@@ -1,4 +1,5 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, OnDestroy, computed, inject, input } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, OnDestroy, PLATFORM_ID, computed, inject, input } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { OdontogramShellComponent, type OdontogramThemeConfig } from 'angular-advanced-odontogram';
 import { OdontogramPersistenceService } from '../../core/services/odontogram-persistence.service';
 
@@ -16,7 +17,7 @@ import { OdontogramPersistenceService } from '../../core/services/odontogram-per
         </div>
         <span class="odontogram-badge">FDI</span>
       </div>
-      @defer (on timer(10ms)) {
+      @if (isBrowser) {
         <div class="odontogram-shell">
           <aao-odontogram-shell
             language="fr"
@@ -28,9 +29,8 @@ import { OdontogramPersistenceService } from '../../core/services/odontogram-per
             [enableNotes]="true"
             [enableIcdas]="true" />
         </div>
-      } @placeholder {
-        <div class="odontogram-loading" aria-live="polite">
-          <div class="odontogram-spinner"></div>
+      } @else {
+        <div class="odontogram-loading" aria-hidden="true">
           <span>Chargement de l'odontogramme clinique...</span>
         </div>
       }
@@ -93,6 +93,7 @@ export class PatientOdontogramComponent implements AfterViewInit, OnDestroy {
   readonly numberingSystem = input<'FDI' | 'UNIVERSAL' | 'PALMER'>('FDI');
   readonly darkMode = input(false);
 
+  readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly persistence = inject(OdontogramPersistenceService);
 
   readonly themeConfig = computed<OdontogramThemeConfig>(() => this.darkMode()
@@ -100,6 +101,7 @@ export class PatientOdontogramComponent implements AfterViewInit, OnDestroy {
     : { colors: { background: '#f8fafc', panel: '#ffffff', card: '#ffffff', text: '#0f172a', muted: '#64748b', line: '#e2e8f0', accent: '#0d9488', accent2: '#0f766e' } });
 
   ngAfterViewInit(): void {
+    if (!this.isBrowser) return;
     void this.persistence.attach(this.patientId(), this.organizationId(), this.clinicId(), this.updatedBy());
   }
 
