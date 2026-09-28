@@ -1,8 +1,6 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, OnDestroy, computed, inject, input } from '@angular/core';
 import { OdontogramShellComponent, type OdontogramThemeConfig } from 'angular-advanced-odontogram';
-import { DentalDataService } from '../../core/services/dental-data.service';
 import { OdontogramPersistenceService } from '../../core/services/odontogram-persistence.service';
-import { ThemeService } from '../../core/services/theme.service';
 
 @Component({
   selector: 'app-patient-odontogram',
