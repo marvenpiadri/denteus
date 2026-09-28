@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { I18nService } from '../../core/services/i18n.service';
 import { DentalDataService } from '../../core/services/dental-data.service';
 import { TenantService } from '../../core/services/tenant.service';
+import { ThemeService } from '../../core/services/theme.service';
 import { PeriodontalDiagnosisCategory, PeriodontalExamination, ToothPerioMeasurement } from '../../core/models/periodontal.models';
 import { PaymentMethodType } from '../../core/models/billing.models';
 import { PatientOdontogramComponent } from './patient-odontogram.component';
@@ -286,7 +287,7 @@ export type PatientWorkspaceTab =
           [clinicId]="tenantService.currentClinicId()"
           [updatedBy]="tenantService.currentUser().name"
           [numberingSystem]="dataService.numberingSystem()"
-          [darkMode]="false" />
+          [darkMode]="themeService.isDark()" />
       }
 
       <!-- TAB CONTENT: PERIODONTAL -->
@@ -771,6 +772,7 @@ export class PatientDetailComponent implements AfterViewInit, OnDestroy {
   readonly i18n = inject(I18nService);
   readonly dataService = inject(DentalDataService);
   readonly tenantService = inject(TenantService);
+  readonly themeService = inject(ThemeService);
 
   readonly goBack = output<void>();
 
