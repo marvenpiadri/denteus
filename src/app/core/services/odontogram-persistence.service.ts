@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import {
   getCaseMeta,
   getOdontogramSummary,
@@ -12,18 +12,20 @@ import {
   setPlanChart,
 } from 'angular-advanced-odontogram';
 
+export interface OdontogramPlanChange {
+  toothNo: number;
+  axis: string;
+  from: unknown;
+  to: unknown;
+}
+
 interface StoredOdontogram {
   patientId: string;
   organizationId: string;
   clinicId: string;
   status: Record<string, unknown>;
   plan: Record<string, unknown> | null;
-  planChanges: Array<{
-    toothNo: number;
-    axis: string;
-    from: unknown;
-    to: unknown;
-  }>;
+  planChanges: OdontogramPlanChange[];
   updatedAt: string;
   updatedBy: string;
 }
@@ -42,6 +44,9 @@ interface ApiResponse<T> {
  */
 @Injectable({ providedIn: 'root' })
 export class OdontogramPersistenceService {
+  readonly attachedPatientId = signal<string | null>(null);
+  readonly planChanges = signal<OdontogramPlanChange[]>([]);
+
   private unsubscribeStateChange: (() => void) | null = null;
   private patientId: string | null = null;
   private hydrating = false;
@@ -56,6 +61,7 @@ export class OdontogramPersistenceService {
     this.detach();
 
     this.patientId = patientId;
+    this.attachedPatientId.set(patientId);
 
     try {
       const response = await fetch(`/api/v1/patients/${encodeURIComponent(patientId)}/odontogram`);
@@ -70,8 +76,10 @@ export class OdontogramPersistenceService {
       console.warn('Denteus odontogram load failed:', error);
     }
 
+    this.planChanges.set(getPlanChanges());
     this.unsubscribeStateChange = onStateChange(() => {
       if (!this.hydrating) {
+        this.planChanges.set(getPlanChanges());
         this.scheduleSave(patientId, organizationId, clinicId, updatedBy);
       }
     });
@@ -86,6 +94,8 @@ export class OdontogramPersistenceService {
     this.unsubscribeStateChange?.();
     this.unsubscribeStateChange = null;
     this.patientId = null;
+    this.attachedPatientId.set(null);
+    this.planChanges.set([]);
   }
 
   private hydrate(record: StoredOdontogram): void {
