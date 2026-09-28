@@ -9,21 +9,14 @@ import { ThemeService } from '../../core/services/theme.service';
 import { PeriodontalDiagnosisCategory, PeriodontalExamination, ToothPerioMeasurement } from '../../core/models/periodontal.models';
 import { PaymentMethodType } from '../../core/models/billing.models';
 import { PatientOdontogramComponent } from './patient-odontogram.component';
+import { PatientWorkspaceTabsComponent } from './patient-workspace-tabs.component';
+import { PatientWorkspaceTab } from './patient-workspace.models';
 import { OdontogramTreatmentPlanService } from '../../core/services/odontogram-treatment-plan.service';
 import { OdontogramPersistenceService } from '../../core/services/odontogram-persistence.service';
 
-export type PatientWorkspaceTab =
-  | 'overview'
-  | 'odontogram'
-  | 'periodontal'
-  | 'treatment'
-  | 'notes'
-  | 'documents'
-  | 'billing';
-
 @Component({
   selector: 'app-patient-detail',
-  imports: [CommonModule, FormsModule, MatIconModule, PatientOdontogramComponent],
+  imports: [CommonModule, FormsModule, MatIconModule, PatientOdontogramComponent, PatientWorkspaceTabsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="space-y-6">
@@ -104,99 +97,12 @@ export type PatientWorkspaceTab =
           </div>
         }
 
-        <!-- Workspace Tabs -->
-        <div class="flex items-center gap-1 border-t border-neutral-200 dark:border-neutral-800 pt-3 overflow-x-auto">
-          <button
-            (click)="activeTab.set('overview')"
-            [class.bg-teal-50]="activeTab() === 'overview'"
-            [class.text-teal-700]="activeTab() === 'overview'"
-            [class.dark:bg-teal-950/70]="activeTab() === 'overview'"
-            [class.dark:text-teal-300]="activeTab() === 'overview'"
-            [class.text-neutral-600]="activeTab() !== 'overview'"
-            [class.dark:text-neutral-400]="activeTab() !== 'overview'"
-            class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors flex items-center gap-1.5">
-            <mat-icon class="text-xs" style="font-size: 16px; width: 16px; height: 16px;">info</mat-icon>
-            <span>Vue d'ensemble</span>
-          </button>
-
-          <button
-            (click)="activeTab.set('odontogram')"
-            [class.bg-teal-50]="activeTab() === 'odontogram'"
-            [class.text-teal-700]="activeTab() === 'odontogram'"
-            [class.dark:bg-teal-950/70]="activeTab() === 'odontogram'"
-            [class.dark:text-teal-300]="activeTab() === 'odontogram'"
-            [class.text-neutral-600]="activeTab() !== 'odontogram'"
-            [class.dark:text-neutral-400]="activeTab() !== 'odontogram'"
-            class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors flex items-center gap-1.5">
-            <mat-icon class="text-xs" style="font-size: 16px; width: 16px; height: 16px;">view_module</mat-icon>
-            <span>Odontogramme (Schéma dentaire)</span>
-          </button>
-
-          <button
-            (click)="activeTab.set('periodontal')"
-            [class.bg-teal-50]="activeTab() === 'periodontal'"
-            [class.text-teal-700]="activeTab() === 'periodontal'"
-            [class.dark:bg-teal-950/70]="activeTab() === 'periodontal'"
-            [class.dark:text-teal-300]="activeTab() === 'periodontal'"
-            [class.text-neutral-600]="activeTab() !== 'periodontal'"
-            [class.dark:text-neutral-400]="activeTab() !== 'periodontal'"
-            class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors flex items-center gap-1.5">
-            <mat-icon class="text-xs" style="font-size: 16px; width: 16px; height: 16px;">water_drop</mat-icon>
-            <span>Bilan Parodontal ({{ dataService.activePatientPerioExams().length }})</span>
-          </button>
-
-          <button
-            (click)="activeTab.set('treatment')"
-            [class.bg-teal-50]="activeTab() === 'treatment'"
-            [class.text-teal-700]="activeTab() === 'treatment'"
-            [class.dark:bg-teal-950/70]="activeTab() === 'treatment'"
-            [class.dark:text-teal-300]="activeTab() === 'treatment'"
-            [class.text-neutral-600]="activeTab() !== 'treatment'"
-            [class.dark:text-neutral-400]="activeTab() !== 'treatment'"
-            class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors flex items-center gap-1.5">
-            <mat-icon class="text-xs" style="font-size: 16px; width: 16px; height: 16px;">receipt</mat-icon>
-            <span>Plans de Traitement ({{ dataService.activePatientTreatmentPlans().length }})</span>
-          </button>
-
-          <button
-            (click)="activeTab.set('notes')"
-            [class.bg-teal-50]="activeTab() === 'notes'"
-            [class.text-teal-700]="activeTab() === 'notes'"
-            [class.dark:bg-teal-950/70]="activeTab() === 'notes'"
-            [class.dark:text-teal-300]="activeTab() === 'notes'"
-            [class.text-neutral-600]="activeTab() !== 'notes'"
-            [class.dark:text-neutral-400]="activeTab() !== 'notes'"
-            class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors flex items-center gap-1.5">
-            <mat-icon class="text-xs" style="font-size: 16px; width: 16px; height: 16px;">edit_note</mat-icon>
-            <span>Notes SOAP ({{ dataService.activePatientNotes().length }})</span>
-          </button>
-
-          <button
-            (click)="activeTab.set('documents')"
-            [class.bg-teal-50]="activeTab() === 'documents'"
-            [class.text-teal-700]="activeTab() === 'documents'"
-            [class.dark:bg-teal-950/70]="activeTab() === 'documents'"
-            [class.dark:text-teal-300]="activeTab() === 'documents'"
-            [class.text-neutral-600]="activeTab() !== 'documents'"
-            [class.dark:text-neutral-400]="activeTab() !== 'documents'"
-            class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors flex items-center gap-1.5">
-            <mat-icon class="text-xs" style="font-size: 16px; width: 16px; height: 16px;">image</mat-icon>
-            <span>Radios & Documents</span>
-          </button>
-
-          <button
-            (click)="activeTab.set('billing')"
-            [class.bg-teal-50]="activeTab() === 'billing'"
-            [class.text-teal-700]="activeTab() === 'billing'"
-            [class.dark:bg-teal-950/70]="activeTab() === 'billing'"
-            [class.dark:text-teal-300]="activeTab() === 'billing'"
-            [class.text-neutral-600]="activeTab() !== 'billing'"
-            [class.dark:text-neutral-400]="activeTab() !== 'billing'"
-            class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors flex items-center gap-1.5">
-            <mat-icon class="text-xs" style="font-size: 16px; width: 16px; height: 16px;">account_balance_wallet</mat-icon>
-            <span>Facturation & Règlements</span>
-          </button>
-        </div>
+        <app-patient-workspace-tabs
+          [activeTab]="activeTab()"
+          [periodontalCount]="dataService.activePatientPerioExams().length"
+          [treatmentCount]="dataService.activePatientTreatmentPlans().length"
+          [notesCount]="dataService.activePatientNotes().length"
+          (tabChange)="activeTab.set($event)" />
       </div>
 
       <!-- TAB CONTENT: OVERVIEW -->
