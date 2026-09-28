@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { PatientWorkspaceTab } from './patient-detail.component';
+import { PatientWorkspaceTab } from './patient-workspace.models';
 
 @Component({
   selector: 'app-patient-workspace-tabs',
@@ -21,8 +21,8 @@ import { PatientWorkspaceTab } from './patient-detail.component';
           class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors flex items-center gap-1.5">
           <mat-icon class="text-xs" style="font-size: 16px; width: 16px; height: 16px;">{{ tab.icon }}</mat-icon>
           <span>{{ tab.label }}</span>
-          @if (tab.count !== undefined) {
-            <span class="text-[10px] opacity-70">({{ tab.count }})</span>
+          @if (getCount(tab.id) !== undefined) {
+            <span class="text-[10px] opacity-70">({{ getCount(tab.id) }})</span>
           }
         </button>
       }
@@ -40,9 +40,9 @@ export class PatientWorkspaceTabsComponent {
   readonly tabs = [
     { id: 'overview' as const, label: "Vue d'ensemble", icon: 'info' },
     { id: 'odontogram' as const, label: 'Odontogramme', icon: 'view_module' },
-    { id: 'periodontal' as const, label: 'Parodontal', icon: 'water_drop', get count() { return 0; } },
-    { id: 'treatment' as const, label: 'Plans de traitement', icon: 'receipt', get count() { return 0; } },
-    { id: 'notes' as const, label: 'Notes cliniques', icon: 'edit_note', get count() { return 0; } },
+    { id: 'periodontal' as const, label: 'Parodontal', icon: 'water_drop' },
+    { id: 'treatment' as const, label: 'Plans de traitement', icon: 'receipt' },
+    { id: 'notes' as const, label: 'Notes cliniques', icon: 'edit_note' },
     { id: 'documents' as const, label: 'Radios & documents', icon: 'image' },
     { id: 'billing' as const, label: 'Facturation', icon: 'account_balance_wallet' },
   ];
