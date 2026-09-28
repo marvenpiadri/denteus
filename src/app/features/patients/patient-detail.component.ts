@@ -777,10 +777,6 @@ export class PatientDetailComponent implements AfterViewInit, OnDestroy {
   readonly goBack = output<void>();
 
   readonly activeTab = signal<PatientWorkspaceTab>('odontogram');
-  // Inspector form fields
-  editConditionType: ToothConditionType = 'caries';
-  editSurfaces: string[] = ['O', 'D'];
-
   // Modal flags
   readonly showNewPerioModal = signal<boolean>(false);
   readonly showNewPlanModal = signal<boolean>(false);
