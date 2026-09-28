@@ -36,8 +36,23 @@
   background: rgba(100, 116, 139, 0.6);
 }
 
-/* Hide embedded odontogram topbar header as requested */
-aao-odontogram-topbar > header,
-aao-odontogram-topbar {
+/* Keep the clinical controls, but remove library branding and developer-only links. */
+aao-odontogram-topbar .brand,
+aao-odontogram-topbar #btnGithubLink,
+aao-odontogram-topbar #btnCreditsMenu {
   display: none !important;
+}
+
+aao-odontogram-topbar > header {
+  justify-content: flex-end !important;
+}
+
+.odontogram-root {
+  --odon-accent: #0d9488;
+  --odon-accent2: #0f766e;
+}
+
+.dark .odontogram-root {
+  --odon-accent: #14b8a6;
+  --odon-accent2: #2dd4bf;
 }
