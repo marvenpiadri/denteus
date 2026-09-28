@@ -1017,6 +1017,7 @@ export class DentalDataService {
       ...plan,
       id: newId,
       createdAt: new Date().toISOString().split('T')[0],
+      items: plan.items.map((item) => ({ ...item, planId: newId })),
     };
     this.treatmentPlans.update((list) => [newPlan, ...list]);
     this.logAudit({
