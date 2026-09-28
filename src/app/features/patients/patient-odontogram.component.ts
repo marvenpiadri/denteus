@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, OnDestroy, PLATFORM_ID, computed, inject, input } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, OnChanges, OnDestroy, PLATFORM_ID, SimpleChanges, computed, inject, input } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { OdontogramShellComponent, type OdontogramThemeConfig } from 'angular-advanced-odontogram';
 import { OdontogramPersistenceService } from '../../core/services/odontogram-persistence.service';
@@ -85,7 +85,7 @@ import { OdontogramPersistenceService } from '../../core/services/odontogram-per
     @keyframes odontogram-spin { to { transform: rotate(360deg); } }
   `],
 })
-export class PatientOdontogramComponent implements AfterViewInit, OnDestroy {
+export class PatientOdontogramComponent implements AfterViewInit, OnChanges, OnDestroy {
   readonly patientId = input.required<string>();
   readonly organizationId = input.required<string>();
   readonly clinicId = input.required<string>();
@@ -95,6 +95,7 @@ export class PatientOdontogramComponent implements AfterViewInit, OnDestroy {
 
   readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly persistence = inject(OdontogramPersistenceService);
+  private viewReady = false;
 
   readonly themeConfig = computed<OdontogramThemeConfig>(() => this.darkMode()
     ? { colors: { background: '#090d16', panel: '#0f172a', card: '#111827', text: '#f8fafc', muted: '#94a3b8', line: '#1e293b', accent: '#14b8a6', accent2: '#2dd4bf' } }
@@ -102,7 +103,19 @@ export class PatientOdontogramComponent implements AfterViewInit, OnDestroy {
 
   ngAfterViewInit(): void {
     if (!this.isBrowser) return;
-    void this.persistence.attach(this.patientId(), this.organizationId(), this.clinicId(), this.updatedBy());
+    this.viewReady = true;
+    void this.attachPersistence();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!this.viewReady || !this.isBrowser) return;
+    if (changes['patientId'] || changes['organizationId'] || changes['clinicId'] || changes['updatedBy']) {
+      void this.attachPersistence();
+    }
+  }
+
+  private attachPersistence(): Promise<void> {
+    return this.persistence.attach(this.patientId(), this.organizationId(), this.clinicId(), this.updatedBy());
   }
 
   ngOnDestroy(): void {
