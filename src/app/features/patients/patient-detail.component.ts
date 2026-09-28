@@ -10,7 +10,7 @@ import { PeriodontalDiagnosisCategory, PeriodontalExamination, ToothPerioMeasure
 import { PaymentMethodType } from '../../core/models/billing.models';
 import { PatientOdontogramComponent } from './patient-odontogram.component';
 import { PatientWorkspaceTabsComponent } from './patient-workspace-tabs.component';
-import { PatientWorkspaceTab } from './patient-workspace.models';
+import type { PatientWorkspaceTab } from './patient-workspace.models';
 import { OdontogramTreatmentPlanService } from '../../core/services/odontogram-treatment-plan.service';
 import { OdontogramPersistenceService } from '../../core/services/odontogram-persistence.service';
 
