@@ -7,6 +7,7 @@ import { DentalDataService } from '../../core/services/dental-data.service';
 import { TenantService } from '../../core/services/tenant.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { OdontogramAdapterService } from '../../core/services/odontogram-adapter.service';
+import { OdontogramPersistenceService } from '../../core/services/odontogram-persistence.service';
 import { ToothConditionType, ToothSurface } from '../../core/models/dental.models';
 import { PeriodontalDiagnosisCategory, PeriodontalExamination, ToothPerioMeasurement } from '../../core/models/periodontal.models';
 import { PaymentMethodType } from '../../core/models/billing.models';
@@ -994,18 +995,20 @@ export type PatientWorkspaceTab =
     </div>
   `,
 })
-export class PatientDetailComponent {
+export class PatientDetailComponent implements AfterViewInit, OnDestroy {
   readonly i18n = inject(I18nService);
   readonly dataService = inject(DentalDataService);
   readonly tenantService = inject(TenantService);
   readonly themeService = inject(ThemeService);
   readonly odontogramAdapter = inject(OdontogramAdapterService);
+  readonly odontogramPersistence = inject(OdontogramPersistenceService);
 
   readonly goBack = output<void>();
 
   readonly activeTab = signal<PatientWorkspaceTab>('odontogram');
   readonly selectedToothNumber = signal<number | null>(16);
-  readonly odontogramViewMode = signal<'simplified' | 'advanced'>('simplified');
+  // The Advanced Odontogram is the single clinical chart UI.
+  readonly odontogramViewMode = signal<'advanced'>('advanced');
 
   // Inspector form fields
   editConditionType: ToothConditionType = 'caries';
@@ -1039,6 +1042,22 @@ export class PatientDetailComponent {
   readonly patientPayments = computed(() => {
     return this.dataService.payments().filter((p) => p.patientId === this.patient().id);
   });
+
+  ngAfterViewInit(): void {
+    const patient = this.patient();
+    const user = this.tenantService.currentUser();
+
+    void this.odontogramPersistence.attach(
+      patient.id,
+      this.tenantService.currentOrganizationId(),
+      this.tenantService.currentClinicId(),
+      user.name,
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.odontogramPersistence.detach();
+  }
 
   calculateAge(birthDate: string): number {
     if (!birthDate) return 0;
