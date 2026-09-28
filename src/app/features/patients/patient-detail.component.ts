@@ -282,7 +282,7 @@ export type PatientWorkspaceTab =
       }
 
       <!-- TAB CONTENT: ODONTOGRAM -->
-      @if (activeTab() === 'odontogram') {
+      <div [class.hidden]="activeTab() !== 'odontogram'">
         <app-patient-odontogram
           [patientId]="patient().id"
           [organizationId]="patient().organizationId"
@@ -290,7 +290,7 @@ export type PatientWorkspaceTab =
           [updatedBy]="tenantService.currentUser().name"
           [numberingSystem]="dataService.numberingSystem()"
           [darkMode]="themeService.isDark()" />
-      }
+      </div>
 
       <!-- TAB CONTENT: PERIODONTAL -->
       @if (activeTab() === 'periodontal') {
