@@ -22,7 +22,7 @@ const AXIS_MAP: Record<string, { code: string; name: string; category: Procedure
   apical: { code: 'ENDO-AP', name: 'Traitement endodontique / apical', category: 'endodontie' },
   presence: { code: 'IMP-TIT', name: 'Implantologie / remplacement dentaire', category: 'implantologie' },
   substrate: { code: 'REST', name: 'Restauration dentaire', category: 'soins_conservateurs' },
-  ortho: { code: 'ORTHO', name: 'Traitement orthodontique', category: 'esthetique' },
+  ortho: { code: 'ORTHO', name: 'Traitement orthodontique', category: 'orthodontie' },
 };
 
 @Injectable({ providedIn: 'root' })
