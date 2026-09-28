@@ -4,14 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { I18nService } from '../../core/services/i18n.service';
 import { DentalDataService } from '../../core/services/dental-data.service';
-import { TenantService } from '../../core/services/tenant.service';
-import { ThemeService } from '../../core/services/theme.service';
-import { OdontogramAdapterService } from '../../core/services/odontogram-adapter.service';
-import { OdontogramPersistenceService } from '../../core/services/odontogram-persistence.service';
-import { ToothConditionType, ToothSurface } from '../../core/models/dental.models';
-import { PeriodontalDiagnosisCategory, PeriodontalExamination, ToothPerioMeasurement } from '../../core/models/periodontal.models';
+{ TenantService } from '../../core/services/tenant.service';
+import import { PeriodontalDiagnosisCategory, PeriodontalExamination, ToothPerioMeasurement } from '../../core/models/periodontal.models';
 import { PaymentMethodType } from '../../core/models/billing.models';
-import { Language, OdontogramShellComponent } from 'angular-advanced-odontogram';
+import { PatientOdontogramComponent } from './patient-odontogram.component';
 
 export type PatientWorkspaceTab =
   | 'overview'
@@ -24,15 +20,8 @@ export type PatientWorkspaceTab =
 
 @Component({
   selector: 'app-patient-detail',
-  imports: [CommonModule, FormsModule, MatIconModule, OdontogramShellComponent],
+  imports: [CommonModule, FormsModule, MatIconModule, PatientOdontogramComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styles: [`
-    :host ::ng-deep aao-odontogram-shell aao-odontogram-topbar > header,
-    :host ::ng-deep aao-odontogram-topbar > header,
-    :host ::ng-deep aao-odontogram-topbar {
-      display: none !important;
-    }
-  `],
   template: `
     <div class="space-y-6">
       <!-- Back button & Patient Header Card -->
@@ -291,230 +280,13 @@ export type PatientWorkspaceTab =
 
       <!-- TAB CONTENT: ODONTOGRAM -->
       @if (activeTab() === 'odontogram') {
-        <div class="space-y-4">
-          <!-- Odontogram Toolbar -->
-          <div class="bg-white dark:bg-neutral-900 p-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-            <div class="flex items-center gap-3">
-              <span class="text-xs font-bold text-neutral-900 dark:text-white">Système de Numérotation :</span>
-              <div class="flex items-center rounded-lg p-0.5 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
-                <button
-                  (click)="dataService.numberingSystem.set('FDI')"
-                  [class.bg-white]="dataService.numberingSystem() === 'FDI'"
-                  [class.dark:bg-neutral-700]="dataService.numberingSystem() === 'FDI'"
-                  [class.shadow-sm]="dataService.numberingSystem() === 'FDI'"
-                  class="px-2.5 py-1 text-xs font-bold rounded text-neutral-700 dark:text-neutral-200 transition-colors">
-                  FDI (ISO)
-                </button>
-                <button
-                  (click)="dataService.numberingSystem.set('UNIVERSAL')"
-                  [class.bg-white]="dataService.numberingSystem() === 'UNIVERSAL'"
-                  [class.dark:bg-neutral-700]="dataService.numberingSystem() === 'UNIVERSAL'"
-                  [class.shadow-sm]="dataService.numberingSystem() === 'UNIVERSAL'"
-                  class="px-2.5 py-1 text-xs font-bold rounded text-neutral-700 dark:text-neutral-200 transition-colors">
-                  Universal (ADA)
-                </button>
-                <button
-                  (click)="dataService.numberingSystem.set('PALMER')"
-                  [class.bg-white]="dataService.numberingSystem() === 'PALMER'"
-                  [class.dark:bg-neutral-700]="dataService.numberingSystem() === 'PALMER'"
-                  [class.shadow-sm]="dataService.numberingSystem() === 'PALMER'"
-                  class="px-2.5 py-1 text-xs font-bold rounded text-neutral-700 dark:text-neutral-200 transition-colors">
-                  Palmer
-                </button>
-              </div>
-            </div>
-
-            <!-- Indicators: Language & Advanced Odontogram -->
-            <div class="flex items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400">
-              <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 font-medium">
-                <mat-icon style="font-size: 16px; width: 16px; height: 16px;" class="text-teal-600 dark:text-teal-400">translate</mat-icon>
-                <span>Langue active : <strong class="uppercase text-neutral-900 dark:text-white">{{ odontogramLanguage() }}</strong></span>
-              </span>
-              <span class="px-2.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/70 text-teal-700 dark:text-teal-300 font-semibold border border-teal-200 dark:border-teal-800">
-                Angular Odontogramme Avancé
-              </span>
-            </div>
-          </div>
-
-          @if (odontogramViewMode() === 'advanced') {
-            <div class="bg-white dark:bg-neutral-900 p-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-hidden min-h-[500px]">
-              @defer (on timer(10ms)) {
-                <aao-odontogram-shell
-                  [numberingSystem]="dataService.numberingSystem()"
-                  [darkMode]="themeService.isDark()"
-                  [showStatusCard]="true"
-                  [showOrthoCard]="true"
-                  [enableNotes]="true"
-                  [enableIcdas]="true" />
-              } @placeholder {
-                <div class="p-16 text-center text-xs text-neutral-400 flex flex-col items-center justify-center gap-2">
-                  <div class="w-6 h-6 border-2 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
-                  <span>Chargement de l'odontogramme haute résolution...</span>
-                </div>
-              }
-            </div>
-          } @else {
-          <!-- Interactive SVG Dental Odontogram Arch -->
-          <div class="bg-white dark:bg-neutral-900 p-6 rounded-2xl border border-neutral-200 dark:border-neutral-800 space-y-8">
-            <!-- Upper Arch (Maxillaire) -->
-            <div>
-              <div class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-2 text-center">
-                Maxillaire Supérieur
-              </div>
-              <div class="grid grid-cols-8 sm:grid-cols-16 gap-1.5 max-w-4xl mx-auto">
-                @for (t of odontogramViewModels().upper; track t.toothNumber) {
-                  <button
-                    (click)="onSelectTooth(t.toothNumber)"
-                    [class.ring-2]="selectedToothNumber() === t.toothNumber"
-                    [class.ring-teal-500]="selectedToothNumber() === t.toothNumber"
-                    class="flex flex-col items-center justify-between p-1.5 rounded-xl border border-neutral-200 dark:border-neutral-800 hover:border-teal-400 bg-neutral-50 dark:bg-neutral-800/40 transition-all h-24 relative group">
-                    <span class="text-[11px] font-mono font-bold text-neutral-600 dark:text-neutral-400">
-                      {{ t.label }}
-                    </span>
-
-                    <!-- Visual Tooth Symbol -->
-                    <div class="w-8 h-12 flex items-center justify-center relative">
-                      @if (t.isMissing) {
-                        <span class="text-neutral-400 font-bold text-lg">✕</span>
-                      } @else if (t.isImplant) {
-                        <mat-icon class="text-cyan-500" style="font-size: 24px; width: 24px; height: 24px;">settings_suggest</mat-icon>
-                      } @else {
-                        <!-- Tooth crown & root graphic -->
-                        <div class="flex flex-col items-center">
-                          <div class="w-5 h-6 rounded-t-lg border-2"
-                            [style.borderColor]="t.statusColor"
-                            [style.backgroundColor]="t.condition ? t.statusColor + '20' : 'transparent'"></div>
-                          <div class="w-2.5 h-5 rounded-b-md border"
-                            [style.borderColor]="t.isEndoTreated ? '#8b5cf6' : t.statusColor"
-                            [style.backgroundColor]="t.isEndoTreated ? '#8b5cf6' : 'transparent'"></div>
-                        </div>
-                      }
-                    </div>
-
-                    <!-- Surface Badges if any -->
-                    <div class="text-[9px] font-mono font-bold text-neutral-500 truncate max-w-full">
-                      {{ t.surfaces.join('') || '-' }}
-                    </div>
-                  </button>
-                }
-              </div>
-            </div>
-
-            <!-- Lower Arch (Mandibule) -->
-            <div>
-              <div class="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-2 text-center">
-                Mandibule Inférieure
-              </div>
-              <div class="grid grid-cols-8 sm:grid-cols-16 gap-1.5 max-w-4xl mx-auto">
-                @for (t of odontogramViewModels().lower; track t.toothNumber) {
-                  <button
-                    (click)="onSelectTooth(t.toothNumber)"
-                    [class.ring-2]="selectedToothNumber() === t.toothNumber"
-                    [class.ring-teal-500]="selectedToothNumber() === t.toothNumber"
-                    class="flex flex-col items-center justify-between p-1.5 rounded-xl border border-neutral-200 dark:border-neutral-800 hover:border-teal-400 bg-neutral-50 dark:bg-neutral-800/40 transition-all h-24 relative group">
-                    <!-- Surface Badges -->
-                    <div class="text-[9px] font-mono font-bold text-neutral-500 truncate max-w-full">
-                      {{ t.surfaces.join('') || '-' }}
-                    </div>
-
-                    <!-- Visual Tooth Symbol -->
-                    <div class="w-8 h-12 flex items-center justify-center relative">
-                      @if (t.isMissing) {
-                        <span class="text-neutral-400 font-bold text-lg">✕</span>
-                      } @else if (t.isImplant) {
-                        <mat-icon class="text-cyan-500" style="font-size: 24px; width: 24px; height: 24px;">settings_suggest</mat-icon>
-                      } @else {
-                        <div class="flex flex-col items-center">
-                          <div class="w-2.5 h-5 rounded-t-md border"
-                            [style.borderColor]="t.isEndoTreated ? '#8b5cf6' : t.statusColor"
-                            [style.backgroundColor]="t.isEndoTreated ? '#8b5cf6' : 'transparent'"></div>
-                          <div class="w-5 h-6 rounded-b-lg border-2"
-                            [style.borderColor]="t.statusColor"
-                            [style.backgroundColor]="t.condition ? t.statusColor + '20' : 'transparent'"></div>
-                        </div>
-                      }
-                    </div>
-
-                    <span class="text-[11px] font-mono font-bold text-neutral-600 dark:text-neutral-400">
-                      {{ t.label }}
-                    </span>
-                  </button>
-                }
-              </div>
-            </div>
-          </div>
-
-          <!-- Tooth Inspector / Surface Editor Drawer -->
-          @if (selectedToothNumber()) {
-            <div class="bg-white dark:bg-neutral-900 p-5 rounded-2xl border border-teal-500/40 shadow-sm space-y-4 animate-in fade-in">
-              <div class="flex items-center justify-between pb-3 border-b border-neutral-200 dark:border-neutral-800">
-                <div class="flex items-center gap-2">
-                  <h3 class="text-base font-bold text-neutral-900 dark:text-white">
-                    Dent {{ selectedToothLabel() }} (FDI {{ selectedToothNumber() }})
-                  </h3>
-                  <span class="text-xs text-neutral-400">
-                    Quadrant {{ getToothQuadrant(selectedToothNumber()!) }}
-                  </span>
-                </div>
-
-                <button (click)="selectedToothNumber.set(null)" class="text-neutral-400 hover:text-neutral-700">
-                  <mat-icon class="text-sm">close</mat-icon>
-                </button>
-              </div>
-
-              <!-- Conditions & Surface controls -->
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Select Condition -->
-                <div class="space-y-2">
-                  <span class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300">État / Pathologie</span>
-                  <select
-                    [(ngModel)]="editConditionType"
-                    class="w-full p-2 text-xs rounded-xl bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-white">
-                    <option value="healthy">Dent saine (Aucun acte requis)</option>
-                    <option value="caries">Carie dentinaire active</option>
-                    <option value="filling">Restauration composite existante</option>
-                    <option value="endo_needed">Pulpite / Nécrose (Endodontie requise)</option>
-                    <option value="endo_treated">Dévitalisée (Obturation canalaire)</option>
-                    <option value="crown">Couronne prothétique (CCM / Zircone)</option>
-                    <option value="implant">Implant ostéointégré</option>
-                    <option value="missing">Dent absente / Extraite</option>
-                  </select>
-                </div>
-
-                <!-- Select Affected Surfaces -->
-                <div class="space-y-2">
-                  <span class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300">Surfaces atteintes</span>
-                  <div class="flex items-center gap-2">
-                    @for (surf of ['M', 'O', 'D', 'B', 'L']; track surf) {
-                      <button
-                        (click)="toggleSurface(surf)"
-                        [class.bg-teal-600]="editSurfaces.includes(surf)"
-                        [class.text-white]="editSurfaces.includes(surf)"
-                        [class.bg-neutral-100]="!editSurfaces.includes(surf)"
-                        [class.dark:bg-neutral-800]="!editSurfaces.includes(surf)"
-                        [class.text-neutral-700]="!editSurfaces.includes(surf)"
-                        [class.dark:text-neutral-300]="!editSurfaces.includes(surf)"
-                        class="w-8 h-8 rounded-lg text-xs font-bold font-mono transition-colors">
-                        {{ surf }}
-                      </button>
-                    }
-                  </div>
-                  <div class="text-[10px] text-neutral-400">M: Mésial, O: Occlusal, D: Distal, B: Vestibulaire, L: Lingual</div>
-                </div>
-
-                <!-- Action Button -->
-                <div class="space-y-2 flex flex-col justify-end">
-                  <button
-                    (click)="saveToothCondition()"
-                    class="w-full py-2.5 text-xs font-semibold rounded-xl bg-teal-600 hover:bg-teal-700 text-white shadow-sm transition-colors">
-                    Enregistrer l'état clinique
-                  </button>
-                </div>
-              </div>
-            </div>
-          }
-        }
-        </div>
+        <app-patient-odontogram
+          [patientId]="patient().id"
+          [organizationId]="patient().organizationId"
+          [clinicId]="tenantService.currentClinicId()"
+          [updatedBy]="tenantService.currentUser().name"
+          [numberingSystem]="dataService.numberingSystem()"
+          [darkMode]="themeIsDark()" />
       }
 
       <!-- TAB CONTENT: PERIODONTAL -->
@@ -999,17 +771,10 @@ export class PatientDetailComponent implements AfterViewInit, OnDestroy {
   readonly i18n = inject(I18nService);
   readonly dataService = inject(DentalDataService);
   readonly tenantService = inject(TenantService);
-  readonly themeService = inject(ThemeService);
-  readonly odontogramAdapter = inject(OdontogramAdapterService);
-  readonly odontogramPersistence = inject(OdontogramPersistenceService);
 
   readonly goBack = output<void>();
 
   readonly activeTab = signal<PatientWorkspaceTab>('odontogram');
-  readonly selectedToothNumber = signal<number | null>(16);
-  // The Advanced Odontogram is the single clinical chart UI.
-  readonly odontogramViewMode = signal<'advanced'>('advanced');
-
   // Inspector form fields
   editConditionType: ToothConditionType = 'caries';
   editSurfaces: string[] = ['O', 'D'];
@@ -1030,77 +795,14 @@ export class PatientDetailComponent implements AfterViewInit, OnDestroy {
 
   readonly patient = computed(() => this.dataService.activePatient());
 
-  readonly odontogramViewModels = computed(() => {
-    return this.odontogramAdapter.buildTeethViewModels(this.dataService.activePatientConditions());
-  });
-
-  readonly selectedToothLabel = computed(() => {
-    if (!this.selectedToothNumber()) return '';
-    return this.odontogramAdapter.formatToothNumber(this.selectedToothNumber()!);
-  });
-
   readonly patientPayments = computed(() => {
     return this.dataService.payments().filter((p) => p.patientId === this.patient().id);
   });
-
-  ngAfterViewInit(): void {
-    const patient = this.patient();
-    const user = this.tenantService.currentUser();
-
-    void this.odontogramPersistence.attach(
-      patient.id,
-      this.tenantService.currentOrganizationId(),
-      this.tenantService.currentClinicId(),
-      user.name,
-    );
-  }
-
-  ngOnDestroy(): void {
-    this.odontogramPersistence.detach();
-  }
 
   calculateAge(birthDate: string): number {
     if (!birthDate) return 0;
     const diff = Date.now() - new Date(birthDate).getTime();
     return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
-  }
-
-  getToothQuadrant(fdi: number): number {
-    return Math.floor(fdi / 10);
-  }
-
-  onSelectTooth(num: number): void {
-    this.selectedToothNumber.set(num);
-    const existing = this.dataService.activePatientConditions().find((c) => c.toothNumber === num);
-    if (existing) {
-      this.editConditionType = existing.condition;
-      this.editSurfaces = [...existing.surfaces];
-    } else {
-      this.editConditionType = 'healthy';
-      this.editSurfaces = [];
-    }
-  }
-
-  toggleSurface(surf: string): void {
-    if (this.editSurfaces.includes(surf)) {
-      this.editSurfaces = this.editSurfaces.filter((s) => s !== surf);
-    } else {
-      this.editSurfaces.push(surf);
-    }
-  }
-
-  saveToothCondition(): void {
-    if (!this.selectedToothNumber()) return;
-
-    this.dataService.addOrUpdateToothCondition({
-      patientId: this.patient().id,
-      toothNumber: this.selectedToothNumber()!,
-      condition: this.editConditionType,
-      surfaces: this.editSurfaces as ToothSurface[],
-      status: 'diagnosed',
-      diagnosedAt: new Date().toISOString().split('T')[0],
-      createdBy: this.tenantService.currentUser().name,
-    });
   }
 
   getExamTeethEntries(exam: PeriodontalExamination): ToothPerioMeasurement[] {
