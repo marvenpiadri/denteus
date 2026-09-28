@@ -10,6 +10,7 @@ import { PeriodontalDiagnosisCategory, PeriodontalExamination, ToothPerioMeasure
 import { PaymentMethodType } from '../../core/models/billing.models';
 import { PatientOdontogramComponent } from './patient-odontogram.component';
 import { OdontogramTreatmentPlanService } from '../../core/services/odontogram-treatment-plan.service';
+import { OdontogramPersistenceService } from '../../core/services/odontogram-persistence.service';
 
 export type PatientWorkspaceTab =
   | 'overview'
@@ -803,6 +804,7 @@ export class PatientDetailComponent {
   readonly tenantService = inject(TenantService);
   readonly themeService = inject(ThemeService);
   readonly odontogramTreatmentPlan = inject(OdontogramTreatmentPlanService);
+  readonly odontogramPersistence = inject(OdontogramPersistenceService);
 
   readonly goBack = output<void>();
 
@@ -824,7 +826,8 @@ export class PatientDetailComponent {
   readonly patient = computed(() => this.dataService.activePatient());
 
   readonly odontogramPlanCandidates = computed(() => {
-    return this.odontogramTreatmentPlan.getCandidates(this.dataService.procedures());
+    if (this.odontogramPersistence.attachedPatientId() !== this.patient().id) return [];
+    return this.odontogramTreatmentPlan.getCandidates(this.odontogramPersistence.planChanges(), this.dataService.procedures());
   });
 
   readonly patientPayments = computed(() => {
