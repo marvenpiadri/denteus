@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { getOdontogram, saveOdontogram } from './backend/odontogram-store';
 
 export const apiRouter = Router();
 
@@ -93,6 +94,52 @@ apiRouter.post('/patients', (req: Request, res: Response) => {
   };
   DB_PATIENTS.unshift(newPatient);
   return res.status(201).json({ data: newPatient });
+});
+
+// Patient odontogram / clinical chart API.
+//
+// The payload is produced by angular-advanced-odontogram itself.
+// Denteus deliberately stores the library's status + plan JSON instead of
+// inventing a second dental-chart serialization format.
+//
+// NOTE: this store is currently in-memory. The module boundary is designed so
+// it can later be replaced by Prisma/PostgreSQL without changing the Angular
+// odontogram integration.
+
+apiRouter.get('/patients/:id/odontogram', (req: Request, res: Response) => {
+  const record = getOdontogram(req.params['id']);
+  return res.json({ data: record });
+});
+
+apiRouter.put('/patients/:id/odontogram', (req: Request, res: Response) => {
+  const body = req.body as {
+    organizationId?: string;
+    clinicId?: string;
+    status?: Record<string, unknown>;
+    plan?: Record<string, unknown> | null;
+    planChanges?: Array<{ toothNo: number; axis: string; from: unknown; to: unknown }>;
+    updatedBy?: string;
+  };
+
+  if (!body.organizationId || !body.clinicId || !body.status || !body.updatedBy) {
+    return res.status(400).json({
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'organizationId, clinicId, status et updatedBy sont obligatoires.',
+      },
+    });
+  }
+
+  const record = saveOdontogram(req.params['id'], {
+    organizationId: body.organizationId,
+    clinicId: body.clinicId,
+    status: body.status,
+    plan: body.plan ?? null,
+    planChanges: body.planChanges ?? [],
+    updatedBy: body.updatedBy,
+  });
+
+  return res.json({ data: record });
 });
 
 // Analytics & Reports API
