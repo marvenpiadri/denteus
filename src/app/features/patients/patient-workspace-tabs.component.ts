@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { PatientWorkspaceTab } from './patient-workspace.models';
+import type { PatientWorkspaceTab } from './patient-workspace.models';
 
 @Component({
   selector: 'app-patient-workspace-tabs',
