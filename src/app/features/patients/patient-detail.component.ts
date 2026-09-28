@@ -9,6 +9,7 @@ import { ThemeService } from '../../core/services/theme.service';
 import { PeriodontalDiagnosisCategory, PeriodontalExamination, ToothPerioMeasurement } from '../../core/models/periodontal.models';
 import { PaymentMethodType } from '../../core/models/billing.models';
 import { PatientOdontogramComponent } from './patient-odontogram.component';
+import { OdontogramTreatmentPlanService } from '../../core/services/odontogram-treatment-plan.service';
 
 export type PatientWorkspaceTab =
   | 'overview'
@@ -444,6 +445,34 @@ export type PatientWorkspaceTab =
             </button>
           </div>
 
+          @if (odontogramPlanCandidates().length > 0) {
+            <div class="bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-900/60 rounded-2xl p-4 space-y-3">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <h3 class="text-sm font-bold text-teal-900 dark:text-teal-100">Plan détecté depuis l'odontogramme</h3>
+                  <p class="text-xs text-teal-700 dark:text-teal-300 mt-1">
+                    Les modifications en mode Plan sont prêtes à devenir des actes de soins Denteus.
+                  </p>
+                </div>
+                <button
+                  (click)="createTreatmentPlanFromOdontogram()"
+                  class="shrink-0 px-3 py-1.5 text-xs font-semibold rounded-xl bg-teal-600 hover:bg-teal-700 text-white">
+                  Créer le plan
+                </button>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                @for (candidate of odontogramPlanCandidates(); track candidate.toothNumber + '-' + candidate.axis) {
+                  <div class="flex items-center justify-between gap-3 px-3 py-2 rounded-xl bg-white/70 dark:bg-neutral-900/60 border border-teal-100 dark:border-teal-900/50">
+                    <span class="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                      Dent {{ candidate.toothNumber }} · {{ candidate.procedureName }}
+                    </span>
+                    <span class="text-xs font-mono text-neutral-500">{{ i18n.formatCurrency(candidate.suggestedFee) }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
           <div class="space-y-4">
             @for (plan of dataService.activePatientTreatmentPlans(); track plan.id) {
               <div class="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-5 space-y-4">
@@ -773,6 +802,7 @@ export class PatientDetailComponent {
   readonly dataService = inject(DentalDataService);
   readonly tenantService = inject(TenantService);
   readonly themeService = inject(ThemeService);
+  readonly odontogramTreatmentPlan = inject(OdontogramTreatmentPlanService);
 
   readonly goBack = output<void>();
 
@@ -792,6 +822,10 @@ export class PatientDetailComponent {
   newPaymentRef = '';
 
   readonly patient = computed(() => this.dataService.activePatient());
+
+  readonly odontogramPlanCandidates = computed(() => {
+    return this.odontogramTreatmentPlan.getCandidates(this.dataService.procedures());
+  });
 
   readonly patientPayments = computed(() => {
     return this.dataService.payments().filter((p) => p.patientId === this.patient().id);
@@ -815,6 +849,31 @@ export class PatientDetailComponent {
       case 'transfer': return 'Virement';
       case 'insurance': return 'Prise en charge';
     }
+  }
+
+  createTreatmentPlanFromOdontogram(): void {
+    const candidates = this.odontogramPlanCandidates();
+    if (!candidates.length) return;
+
+    const planId = `pending-${Date.now()}`;
+    const items = this.odontogramTreatmentPlan.buildItems(planId, candidates);
+    const subtotal = items.reduce((sum, item) => sum + item.fee, 0);
+
+    this.dataService.addTreatmentPlan({
+      patientId: this.patient().id,
+      clinicId: this.tenantService.currentClinicId(),
+      doctorId: this.tenantService.currentUserId(),
+      doctorName: this.tenantService.currentUser().name,
+      title: 'Plan issu de l’odontogramme',
+      status: 'planned',
+      items,
+      subtotal,
+      discountPercent: 0,
+      total: subtotal,
+      notes: 'Généré à partir des différences entre le statut clinique et le plan odontogramme.',
+    });
+
+    this.activeTab.set('treatment');
   }
 
   saveNewPerioExam(): void {
