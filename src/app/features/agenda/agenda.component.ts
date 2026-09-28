@@ -6,6 +6,7 @@ import { I18nService } from '../../core/services/i18n.service';
 import { DentalDataService } from '../../core/services/dental-data.service';
 import { TenantService } from '../../core/services/tenant.service';
 import { Appointment, AppointmentType } from '../../core/models/appointment.models';
+import { AppointmentSchedulingService } from '../../core/services/appointment-scheduling.service';
 
 @Component({
   selector: 'app-agenda',
@@ -280,6 +281,12 @@ import { Appointment, AppointmentType } from '../../core/models/appointment.mode
               </div>
             </div>
 
+            @if (scheduleError()) {
+              <div class="px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 text-xs text-rose-700 dark:text-rose-300">
+                {{ scheduleError() }}
+              </div>
+            }
+
             <div class="flex justify-end gap-2 pt-3 border-t border-neutral-200 dark:border-neutral-800">
               <button (click)="showNewModal.set(false)" class="px-4 py-2 text-xs font-semibold rounded-xl bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300">
                 Annuler
@@ -299,6 +306,8 @@ export class AgendaComponent {
   readonly i18n = inject(I18nService);
   readonly dataService = inject(DentalDataService);
   readonly tenantService = inject(TenantService);
+  readonly scheduling = inject(AppointmentSchedulingService);
+  readonly scheduleError = signal<string | null>(null);
 
   readonly activeView = signal<'day' | 'chairs' | 'list'>('chairs');
   readonly showNewModal = signal<boolean>(false);
@@ -329,6 +338,7 @@ export class AgendaComponent {
   }
 
   saveAppointment(): void {
+    this.scheduleError.set(null);
     const patient = this.dataService.patients().find((p) => p.id === this.newAptPatientId);
     const doctor = this.tenantService.users().find((u) => u.id === this.newAptDoctorId);
     const chair = this.tenantService.currentClinicChairs().find((c) => c.id === this.newAptChairId);
@@ -340,6 +350,14 @@ export class AgendaComponent {
     const endHour = Math.floor(endMinutes / 60);
     const endMin = endMinutes % 60;
     const endIso = `${this.newAptDate}T${String(endHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}:00`;
+
+    const clinicAppointments = this.dataService.appointments().filter(
+      (appointment) => appointment.clinicId === this.tenantService.currentClinicId(),
+    );
+    if (!this.scheduling.isAvailable(clinicAppointments, startIso, endIso, doctor.id, chair.id)) {
+      this.scheduleError.set('Ce praticien et ce fauteuil sont déjà occupés sur ce créneau.');
+      return;
+    }
 
     this.dataService.addAppointment({
       organizationId: this.tenantService.currentOrganizationId(),
