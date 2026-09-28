@@ -1,0 +1,7 @@
+{
+  "name": "Denteus - Logiciel de Gestion de Cabinet Dentaire",
+  "description": "Plateforme SaaS multi-cliniques de gestion de cabinet dentaire : dossier patient, odontogramme interactif, bilan parodontal, agenda clinique, plans de traitement et suivi des règlements.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
