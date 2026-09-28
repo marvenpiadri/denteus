@@ -4,8 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { I18nService } from '../../core/services/i18n.service';
 import { DentalDataService } from '../../core/services/dental-data.service';
-{ TenantService } from '../../core/services/tenant.service';
-import import { PeriodontalDiagnosisCategory, PeriodontalExamination, ToothPerioMeasurement } from '../../core/models/periodontal.models';
+import { TenantService } from '../../core/services/tenant.service';
+import { PeriodontalDiagnosisCategory, PeriodontalExamination, ToothPerioMeasurement } from '../../core/models/periodontal.models';
 import { PaymentMethodType } from '../../core/models/billing.models';
 import { PatientOdontogramComponent } from './patient-odontogram.component';
 
@@ -286,7 +286,7 @@ export type PatientWorkspaceTab =
           [clinicId]="tenantService.currentClinicId()"
           [updatedBy]="tenantService.currentUser().name"
           [numberingSystem]="dataService.numberingSystem()"
-          [darkMode]="themeIsDark()" />
+          [darkMode]="false" />
       }
 
       <!-- TAB CONTENT: PERIODONTAL -->
