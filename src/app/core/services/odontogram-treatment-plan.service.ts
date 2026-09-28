@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { getPlanChanges } from 'angular-advanced-odontogram';
+import { OdontogramPlanChange } from './odontogram-persistence.service';
 import { DentalProcedure, ProcedureCategory, TreatmentPlanItem } from '../models/treatment.models';
 
 export interface OdontogramTreatmentCandidate {
@@ -27,8 +27,8 @@ const AXIS_MAP: Record<string, { code: string; name: string; category: Procedure
 
 @Injectable({ providedIn: 'root' })
 export class OdontogramTreatmentPlanService {
-  getCandidates(procedures: DentalProcedure[]): OdontogramTreatmentCandidate[] {
-    return getPlanChanges().flatMap((change) => {
+  getCandidates(changes: OdontogramPlanChange[], procedures: DentalProcedure[]): OdontogramTreatmentCandidate[] {
+    return changes.flatMap((change) => {
       const mapping = AXIS_MAP[change.axis];
       if (!mapping) return [];
 
