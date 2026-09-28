@@ -7,7 +7,8 @@ export type ProcedureCategory =
   | 'chirurgie'
   | 'parodontologie'
   | 'implantologie'
-  | 'esthetique';
+  | 'esthetique'
+  | 'orthodontie';
 
 export interface DentalProcedure {
   id: string;
