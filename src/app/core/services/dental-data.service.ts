@@ -29,6 +29,7 @@ const INITIAL_PROCEDURES: DentalProcedure[] = [
   { id: 'p-17', code: 'IMP-TIT', name: 'Pose d’implant dentaire titane de grade médical', category: 'implantologie', defaultFee: 6500, durationMinutes: 60, requiresTooth: true, isActive: true },
   { id: 'p-18', code: 'IMP-CRN', name: 'Couronne transvissée sur implant Zircone', category: 'implantologie', defaultFee: 4000, durationMinutes: 45, requiresTooth: true, isActive: true },
   { id: 'p-19', code: 'BLANCH', name: 'Éclaircissement dentaire au fauteuil (Blanchiment LED)', category: 'esthetique', defaultFee: 2500, durationMinutes: 60, requiresTooth: false, isActive: true },
+  { id: 'p-20', code: 'ORTHO', name: 'Acte orthodontique', category: 'orthodontie', defaultFee: 800, durationMinutes: 45, requiresTooth: true, isActive: true },
 ];
 
 const INITIAL_SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
