@@ -1,0 +1,73 @@
+<section class="odontogram-workspace" aria-labelledby="odontogram-title">
+  <header class="odontogram-header">
+    <div class="odontogram-title-group">
+      <div class="odontogram-icon" aria-hidden="true">
+        <span class="material-icons-round">dentistry</span>
+      </div>
+
+      <div>
+        <p class="odontogram-eyebrow">Dossier clinique</p>
+        <h2 id="odontogram-title">Odontogramme</h2>
+        <p class="odontogram-description">
+          État dentaire, surfaces concernées et plan de soins du patient.
+        </p>
+      </div>
+    </div>
+
+    <div class="odontogram-header-meta">
+      <span class="odontogram-numbering">{{ numberingSystem() }}</span>
+      @if (workingTeeth().length > 0) {
+        <span class="odontogram-working-count">
+          <span class="status-dot" aria-hidden="true"></span>
+          {{ workingTeeth().length }} dent{{ workingTeeth().length > 1 ? 's' : '' }} au plan
+        </span>
+      }
+    </div>
+  </header>
+
+  @if (workingTeeth().length > 0) {
+    <section class="working-teeth-bar" aria-label="Dents actuellement concernées par le plan">
+      <div class="working-teeth-label">
+        <span class="material-icons-round" aria-hidden="true">medical_services</span>
+        <span>Dents concernées</span>
+      </div>
+
+      <div class="working-teeth-list">
+        @for (tooth of workingTeeth(); track tooth) {
+          <span class="working-tooth">{{ tooth }}</span>
+        }
+      </div>
+    </section>
+  }
+
+  @if (isBrowser) {
+    <div class="odontogram-engine">
+      <aao-odontogram-shell
+        language="fr"
+        [numberingSystem]="numberingSystem()"
+        [darkMode]="darkMode()"
+        [themeConfig]="themeConfig()"
+        [showStatusCard]="true"
+        [showOrthoCard]="true"
+        [enableNotes]="true"
+        [enableIcdas]="true" />
+    </div>
+  } @else {
+    <div class="odontogram-loading" aria-hidden="true">
+      <span class="loading-spinner"></span>
+      <span>Chargement de l'odontogramme clinique...</span>
+    </div>
+  }
+
+  <footer class="odontogram-footer">
+    <div class="legend-item">
+      <span class="legend-marker legend-marker--plan" aria-hidden="true"></span>
+      <span>Plan de soins</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-marker legend-marker--clinical" aria-hidden="true"></span>
+      <span>État clinique</span>
+    </div>
+    <span class="odontogram-footer-note">Les modifications sont enregistrées automatiquement.</span>
+  </footer>
+</section>
