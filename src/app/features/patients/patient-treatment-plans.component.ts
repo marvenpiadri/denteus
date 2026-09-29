@@ -12,7 +12,9 @@ import { OdontogramPersistenceService } from '../../core/services/odontogram-per
   imports: [CommonModule, MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    ${treatmentBlock.replaceAll('      ','    ')}
+      @if (activeTab() === 'treatment') {
+        <app-patient-treatment-plans [patientId]="patient().id" />
+      }
   `,
 })
 export class PatientTreatmentPlansComponent {
