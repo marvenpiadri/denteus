@@ -74,8 +74,7 @@ export class CalendarService {
   getMonthDays(anchor: Date): CalendarDay[] {
     const first = this.startOfMonth(anchor);
     const gridStart = this.startOfWeek(first);
-    const last = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
-    const gridEnd = this.addDays(this.startOfWeek(this.addDays(last, 6)), 0);
+    const gridEnd = this.addDays(gridStart, 41);
     const days: CalendarDay[] = [];
     for (let cursor = new Date(gridStart); cursor <= gridEnd; cursor = this.addDays(cursor, 1)) {
       const date = new Date(cursor);
