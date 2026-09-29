@@ -10,6 +10,8 @@
   --surface-bg: #f8fafc;
   --surface-card: #ffffff;
   --surface-border: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-muted: #64748b;
 }
 
 .dark {
@@ -18,6 +20,8 @@
   --surface-bg: #090d16;
   --surface-card: #0f172a;
   --surface-border: #1e293b;
+  --text-primary: #f8fafc;
+  --text-muted: #94a3b8;
 }
 
 /* Custom scrollbars for clinical data views */
