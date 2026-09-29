@@ -33,12 +33,12 @@
       <div class="timeline-body"><div class="time-axis">@for (row of timeRows(); track row) {<span>{{ calendar.timeLabel(row) }}</span>}</div>
         <div class="day-columns" [style.--resource-count]="view() === 'day' ? resources().length : 7">
           @if (view() === 'week') {
-            @for (day of weekDays(); track $index) {<div class="day-column">@for (row of timeRows(); track row) {<button class="slot" type="button" (click)="openNew(day, calendar.timeLabel(row))"></button>}
-              @for (apt of appointmentsForResourceDay(day); track apt.id) {<button class="calendar-event" type="button" [style.--event-color]="colorFor(apt)" [style.top.px]="calendar.eventStyle(apt).top" [style.height.px]="calendar.eventStyle(apt).height" (click)="selectAppointment(apt)"><strong>{{ apt.startTime.split('T')[1].slice(0,5) }} · {{ apt.patientName }}</strong><span>{{ apt.reason }}</span><small>{{ apt.doctorName }} · {{ apt.chairName }}</small></button>}
+            @for (day of weekDays(); track $index) {<div class="day-column">@for (row of timeRows(); track row) {<button class="slot" type="button" (click)="openNew(day, calendar.timeLabel(row))" (dragover)="$event.preventDefault()" (drop)="dropAppointment($event, day, calendar.timeLabel(row))"></button>}
+              @for (apt of appointmentsForResourceDay(day); track apt.id) {<button class="calendar-event" type="button" draggable="true" (dragstart)="startDrag(apt)" (dragend)="clearDrag()" [style.--event-color]="colorFor(apt)" [style.top.px]="calendar.eventStyle(apt).top" [style.height.px]="calendar.eventStyle(apt).height" (click)="selectAppointment(apt)"><strong>{{ apt.startTime.split('T')[1].slice(0,5) }} · {{ apt.patientName }}</strong><span>{{ apt.reason }}</span><small>{{ apt.doctorName }} · {{ apt.chairName }}</small></button>}
             </div>}
           } @else {
             @for (resource of resources(); track resource.id) {<div class="day-column resource-column"><div class="resource-label"><i [style.background]="resource.color"></i><strong>{{ resource.name }}</strong><span>{{ resource.subtitle }}</span></div>
-              @for (row of timeRows(); track row) {<button class="slot" type="button" (click)="openNew(anchorDate(), calendar.timeLabel(row))"></button>}
+              @for (row of timeRows(); track row) {<button class="slot" type="button" (click)="openNew(anchorDate(), calendar.timeLabel(row))" (dragover)="$event.preventDefault()" (drop)="dropAppointment($event, anchorDate(), calendar.timeLabel(row), resource.id)"></button>}
               @for (apt of appointmentsForResource(resource.id, anchorDate()); track apt.id) {<button class="calendar-event" type="button" [style.--event-color]="colorFor(apt)" [style.top.px]="calendar.eventStyle(apt).top + 38" [style.height.px]="calendar.eventStyle(apt).height" (click)="selectAppointment(apt)"><strong>{{ apt.startTime.split('T')[1].slice(0,5) }} · {{ apt.patientName }}</strong><span>{{ apt.reason }}</span></button>}
             </div>}
           }
