@@ -32,6 +32,10 @@ export class AgendaComponent {
   readonly scheduleError = signal<string | null>(null);
   readonly draftDate = signal(this.calendar.formatDateKey(new Date()));
   readonly draggedAppointment = signal<Appointment | null>(null);
+  readonly snapMinutes = signal<15 | 30>(15);
+  readonly showColorPanel = signal(false);
+  readonly selectedColor = signal<string | null>(null);
+  readonly eventPalette = this.calendar.defaultEventPalette;
 
   newAptPatientId = 'pat-1';
   newAptDoctorId = 'user-1';
@@ -127,6 +131,24 @@ export class AgendaComponent {
       prothese: '#f59e0b', chirurgie: '#e11d48', urgence: '#dc2626', controle: '#64748b',
     };
     return palette[appointment.appointmentType];
+  }
+
+  setAppointmentColor(color: string): void {
+    const appointment = this.selectedAppointment();
+    if (!appointment) return;
+    this.dataService.updateAppointment(appointment.id, { color });
+    this.selectedAppointment.set({ ...appointment, color });
+    this.selectedColor.set(color);
+    this.showColorPanel.set(false);
+  }
+
+  clearAppointmentColor(): void {
+    const appointment = this.selectedAppointment();
+    if (!appointment) return;
+    this.dataService.updateAppointment(appointment.id, { color: undefined });
+    this.selectedAppointment.set({ ...appointment, color: undefined });
+    this.selectedColor.set(null);
+    this.showColorPanel.set(false);
   }
 
   statusLabel(status: Appointment['status']): string {
