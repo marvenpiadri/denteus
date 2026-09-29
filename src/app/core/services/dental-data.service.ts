@@ -984,6 +984,19 @@ export class DentalDataService {
     return newApt;
   }
 
+  updateAppointment(appointmentId: string, changes: Partial<Appointment>): void {
+    const existing = this.appointments().find((appointment) => appointment.id === appointmentId);
+    if (!existing) return;
+    const updated = { ...existing, ...changes };
+    this.appointments.update((list) => list.map((appointment) => appointment.id === appointmentId ? updated : appointment));
+    this.logAudit({
+      action: 'appointment.updated',
+      entityType: 'appointment',
+      entityId: appointmentId,
+      description: `Modification du rendez-vous de ${updated.patientName}`,
+    });
+  }
+
   // Clinical note management (SOAP)
   addClinicalNote(note: Omit<ClinicalNote, 'id'>): ClinicalNote {
     const newId = `note-${Date.now()}`;
