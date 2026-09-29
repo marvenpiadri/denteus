@@ -31,6 +31,7 @@ export class AgendaComponent {
   readonly showNewModal = signal(false);
   readonly scheduleError = signal<string | null>(null);
   readonly draftDate = signal(this.calendar.formatDateKey(new Date()));
+  readonly draggedAppointment = signal<Appointment | null>(null);
 
   newAptPatientId = 'pat-1';
   newAptDoctorId = 'user-1';
@@ -134,6 +135,67 @@ export class AgendaComponent {
   }
 
   selectAppointment(appointment: Appointment): void { this.selectedAppointment.set(appointment); }
+
+  startDrag(appointment: Appointment): void {
+    this.draggedAppointment.set(appointment);
+  }
+
+  clearDrag(): void {
+    this.draggedAppointment.set(null);
+  }
+
+  dropAppointment(event: DragEvent, date: Date, time: string, resourceId?: string): void {
+    event.preventDefault();
+    const appointment = this.draggedAppointment();
+    this.draggedAppointment.set(null);
+    if (!appointment) return;
+
+    const start = this.calendar.parseLocalDate(`${this.calendar.formatDateKey(date)}T${time}:00`);
+    const duration = Math.max(15, appointment.durationMinutes);
+    const end = new Date(start.getTime() + duration * 60000);
+    const startIso = this.calendar.localIso(start);
+    const endIso = this.calendar.localIso(end);
+
+    let doctorId = appointment.doctorId;
+    let chairId = appointment.chairId;
+    let doctorName = appointment.doctorName;
+    let doctorColor = appointment.doctorColor;
+    let chairName = appointment.chairName;
+
+    if (this.view() === 'day' && resourceId) {
+      if (this.resourceMode() === 'doctors') {
+        const doctor = this.tenantService.clinicDoctors().find((item) => item.id === resourceId);
+        if (doctor) {
+          doctorId = doctor.id;
+          doctorName = doctor.name;
+          doctorColor = doctor.color;
+        }
+      } else {
+        const chair = this.tenantService.currentClinicChairs().find((item) => item.id === resourceId);
+        if (chair) {
+          chairId = chair.id;
+          chairName = chair.name;
+        }
+      }
+    }
+
+    const clinicAppointments = this.dataService.appointments().filter((item) => item.clinicId === appointment.clinicId && item.id !== appointment.id);
+    if (!this.scheduling.isAvailable(clinicAppointments, startIso, endIso, doctorId, chairId)) {
+      this.scheduleError.set('Ce déplacement crée un conflit avec un autre rendez-vous.');
+      return;
+    }
+
+    this.dataService.updateAppointment(appointment.id, {
+      startTime: startIso,
+      endTime: endIso,
+      doctorId,
+      doctorName,
+      doctorColor,
+      chairId,
+      chairName,
+    });
+  }
+
 
   changeStatus(status: Appointment['status']): void {
     const appointment = this.selectedAppointment();
