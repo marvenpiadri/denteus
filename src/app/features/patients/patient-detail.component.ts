@@ -384,7 +384,6 @@ export class PatientDetailComponent {
 
   readonly activeTab = signal<PatientWorkspaceTab>('odontogram');
   // Modal flags
-  readonly showNewPlanModal = signal<boolean>(false);
   readonly showNewNoteModal = signal<boolean>(false);
   readonly showNewPaymentModal = signal<boolean>(false);
 
