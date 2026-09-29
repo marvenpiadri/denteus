@@ -39,6 +39,7 @@ export class AgendaComponent {
   newAptDuration = 30;
   newAptTime = '09:00';
   newAptReason = '';
+  newAptColor = '#0d9488';
 
   readonly resources = computed(() => this.resourceMode() === 'doctors'
     ? this.tenantService.clinicDoctors().map((doctor) => ({
@@ -118,6 +119,7 @@ export class AgendaComponent {
   }
 
   colorFor(appointment: Appointment): string {
+    if (appointment.color) return appointment.color;
     if (appointment.doctorColor) return appointment.doctorColor;
     const palette: Record<AppointmentType, string> = {
       consultation: '#0d9488', soin: '#2563eb', detartrage: '#14b8a6', endodontie: '#8b5cf6',
@@ -185,6 +187,7 @@ export class AgendaComponent {
       durationMinutes: this.newAptDuration,
       status: 'confirmed',
       reason: this.newAptReason || 'Consultation programmée',
+      color: this.newAptColor,
     });
 
     this.showNewModal.set(false);
