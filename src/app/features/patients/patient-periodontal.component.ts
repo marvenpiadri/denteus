@@ -12,7 +12,6 @@ import { PeriodontalDiagnosisCategory, PeriodontalExamination, ToothPerioMeasure
   imports: [CommonModule, FormsModule, MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-@if (activeTab() === 'periodontal') {
         <div class="space-y-6">
           <!-- Periodontal Header & Classification Summary -->
           @let latestExam = dataService.activePatientPerioExams()[0];
@@ -148,9 +147,7 @@ import { PeriodontalDiagnosisCategory, PeriodontalExamination, ToothPerioMeasure
             </div>
           }
         </div>
-      }
-  `,
-})
+  `,)
 export class PatientPeriodontalComponent {
   readonly patientId = input.required<string>();
   readonly i18n = inject(I18nService);
