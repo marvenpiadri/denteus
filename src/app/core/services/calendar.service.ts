@@ -100,3 +100,28 @@ export class CalendarService {
     return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}T${pad(value.getHours())}:${pad(value.getMinutes())}:00`;
   }
 }
+
+  readonly defaultEventPalette = ['#0d9488','#2563eb','#7c3aed','#db2777','#ea580c','#ca8a04','#475569','#0891b2'];
+
+  snapMinutes(value: number, snap = this.slotMinutes): number {
+    return Math.round(value / snap) * snap;
+  }
+
+  clampToWorkingHours(value: number): number {
+    const min = 0;
+    const max = (this.dayEndHour - this.dayStartHour) * 60;
+    return Math.min(max, Math.max(min, value));
+  }
+
+  eventDurationMinutes(start: string, end: string): number {
+    return Math.max(1, Math.round((this.parseLocalDate(end).getTime() - this.parseLocalDate(start).getTime()) / 60000));
+  }
+
+  colorWithAlpha(hex: string, alpha = 0.12): string {
+    const value = hex.replace('#', '');
+    if (value.length !== 6) return hex;
+    const r = Number.parseInt(value.slice(0, 2), 16);
+    const g = Number.parseInt(value.slice(2, 4), 16);
+    const b = Number.parseInt(value.slice(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
