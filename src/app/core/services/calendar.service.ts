@@ -99,8 +99,6 @@ export class CalendarService {
     const pad = (n: number) => String(n).padStart(2, '0');
     return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}T${pad(value.getHours())}:${pad(value.getMinutes())}:00`;
   }
-}
-
   readonly defaultEventPalette = ['#0d9488','#2563eb','#7c3aed','#db2777','#ea580c','#ca8a04','#475569','#0891b2'];
 
   snapMinutes(value: number, snap = this.slotMinutes): number {
@@ -125,3 +123,4 @@ export class CalendarService {
     const b = Number.parseInt(value.slice(4, 6), 16);
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
+}
