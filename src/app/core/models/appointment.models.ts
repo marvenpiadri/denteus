@@ -28,6 +28,7 @@ export interface Appointment {
   doctorId: string;
   doctorName: string;
   doctorColor: string;
+  color?: string;
   chairId: string;
   chairName: string;
   appointmentType: AppointmentType;
