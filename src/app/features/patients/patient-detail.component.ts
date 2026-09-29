@@ -379,8 +379,6 @@ export class PatientDetailComponent {
   readonly dataService = inject(DentalDataService);
   readonly tenantService = inject(TenantService);
   readonly themeService = inject(ThemeService);
-  readonly odontogramTreatmentPlan = inject(OdontogramTreatmentPlanService);
-  readonly odontogramPersistence = inject(OdontogramPersistenceService);
 
   readonly goBack = output<void>();
 
@@ -399,12 +397,6 @@ export class PatientDetailComponent {
   readonly patientPayments = computed(() => {
     return this.dataService.payments().filter((p) => p.patientId === this.patient().id);
   });
-
-  calculateAge(birthDate: string): number {
-    if (!birthDate) return 0;
-    const diff = Date.now() - new Date(birthDate).getTime();
-    return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
-  }
 
   getPaymentMethodName(method: PaymentMethodType): string {
     switch (method) {
