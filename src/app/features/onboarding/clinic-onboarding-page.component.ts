@@ -4,13 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
-interface OnboardingResponse {
-  data: {
-    organization: { id: string; name: string; slug: string; currency: string; locale: string };
-    clinic: { id: string; organizationId: string; name: string; role: string };
-  };
-}
-
 @Component({
   selector: 'app-clinic-onboarding-page',
   imports: [FormsModule, RouterLink],
