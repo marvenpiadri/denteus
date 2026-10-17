@@ -10,11 +10,27 @@ export interface PatientRecord {
   lastName: string;
   birthDate: string | null;
   gender: 'M' | 'F' | 'OTHER' | null;
+  nationalId: string | null;
   phone: string | null;
   email: string | null;
+  address: string | null;
   city: string | null;
+  notes: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface UpdatePatientInput {
+  firstName: string;
+  lastName: string;
+  birthDate: string | null;
+  gender: 'M' | 'F' | 'OTHER' | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  city: string | null;
+  notes: string | null;
+  expectedUpdatedAt: string;
 }
 
 export interface CreatePatientInput {
@@ -51,6 +67,23 @@ export class PatientApiService {
   async create(organizationId: string, clinicId: string, input: CreatePatientInput): Promise<PatientRecord> {
     const result = await firstValueFrom(this.http.post<PatientResponse>(
       this.collectionUrl(organizationId, clinicId),
+      input,
+      { withCredentials: true },
+    ));
+    return result.data;
+  }
+
+  async get(organizationId: string, clinicId: string, patientId: string): Promise<PatientRecord> {
+    const result = await firstValueFrom(this.http.get<PatientResponse>(
+      `${this.collectionUrl(organizationId, clinicId)}/${encodeURIComponent(patientId)}`,
+      { withCredentials: true },
+    ));
+    return result.data;
+  }
+
+  async update(organizationId: string, clinicId: string, patientId: string, input: UpdatePatientInput): Promise<PatientRecord> {
+    const result = await firstValueFrom(this.http.put<PatientResponse>(
+      `${this.collectionUrl(organizationId, clinicId)}/${encodeURIComponent(patientId)}`,
       input,
       { withCredentials: true },
     ));
