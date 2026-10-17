@@ -37,6 +37,8 @@ These sources describe established product patterns, mainly from the US market. 
 - [x] Server-enforced organization/clinic authorization foundations and composite tenant foreign keys.
 - [x] Persistent appointment create/list/status/reschedule endpoints and audit events.
 - [x] Appointment UI with clinic-local timezone conversion, patient conflict checks, explicit cancellation/no-show confirmation and error handling.
+- [x] Custom no-dependency day-calendar view with timezone-aware appointment display and time-slot prefill for creating patient appointments.
+- [ ] Week/month calendar views, drag-to-reschedule and keyboard-equivalent move controls.
 - [ ] Provider and operatory resources, working hours and resource-aware conflict prevention.
 - [ ] Patient medical/dental history, allergies/medication reconciliation and review dates.
 - [ ] Append-only signed clinical notes, correction/amendment trail and encounter association.
