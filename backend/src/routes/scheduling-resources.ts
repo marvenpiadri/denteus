@@ -91,6 +91,12 @@ export const schedulingResourceRoutes: FastifyPluginAsync = async (app) => {
         [randomUUID(), request.params.organizationId, request.params.clinicId, request.body.userId ?? null,
           request.body.displayName.trim(), request.body.role, request.body.color ?? '#087f75'],
       );
+      await pool.query(
+        `INSERT INTO audit_events (id, organization_id, user_id, action, resource_type, resource_id, metadata)
+         VALUES ($1, $2, $3, 'CLINIC_PROVIDER_CREATED', 'CLINIC_PROVIDER', $4, $5::jsonb)`,
+        [randomUUID(), request.params.organizationId, access.userId, result.rows[0].id,
+          JSON.stringify({ clinicId: request.params.clinicId, role: request.body.role })],
+      );
       return reply.code(201).send({ data: result.rows[0] });
     },
   );
@@ -108,6 +114,12 @@ export const schedulingResourceRoutes: FastifyPluginAsync = async (app) => {
          RETURNING id, name, chair_number AS "chairNumber", color, active`,
         [randomUUID(), request.params.organizationId, request.params.clinicId, request.body.name.trim(),
           request.body.chairNumber ?? null, request.body.color ?? '#267d93'],
+      );
+      await pool.query(
+        `INSERT INTO audit_events (id, organization_id, user_id, action, resource_type, resource_id, metadata)
+         VALUES ($1, $2, $3, 'CLINIC_OPERATORY_CREATED', 'CLINIC_OPERATORY', $4, $5::jsonb)`,
+        [randomUUID(), request.params.organizationId, access.userId, result.rows[0].id,
+          JSON.stringify({ clinicId: request.params.clinicId, chairNumber: request.body.chairNumber ?? null })],
       );
       return reply.code(201).send({ data: result.rows[0] });
     },
@@ -138,6 +150,13 @@ export const schedulingResourceRoutes: FastifyPluginAsync = async (app) => {
         [randomUUID(), request.params.organizationId, request.params.clinicId, request.params.providerId,
           request.body.dayOfWeek, request.body.startsAt, request.body.endsAt],
       );
+      await pool.query(
+        `INSERT INTO audit_events (id, organization_id, user_id, action, resource_type, resource_id, metadata)
+         VALUES ($1, $2, $3, 'PROVIDER_WORKING_HOURS_UPDATED', 'CLINIC_PROVIDER', $4, $5::jsonb)`,
+        [randomUUID(), request.params.organizationId, access.userId, request.params.providerId,
+          JSON.stringify({ clinicId: request.params.clinicId, dayOfWeek: request.body.dayOfWeek,
+            startsAt: request.body.startsAt, endsAt: request.body.endsAt })],
+      );
       return { data: result.rows[0] };
     },
   );
@@ -155,6 +174,12 @@ export const schedulingResourceRoutes: FastifyPluginAsync = async (app) => {
       await pool.query(
         'DELETE FROM provider_working_hours WHERE organization_id = $1 AND clinic_id = $2 AND provider_id = $3 AND day_of_week = $4',
         [request.params.organizationId, request.params.clinicId, request.params.providerId, dayOfWeek],
+      );
+      await pool.query(
+        `INSERT INTO audit_events (id, organization_id, user_id, action, resource_type, resource_id, metadata)
+         VALUES ($1, $2, $3, 'PROVIDER_WORKING_HOURS_REMOVED', 'CLINIC_PROVIDER', $4, $5::jsonb)`,
+        [randomUUID(), request.params.organizationId, access.userId, request.params.providerId,
+          JSON.stringify({ clinicId: request.params.clinicId, dayOfWeek })],
       );
       return reply.code(204).send();
     },
