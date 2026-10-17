@@ -45,7 +45,7 @@ CREATE TABLE patient_treatment_teeth (
     51,52,53,54,55,61,62,63,64,65,71,72,73,74,75,81,82,83,84,85
   )),
   surface text NOT NULL DEFAULT 'WHOLE' CHECK (surface IN (
-    'WHOLE', 'OCCLUSAL', 'MESIAL', 'DISTAL', 'BUCCAL', 'LINGUAL', 'PALATAL', 'CERVICAL'
+    'WHOLE', 'OCCLUSAL', 'INCISAL', 'MESIAL', 'DISTAL', 'BUCCAL', 'LINGUAL', 'PALATAL', 'CERVICAL'
   )),
   created_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE (treatment_id, tooth_no, surface),
