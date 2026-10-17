@@ -20,6 +20,7 @@ CREATE TABLE patient_treatments (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE (organization_id, clinic_id, id),
+  UNIQUE (organization_id, clinic_id, patient_id, id),
   CHECK ((status = 'COMPLETED') = (performed_at IS NOT NULL)),
   FOREIGN KEY (organization_id, clinic_id)
     REFERENCES clinics(organization_id, id) ON DELETE CASCADE,
@@ -68,8 +69,8 @@ CREATE TABLE patient_treatment_events (
   created_at timestamptz NOT NULL DEFAULT now(),
   FOREIGN KEY (organization_id, patient_id, clinic_id)
     REFERENCES patient_clinics(organization_id, patient_id, clinic_id) ON DELETE CASCADE,
-  FOREIGN KEY (organization_id, clinic_id, treatment_id)
-    REFERENCES patient_treatments(organization_id, clinic_id, id) ON DELETE CASCADE
+  FOREIGN KEY (organization_id, clinic_id, patient_id, treatment_id)
+    REFERENCES patient_treatments(organization_id, clinic_id, patient_id, id) ON DELETE CASCADE
 );
 CREATE INDEX patient_treatment_events_history_idx
   ON patient_treatment_events(organization_id, clinic_id, treatment_id, created_at DESC);
