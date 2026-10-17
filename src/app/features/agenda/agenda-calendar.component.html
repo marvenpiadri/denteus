@@ -25,7 +25,7 @@
       <div class="calendar-day-grid" [style.gridTemplateColumns]="'74px repeat(' + resourceCount + ', minmax(180px, 1fr))'">
         <div class="time-ruler">
           @for (hour of hours; track hour) {
-            <button type="button" class="time-ruler-slot" (click)="selectSlot(hour, columns()[0])" [disabled]="loading" [attr.aria-label]="'Préremplir un rendez-vous à ' + hour.toString().padStart(2, '0') + ':00">
+            <button type="button" class="time-ruler-slot" (click)="selectSlot(hour, defaultColumn())" [disabled]="loading" [attr.aria-label]="'Préremplir un rendez-vous à ' + hour.toString().padStart(2, '0') + ':00">
               <span>{{ hour.toString().padStart(2, '0') }}:00</span>
             </button>
           }
