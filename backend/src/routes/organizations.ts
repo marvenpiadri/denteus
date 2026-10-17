@@ -29,6 +29,8 @@ export const organizationRoutes: FastifyPluginAsync = async (app) => {
               jsonb_build_object(
                 'id', c.id,
                 'name', c.name,
+                'timezone', c.timezone,
+                'city', c.city,
                 'role', COALESCE(cm.role, om.role)
               )
               ORDER BY c.name
