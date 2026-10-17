@@ -28,17 +28,18 @@ Target: a realistic, tested first-customer release by October 31, 2026. This is 
 ## Current findings
 
 - The CRM UI has useful existing modules for patients, appointments, odontograms, treatment plans, reports, clinic settings and subscriptions.
-- The API in `src/server/api.ts` contains hardcoded patient demo records and report metrics.
-- Patient and odontogram data are currently in-memory; a process restart loses writes.
-- Patient list filtering trusts an `orgId` query parameter and the patient-detail/odontogram routes do not enforce authenticated organization membership. This is a release blocker for real patient data.
+- The current Express SSR server still mounts an older demo API containing hardcoded patient records and report metrics. It is a migration-only implementation and is not approved for real patient data.
+- Patient and odontogram data in the legacy API are in-memory; a process restart loses writes.
+- Legacy patient routes trust request-supplied organization IDs and do not enforce authenticated organization/clinic membership. This is a release blocker.
 - Tenant state in `TenantService` is initialized with hardcoded organizations, clinics and users.
 - `src/app/app.routes.ts` is currently empty; the shell uses tab state rather than actual feature routes.
 - Both `denteus` and `dentist-page` currently declare Angular 21 packages. Confirm the desired Angular target before changing framework versions.
-- The current odontogram integration correctly treats the Advanced Odontogram payload as the clinical source of truth. Preserve that boundary.
+- The current odontogram integration correctly treats the Advanced Odontogram payload as the clinical chart source of truth. Preserve that boundary.
 
 ## Phases and acceptance gates
 
 ### Phase 0 — Audit and product boundary
+
 - Keep the CRM as the authenticated private application.
 - Treat the 3D dental site as a reusable, server-rendered public website experience.
 - Define organization, clinic, user membership, Page template, website and domain as separate concepts.
@@ -46,17 +47,21 @@ Target: a realistic, tested first-customer release by October 31, 2026. This is 
 
 Acceptance: agreed data model and launch checklist; no Dali-specific identity in the reusable template.
 
-### Phase 1 — PostgreSQL and authentication foundation
-- Add Prisma/PostgreSQL migrations and environment configuration.
+### Phase 1 — Independent API, PostgreSQL and authentication foundation
+
+- Keep Angular SSR as the frontend application and establish a separately runnable Fastify + TypeScript API.
+- Use PostgreSQL through `pg`; manage schema changes with versioned, transactional SQL migrations. Do not use Prisma or another mandatory ORM.
+- Add environment configuration, safe health/readiness endpoints, connection pooling and graceful shutdown.
 - Implement authentication and server-derived user identity.
 - Enforce organization and clinic membership on every private API route.
 - Replace demo patient/odontogram storage with database repositories.
 - Remove production dependence on hardcoded demo records.
-- Add automated tests for cross-organization access denial.
+- Add automated tests for cross-organization and cross-clinic access denial.
 
-Acceptance: data survives restart; unauthenticated private API requests are rejected; a user from Organization A cannot read or change Organization B's patients or odontograms.
+Acceptance: data survives restart; unauthenticated private API requests are rejected; a user from Organization A cannot read or change Organization B's patients or odontograms; the API can be deployed independently of Angular SSR.
 
 ### Phase 2 — First-clinic onboarding and CRM persistence
+
 - Create organization, first clinic, owner membership and initial subscription transactionally.
 - Persist staff and clinic membership.
 - Persist patients, appointments and odontogram state.
@@ -66,6 +71,7 @@ Acceptance: data survives restart; unauthenticated private API requests are reje
 Acceptance: the pilot clinic can use core workflows without demo-only state.
 
 ### Phase 3 — Page templates and clinic websites
+
 - Build a versioned Page template registry and per-website content/theme/SEO configuration.
 - Adapt the existing 3D dental website into a tenant-configurable template.
 - Preserve interactive 3D dental content by default.
@@ -75,6 +81,7 @@ Acceptance: the pilot clinic can use core workflows without demo-only state.
 Acceptance: two clinics can use the same Page template with different branding/content and no identity/data leakage.
 
 ### Phase 4 — Hostnames and SSR resolution
+
 - Generate readable name + random suffix hostnames on the backend.
 - Normalize hostname values and enforce a database unique constraint.
 - Resolve incoming hostname to an active website record during SSR.
@@ -84,6 +91,7 @@ Acceptance: two clinics can use the same Page template with different branding/c
 Acceptance: two clinics with identical names can publish distinct URLs; unknown hostnames return a safe not-found response.
 
 ### Phase 5 — Subscriptions and commercial gates
+
 - Store plans, price, currency, trial and entitlement rules in the database.
 - Public clinic website remains free.
 - CRM API and CRM screens enforce server-side subscription entitlements.
@@ -92,6 +100,7 @@ Acceptance: two clinics with identical names can publish distinct URLs; unknown 
 Acceptance: changing a plan updates server-enforced entitlements; hiding a UI button is never the only access control.
 
 ### Phase 6 — Ratings, SEO and release quality
+
 - Reviews start pending and are published only after moderation/verification policy.
 - Display only genuine reviews and accurate rating aggregates; never fabricate ratings or structured review markup.
 - Add backups/restore rehearsal, error monitoring, rate limits, security headers and data export/cancellation procedures.
@@ -109,8 +118,8 @@ Acceptance: public SEO pages contain only public-safe, accurate information; pri
 
 ## Immediate next implementation steps
 
-1. Confirm Angular target because both repos currently specify Angular 21 while the desired target has been described as Angular 22.
-2. Install the Prisma 7 PostgreSQL adapter/client dependencies and generate the client during install.
-3. Generate and review the first migration from the schema.
-4. Add a database connection module and health check that verifies database connectivity without exposing secrets.
-5. Replace the demo patient API with authenticated, tenant-scoped database access.
+1. Complete the standalone Fastify backend foundation and run its TypeScript checks.
+2. Review and test the initial SQL migration against a real PostgreSQL instance.
+3. Implement authentication and server-derived organization/clinic permissions before exposing patient endpoints.
+4. Replace the legacy Express-mounted demo API only when equivalent secure Fastify endpoints and frontend configuration are ready.
+5. Add integration tests for persistence, authentication and tenant isolation before the pilot uses real data.
