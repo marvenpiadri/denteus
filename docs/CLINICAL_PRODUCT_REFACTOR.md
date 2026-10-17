@@ -70,12 +70,13 @@ This is a phased replacement, not a cosmetic redesign. Existing UI can be inspec
 **Gate:** records persist across server restarts; clinical chart reads/writes are authorization-tested; no synthetic patient records appear in production.
 
 ### Phase 4 — Agenda and chair-side workflow
-- Model appointments and appointment status transitions in PostgreSQL.
-- Build day/week agenda, patient arrival/check-in, chair/room assignment, cancellation and rescheduling with explicit confirmation.
-- Handle timezone, overlaps, empty schedules, network failures, and concurrency.
-- Optimize for the receptionist and clinician workflows separately without duplicating the source of truth.
+- Added a PostgreSQL appointments table with tenant/clinic/patient foreign keys, a constrained status set, positive-duration check, and schedule indexes.
+- Added tenant-scoped API endpoints to list a bounded date range, create appointments, reschedule, and advance status through explicit transitions. Writes are audited.
+- Creation/rescheduling serialize schedule writes per clinic and prevent the same patient from being booked in overlapping appointments. Parallel appointments for different patients remain allowed because rooms/chairs and provider assignment have not yet been modeled.
+- Added pure unit tests for duration bounds, role access, and status transitions; they are authored but not verified as passing.
+- Remaining: timezone-aware agenda UI, room/chair/provider resource conflict rules, API/database integration tests, and usability validation.
 
-**Gate:** appointment workflows are durable, auditable, and tested for collisions and tenant isolation.
+**Gate:** appointment workflows are durable, auditable, timezone-correct, and tested for patient/resource collisions and tenant isolation. This gate is not yet verified.
 
 ### Phase 5 — Treatment plans, reports, staff and settings
 - Persist treatment plans, staff memberships, clinic hours, rooms/chairs, and settings.
