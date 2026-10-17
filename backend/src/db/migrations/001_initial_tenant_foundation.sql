@@ -76,6 +76,13 @@ CREATE TABLE organization_memberships (
 );
 CREATE INDEX organization_memberships_user_role_idx ON organization_memberships(user_id, role);
 
+CREATE TABLE patient_number_counters (
+  organization_id text NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  number_year integer NOT NULL,
+  last_value bigint NOT NULL DEFAULT 0 CHECK (last_value >= 0),
+  PRIMARY KEY (organization_id, number_year)
+);
+
 CREATE TABLE clinics (
   id text PRIMARY KEY,
   organization_id text NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
