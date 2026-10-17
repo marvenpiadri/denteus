@@ -6,7 +6,7 @@ const validFdiTeeth = new Set([
   31,32,33,34,35,36,37,38,41,42,43,44,45,46,47,48,
   51,52,53,54,55,61,62,63,64,65,71,72,73,74,75,81,82,83,84,85,
 ]);
-const validSurfaces = new Set<ToothSurface>(['WHOLE','OCCLUSAL','MESIAL','DISTAL','BUCCAL','LINGUAL','PALATAL','CERVICAL']);
+const validSurfaces = new Set<ToothSurface>(['WHOLE','OCCLUSAL','INCISAL','MESIAL','DISTAL','BUCCAL','LINGUAL','PALATAL','CERVICAL']);
 
 export function isValidFdiTooth(toothNo: number): boolean {
   return validFdiTeeth.has(toothNo);
@@ -14,6 +14,15 @@ export function isValidFdiTooth(toothNo: number): boolean {
 
 export function isValidToothSurface(surface: string): surface is ToothSurface {
   return validSurfaces.has(surface as ToothSurface);
+}
+
+export function isValidToothSurfaceForTooth(toothNo: number, surface: string): boolean {
+  if (!isValidFdiTooth(toothNo) || !isValidToothSurface(surface)) return false;
+  if (surface === 'INCISAL') return [1, 2, 3].includes(toothNo % 10);
+  if (surface === 'OCCLUSAL') return toothNo % 10 >= 4;
+  if (surface === 'PALATAL') return [1, 2, 5, 6].includes(Math.floor(toothNo / 10));
+  if (surface === 'LINGUAL') return [3, 4, 7, 8].includes(Math.floor(toothNo / 10));
+  return true;
 }
 
 export function canTransitionTreatmentStatus(from: TreatmentStatus, to: TreatmentStatus): boolean {
