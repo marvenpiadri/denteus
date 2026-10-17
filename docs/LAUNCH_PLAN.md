@@ -28,8 +28,9 @@ Target: a realistic, tested first-customer release by October 31, 2026. This is 
 ## Current findings
 
 - The CRM UI has useful existing modules for patients, appointments, odontograms, treatment plans, reports, clinic settings and subscriptions.
-- The old Express-mounted demo API and its hardcoded/in-memory patient and report endpoints have been removed from the SSR server. The new Fastify service currently exposes health endpoints only.
-- Patient, appointment and odontogram API repositories/routes are not yet implemented in Fastify; the frontend must not use real patient data until authentication, tenant authorization and persistence are ready.
+- The old Express-mounted demo API and its hardcoded/in-memory patient and report endpoints have been removed from the SSR server.
+- Fastify now has Better Auth sessions, session-scoped organization listing, and PostgreSQL-backed patient and odontogram routes scoped to authorized organization/clinic paths. These routes and the initial migration have not yet been build-tested or integration-tested.
+- Appointment routes, frontend API/auth integration, and first-clinic onboarding are not yet implemented. Do not use real patient data until migration, authentication, tenant isolation and restart-persistence tests pass.
 - Tenant state in `TenantService` is initialized with hardcoded organizations, clinics and users.
 - `src/app/app.routes.ts` is currently empty; the shell uses tab state rather than actual feature routes.
 - Both `denteus` and `dentist-page` currently declare Angular 21 packages. Confirm the desired Angular target before changing framework versions.
@@ -53,10 +54,10 @@ Acceptance: agreed data model and launch checklist; no Dali-specific identity in
 - Add environment configuration, safe health/readiness endpoints, connection pooling and graceful shutdown.
 - Implement Better Auth email/password sessions with PostgreSQL-backed session storage.
 - Derive user identity from the server-validated session; never trust user IDs supplied in request bodies or query strings.
-- Enforce organization and clinic membership on every private API route before adding patient endpoints.
-- Replace demo patient/odontogram storage with database repositories.
+- Enforce organization and clinic membership on every private API route using the server-derived session identity.
+- Replace demo patient/odontogram storage with PostgreSQL repositories and transactional audit events.
 - Remove production dependence on hardcoded demo records.
-- Add automated tests for cross-organization and cross-clinic access denial.
+- Add automated tests for unauthenticated requests, cross-organization and cross-clinic access denial, and restart persistence.
 
 Acceptance: data survives restart; unauthenticated private API requests are rejected; a user from Organization A cannot read or change Organization B's patients or odontograms; the API can be deployed independently of Angular SSR.
 
@@ -120,6 +121,6 @@ Acceptance: public SEO pages contain only public-safe, accurate information; pri
 
 1. Complete the standalone Fastify backend foundation and run its TypeScript checks.
 2. Review and test the initial SQL migration against a real PostgreSQL instance.
-3. Implement server-derived organization/clinic membership authorization and test it before exposing patient endpoints.
-4. Add secure Fastify patient and odontogram endpoints and configure the frontend API origin only after authentication and tenant authorization are in place.
-5. Add integration tests for persistence, authentication and tenant isolation before the pilot uses real data.
+3. Build and run the backend TypeScript checks and apply the SQL migration against a clean PostgreSQL database.
+4. Add integration tests for authentication, organization/clinic isolation, patient persistence and odontogram persistence across restarts.
+5. Wire the Angular frontend to the new Fastify API and verify the complete clinic workflow before the pilot uses real data.
