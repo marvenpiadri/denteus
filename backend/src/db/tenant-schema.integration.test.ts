@@ -185,6 +185,21 @@ test('tenant constraints isolate clinics and odontogram data persists across con
       'INSERT INTO patient_clinics (organization_id, patient_id, clinic_id) VALUES ($1, $2, $3)',
       [orgA, patientId, clinicA2],
     );
+    await writer.query('SAVEPOINT expected_resource_scope_failure');
+    await assert.rejects(
+      writer.query(
+        `INSERT INTO appointments (
+          id, organization_id, clinic_id, patient_id, starts_at, ends_at, provider_id, operatory_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [`bad-resource-appointment-${suffix}`, orgA, clinicA2, patientId,
+          '2026-10-17T10:00:00.000Z', '2026-10-17T10:30:00.000Z', providerId, operatoryId],
+      ),
+      (error: unknown) => (error as { code?: string }).code === '23503',
+      'an appointment cannot use a provider or chair from another clinic',
+    );
+    await writer.query('ROLLBACK TO SAVEPOINT expected_resource_scope_failure');
+    await writer.query('RELEASE SAVEPOINT expected_resource_scope_failure');
+
     await writer.query('SAVEPOINT expected_treatment_scope_failure');
     await assert.rejects(
       writer.query(
