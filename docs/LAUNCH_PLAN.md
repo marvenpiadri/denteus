@@ -110,7 +110,7 @@ Acceptance: public SEO pages contain only public-safe, accurate information; pri
 ## Immediate next implementation steps
 
 1. Confirm Angular target because both repos currently specify Angular 21 while the desired target has been described as Angular 22.
-2. Add Prisma and PostgreSQL dependencies/scripts and regenerate the lockfile using the repository's package manager.
+2. Install the Prisma 7 PostgreSQL adapter/client dependencies and generate the client during install.
 3. Generate and review the first migration from the schema.
 4. Add a database connection module and health check that verifies database connectivity without exposing secrets.
 5. Replace the demo patient API with authenticated, tenant-scoped database access.
