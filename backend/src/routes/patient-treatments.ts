@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { FastifyPluginAsync, FastifyReply } from 'fastify';
-import { canWriteOdontogram, denyInsufficientRole, requireClinicAccess } from '../auth/authorization.js';
+import { canReadOdontogram, canWriteOdontogram, denyInsufficientRole, requireClinicAccess } from '../auth/authorization.js';
 import { pool } from '../db/pool.js';
 
 interface PatientParams { organizationId: string; clinicId: string; patientId: string; }
@@ -109,7 +109,7 @@ export const patientTreatmentRoutes: FastifyPluginAsync = async (app) => {
     async (request, reply) => {
       const access = await requireClinicAccess(request, reply, request.params.organizationId, request.params.clinicId);
       if (!access) return;
-      if (!canWriteOdontogram(access)) return deny(reply);
+      if (!canReadOdontogram(access)) return deny(reply);
       const result = await pool.query(
         `SELECT ${treatmentSelect}
          FROM patient_treatments pt
