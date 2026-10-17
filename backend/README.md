@@ -1,6 +1,6 @@
 # Dentaleus API
 
-This is the independent Node.js backend. It is intentionally separate from Angular SSR and can be deployed as its own service.
+This is the independent Node.js backend. It is intentionally separate from Angular SSR and can be deployed as its own service. The optional 3D dental atlas is not part of this API or the CRM; it belongs only to the public clinic website Page template.
 
 ## Stack
 
@@ -35,7 +35,7 @@ The API listens on `http://localhost:4100` by default.
 - `/api/auth/*` serves Better Auth endpoints.
 - `GET /api/v1/session` returns a minimal current-user/session view or `401`.
 - `GET /api/v1/organizations` returns only organizations and clinic scopes associated with the authenticated user's memberships; it never accepts a user ID from the caller.
-- Patient list/detail/create routes are nested under an authorized organization and clinic path.
+- Patient list/detail/create routes are nested under an authorized organization and clinic path. Clinical odontogram reads/writes are restricted to explicitly allowed clinical roles.
 - Odontogram read/write routes are nested under an authorized organization, clinic and patient path; writes require an allowed clinical role and are audited transactionally.
 
 ## Security boundary
