@@ -214,7 +214,7 @@ export const patientRoutes: FastifyPluginAsync = async (app) => {
               address = $9,
               city = $10,
               notes = $11,
-              updated_at = now()
+              updated_at = clock_timestamp()
             WHERE p.organization_id = $1
               AND p.id = $2
               AND p.updated_at = $12::timestamptz
