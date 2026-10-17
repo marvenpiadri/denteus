@@ -45,7 +45,7 @@
       } @else if (patients().length) {
         <div class="table-scroll"><table><thead><tr><th scope="col">Patient</th><th scope="col">N° de dossier</th><th scope="col">Téléphone</th><th scope="col">Ville</th><th scope="col">Créé le</th></tr></thead><tbody>
           @for (patient of patients(); track patient.id) {
-            <tr><td><div class="patient-identity"><span class="patient-avatar" aria-hidden="true">{{ patientInitials(patient) }}</span><div><strong>{{ patient.firstName }} {{ patient.lastName }}</strong><small>{{ patient.email || 'Aucune adresse e-mail' }}</small></div></div></td><td><span class="patient-number">{{ patient.patientNumber }}</span></td><td>{{ patient.phone || '—' }}</td><td>{{ patient.city || '—' }}</td><td>{{ patient.createdAt | date:'dd/MM/yyyy' }}</td></tr>
+            <tr><td><div class="patient-identity"><span class="patient-avatar" aria-hidden="true">{{ patientInitials(patient) }}</span><div><a class="patient-name-link" [routerLink]="['/crm/patients', patient.id]">{{ patient.firstName }} {{ patient.lastName }}</a><small>{{ patient.email || 'Aucune adresse e-mail' }}</small></div></div></td><td><span class="patient-number">{{ patient.patientNumber }}</span></td><td>{{ patient.phone || '—' }}</td><td>{{ patient.city || '—' }}</td><td>{{ patient.createdAt | date:'dd/MM/yyyy' }}</td></tr>
           }
         </tbody></table></div>
         <p class="list-footnote">Affichage limité aux 100 premiers dossiers retournés par l’API.</p>
