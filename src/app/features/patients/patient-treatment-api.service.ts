@@ -21,6 +21,8 @@ export interface PatientTreatment {
   id: string;
   patientId: string;
   appointmentId: string | null;
+  appointmentStartsAt: string | null;
+  appointmentReason: string | null;
   title: string;
   category: TreatmentCategory;
   status: TreatmentStatus;
