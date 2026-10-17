@@ -137,6 +137,7 @@ model Organization {
   subscription Subscription?
   patients    Patient[]
   appointments Appointment[]
+  odontograms  OdontogramRecord[]
   auditEvents AuditEvent[]
 }
 
@@ -361,6 +362,7 @@ model OdontogramRecord {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   clinic         Clinic       @relation(fields: [clinicId], references: [id], onDelete: Cascade)
   patient        Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
   updatedBy      User?        @relation("OdontogramUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
