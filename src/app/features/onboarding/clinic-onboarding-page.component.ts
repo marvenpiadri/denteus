@@ -53,7 +53,7 @@ export class ClinicOnboardingPageComponent {
     this.error.set('');
     this.submitting.set(true);
     try {
-      const response = await firstValueFrom(this.http.post<OnboardingResponse>(
+      await firstValueFrom(this.http.post(
         '/api/v1/onboarding/clinic',
         {
           organizationName: this.organizationName.trim(),
