@@ -48,6 +48,11 @@
           <div class="recall-actions">
             @if (recall.status === 'DUE' || recall.status === 'CONTACTED') { <button type="button" class="secondary-button" (click)="openContact(recall)">Consigner un contact</button> }
             @if (recall.patientPhone) { <a class="contact-link" [href]="'tel:' + recall.patientPhone">Appeler le patient</a> }
+            @if (recall.status !== 'COMPLETED' && recall.status !== 'INACTIVE') {
+              <button type="button" class="status-action" (click)="changeRecallStatus(recall, 'SCHEDULED')" [disabled]="saving()">Planifié</button>
+              <button type="button" class="status-action" (click)="changeRecallStatus(recall, 'COMPLETED')" [disabled]="saving()">Effectué</button>
+              <button type="button" class="status-action status-action--quiet" (click)="changeRecallStatus(recall, 'INACTIVE')" [disabled]="saving()">Désactiver</button>
+            }
           </div>
           @if (contactRecallId() === recall.id) {
             <form class="contact-form" (ngSubmit)="saveContact(recall)">
