@@ -32,7 +32,7 @@ enum WebsiteStatus {
 }
 
 enum WebsiteDomainType {
-  DENTEUS_SUBDOMAIN
+  DENTALEUS_SUBDOMAIN
   CUSTOM_DOMAIN
 }
 
@@ -379,7 +379,7 @@ model ClinicReview {
   reviewText        String?
   status            ReviewStatus @default(PENDING)
   verified          Boolean      @default(false)
-  source             String       @default("DENTEUS")
+  source             String       @default("DENTALEUS")
   publishedAt       DateTime?
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
