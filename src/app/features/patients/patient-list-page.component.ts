@@ -32,7 +32,8 @@ export class PatientListPageComponent {
   birthDate = '';
   gender: '' | 'M' | 'F' | 'OTHER' = '';
   phone = '';
-  email = '';\n  private requestSequence = 0;
+  email = '';
+  private requestSequence = 0;
 
   constructor() {
     effect(() => {
@@ -53,13 +54,16 @@ export class PatientListPageComponent {
   }
 
   async loadPatients(organizationId: string, clinicId: string, query = ''): Promise<void> {
+    const requestSequence = ++this.requestSequence;
     this.loading.set(true);
     this.error.set('');
     try {
       const response = await this.patientsApi.list(organizationId, clinicId, query);
+      if (requestSequence !== this.requestSequence) return;
       this.patients.set(response.data);
       this.total.set(response.count);
     } catch (error) {
+      if (requestSequence !== this.requestSequence) return;
       this.patients.set([]);
       this.total.set(0);
       this.error.set(error instanceof HttpErrorResponse && error.status === 401
@@ -68,7 +72,7 @@ export class PatientListPageComponent {
           ? 'Cette clinique n’est plus accessible avec votre compte.'
           : 'Les dossiers patients ne peuvent pas être chargés. Vérifiez votre connexion puis réessayez.');
     } finally {
-      this.loading.set(false);
+      if (requestSequence === this.requestSequence) this.loading.set(false);
     }
   }
 
