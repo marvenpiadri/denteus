@@ -41,6 +41,7 @@ export class PatientDetailPageComponent {
   readonly treatmentsSuccess = signal('');
   readonly showTreatmentForm = signal(false);
   readonly selectedTeeth = signal<number[]>([]);
+  readonly showPrimaryTeeth = signal(false);
   readonly treatedTeeth = computed(() => [...new Set(this.treatments().flatMap((item) => item.toothSites.map((site) => site.toothNo)))]);
   readonly treatmentCategories: { value: TreatmentCategory; label: string }[] = [
     { value: 'EXAM', label: 'Examen / diagnostic' }, { value: 'HYGIENE', label: 'Détartrage / hygiène' },
