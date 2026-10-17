@@ -48,10 +48,22 @@
           <div class="recall-actions">
             @if (recall.status === 'DUE' || recall.status === 'CONTACTED') { <button type="button" class="secondary-button" (click)="openContact(recall)">Consigner un contact</button> }
             @if (recall.patientPhone) { <a class="contact-link" [href]="'tel:' + recall.patientPhone">Appeler le patient</a> }
-            @if (recall.status !== 'COMPLETED' && recall.status !== 'INACTIVE') {
+            @if (recall.status === 'DUE' || recall.status === 'CONTACTED') {
               <button type="button" class="status-action" (click)="changeRecallStatus(recall, 'SCHEDULED')" [disabled]="saving()">Planifié</button>
               <button type="button" class="status-action" (click)="changeRecallStatus(recall, 'COMPLETED')" [disabled]="saving()">Effectué</button>
+              <button type="button" class="status-action status-action--quiet" (click)="changeRecallStatus(recall, 'DECLINED')" [disabled]="saving()">Refusé</button>
               <button type="button" class="status-action status-action--quiet" (click)="changeRecallStatus(recall, 'INACTIVE')" [disabled]="saving()">Désactiver</button>
+            }
+            @if (recall.status === 'SCHEDULED') {
+              <button type="button" class="status-action status-action--quiet" (click)="changeRecallStatus(recall, 'DUE')" [disabled]="saving()">À recontacter</button>
+              <button type="button" class="status-action" (click)="changeRecallStatus(recall, 'COMPLETED')" [disabled]="saving()">Effectué</button>
+              <button type="button" class="status-action status-action--quiet" (click)="changeRecallStatus(recall, 'INACTIVE')" [disabled]="saving()">Désactiver</button>
+            }
+            @if (recall.status === 'DECLINED' || recall.status === 'INACTIVE') {
+              <button type="button" class="status-action" (click)="changeRecallStatus(recall, 'DUE')" [disabled]="saving()">Réactiver</button>
+            }
+            @if (recall.status === 'COMPLETED') {
+              <button type="button" class="status-action status-action--quiet" (click)="changeRecallStatus(recall, 'INACTIVE')" [disabled]="saving()">Archiver</button>
             }
           </div>
           @if (contactRecallId() === recall.id) {
