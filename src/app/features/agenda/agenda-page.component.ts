@@ -8,7 +8,7 @@ import { PatientApiService } from '../patients/patient-api.service';
 import type { PatientRecord } from '../patients/patient-api.service';
 import { AppointmentApiService } from './appointment-api.service';
 import type { AppointmentRecord, AppointmentStatus } from './appointment-api.service';
-import { addCalendarDays, formatCalendarDate, formatClinicDate, formatClinicTime, localDateTimeToIso, todayInTimeZone, toClinicDateTimeInput } from './clinic-date-time';
+import { addCalendarDays, formatCalendarDate as formatCalendarDateValue, formatClinicDate, formatClinicTime, localDateTimeToIso, todayInTimeZone, toClinicDateTimeInput } from './clinic-date-time';
 
 @Component({
   selector: 'app-agenda-page',
@@ -175,6 +175,10 @@ export class AgendaPageComponent {
       NO_SHOW: 'Absent',
     };
     return labels[status];
+  }
+
+  formatCalendarDate(value: string): string {
+    return formatCalendarDateValue(value);
   }
 
   formatTime(iso: string): string {
