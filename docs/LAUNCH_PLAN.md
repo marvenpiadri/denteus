@@ -28,9 +28,8 @@ Target: a realistic, tested first-customer release by October 31, 2026. This is 
 ## Current findings
 
 - The CRM UI has useful existing modules for patients, appointments, odontograms, treatment plans, reports, clinic settings and subscriptions.
-- The current Express SSR server still mounts an older demo API containing hardcoded patient records and report metrics. It is a migration-only implementation and is not approved for real patient data.
-- Patient and odontogram data in the legacy API are in-memory; a process restart loses writes.
-- Legacy patient routes trust request-supplied organization IDs and do not enforce authenticated organization/clinic membership. This is a release blocker.
+- The old Express-mounted demo API and its hardcoded/in-memory patient and report endpoints have been removed from the SSR server. The new Fastify service currently exposes health endpoints only.
+- Patient, appointment and odontogram API repositories/routes are not yet implemented in Fastify; the frontend must not use real patient data until authentication, tenant authorization and persistence are ready.
 - Tenant state in `TenantService` is initialized with hardcoded organizations, clinics and users.
 - `src/app/app.routes.ts` is currently empty; the shell uses tab state rather than actual feature routes.
 - Both `denteus` and `dentist-page` currently declare Angular 21 packages. Confirm the desired Angular target before changing framework versions.
@@ -121,5 +120,5 @@ Acceptance: public SEO pages contain only public-safe, accurate information; pri
 1. Complete the standalone Fastify backend foundation and run its TypeScript checks.
 2. Review and test the initial SQL migration against a real PostgreSQL instance.
 3. Implement authentication and server-derived organization/clinic permissions before exposing patient endpoints.
-4. Replace the legacy Express-mounted demo API only when equivalent secure Fastify endpoints and frontend configuration are ready.
+4. Add secure Fastify patient and odontogram endpoints and configure the frontend API origin only after authentication and tenant authorization are in place.
 5. Add integration tests for persistence, authentication and tenant isolation before the pilot uses real data.
