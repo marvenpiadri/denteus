@@ -8,6 +8,7 @@ import { WorkspacePageComponent } from './features/workspace/workspace-page.comp
 import { PatientListPageComponent } from './features/patients/patient-list-page.component';
 import { PatientDetailPageComponent } from './features/patients/patient-detail-page.component';
 import { AgendaPageComponent } from './features/agenda/agenda-page.component';
+import { RecallsPageComponent } from './features/recalls/recalls-page.component';
 
 export const routes: Routes = [
   {
@@ -55,6 +56,11 @@ export const routes: Routes = [
         path: 'agenda',
         component: AgendaPageComponent,
         title: 'Agenda | Dentaleus',
+      },
+      {
+        path: 'recalls',
+        component: RecallsPageComponent,
+        title: 'Rappels patients | Dentaleus',
       },
       {
         path: 'patients',
