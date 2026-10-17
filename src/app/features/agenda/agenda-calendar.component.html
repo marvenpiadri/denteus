@@ -2,36 +2,50 @@
   <header class="calendar-heading">
     <div>
       <h2 id="calendar-heading">Planning de la journée</h2>
-      <p>Choisissez une heure pour préremplir le formulaire de rendez-vous. La disponibilité du praticien et du fauteuil n’est pas encore vérifiée.</p>
+      <p>Les conflits de patient, praticien et fauteuil affectés sont vérifiés par le serveur lors de l’enregistrement.</p>
     </div>
-    <span class="calendar-range">07:00–20:00</span>
+    <div class="calendar-controls">
+      <div class="view-switch" role="group" aria-label="Vue du planning">
+        <button type="button" [class.is-selected]="viewMode() === 'day'" (click)="setView('day')">Journée</button>
+        <button type="button" [class.is-selected]="viewMode() === 'provider'" [disabled]="!providers.length" (click)="setView('provider')">Praticiens</button>
+        <button type="button" [class.is-selected]="viewMode() === 'operatory'" [disabled]="!operatories.length" (click)="setView('operatory')">Fauteuils</button>
+      </div>
+      <span class="calendar-range">07:00–20:00</span>
+    </div>
   </header>
 
   <div class="calendar-scroll" [attr.aria-busy]="loading">
-    <div class="time-grid">
-      <div class="time-grid-header"><span>Heure</span><span>Rendez-vous · choisir une heure pour préremplir le formulaire</span></div>
+    <div class="time-grid" [class.resource-grid]="viewMode() !== 'day'">
+      <div class="time-grid-header" [style.gridTemplateColumns]="'74px repeat(' + resourceCount + ', minmax(180px, 1fr))'">
+        <span>Heure</span>
+        @for (column of columns(); track column.key) {
+          <span class="resource-column-heading" [class.unassigned-heading]="column.kind === 'unassigned'">{{ column.label }}</span>
+        }
+      </div>
       @for (hour of hours; track hour) {
-        <div class="time-row">
+        <div class="time-row" [style.gridTemplateColumns]="'74px repeat(' + resourceCount + ', minmax(180px, 1fr))'">
           <div class="hour-label">{{ hour.toString().padStart(2, '0') }}:00</div>
-          <div class="hour-content">
-            @for (appointment of appointmentsAt(hour); track appointment.id) {
-              <button
-                type="button"
-                class="calendar-appointment"
-                [class.is-cancelled]="appointment.status === 'CANCELLED' || appointment.status === 'NO_SHOW'"
-                [class.is-active]="appointment.status === 'ARRIVED' || appointment.status === 'IN_PROGRESS'"
-                [class.is-completed]="appointment.status === 'COMPLETED'"
-                (click)="appointmentSelected.emit(appointment)"
-                [attr.aria-label]="'Modifier le créneau de ' + patientName(appointment) + ', ' + time(appointment.startsAt) + ' à ' + time(appointment.endsAt)">
-                <span class="event-time">{{ time(appointment.startsAt) }}–{{ time(appointment.endsAt) }}</span>
-                <strong>{{ patientName(appointment) || 'Patient' }}</strong>
-                <span class="event-detail">{{ appointment.reason || 'Motif non précisé' }} · {{ statusLabel(appointment.status) }}@if (appointment.providerName) { · {{ appointment.providerName }} }@if (appointment.operatoryName) { · {{ appointment.operatoryName }} }</span>
+          @for (column of columns(); track column.key) {
+            <div class="hour-content">
+              @for (appointment of appointmentsAt(hour, column); track appointment.id) {
+                <button
+                  type="button"
+                  class="calendar-appointment"
+                  [class.is-cancelled]="appointment.status === 'CANCELLED' || appointment.status === 'NO_SHOW'"
+                  [class.is-active]="appointment.status === 'ARRIVED' || appointment.status === 'IN_PROGRESS'"
+                  [class.is-completed]="appointment.status === 'COMPLETED'"
+                  (click)="appointmentSelected.emit(appointment)"
+                  [attr.aria-label]="'Modifier le créneau de ' + patientName(appointment) + ', ' + time(appointment.startsAt) + ' à ' + time(appointment.endsAt)">
+                  <span class="event-time">{{ time(appointment.startsAt) }}–{{ time(appointment.endsAt) }}</span>
+                  <strong>{{ patientName(appointment) || 'Patient' }}</strong>
+                  <span class="event-detail">{{ appointment.reason || 'Motif non précisé' }} · {{ statusLabel(appointment.status) }}@if (appointment.providerName && viewMode() !== 'provider') { · {{ appointment.providerName }} }@if (appointment.operatoryName && viewMode() !== 'operatory') { · {{ appointment.operatoryName }} }</span>
+                </button>
+              }
+              <button type="button" class="empty-slot" (click)="selectSlot(hour, column)" [disabled]="loading" [attr.aria-label]="'Préremplir un rendez-vous à ' + hour.toString().padStart(2, '0') + ':00 pour ' + column.label">
+                <span>+</span> {{ hour.toString().padStart(2, '0') }}:00
               </button>
-            }
-            <button type="button" class="empty-slot" (click)="selectSlot(hour)" [disabled]="loading" [attr.aria-label]="'Ajouter un rendez-vous à ' + hour.toString().padStart(2, '0') + ':00'">
-              <span>+</span> Ajouter à {{ hour.toString().padStart(2, '0') }}:00
-            </button>
-          </div>
+            </div>
+          }
         </div>
       }
     </div>
