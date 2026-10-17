@@ -104,7 +104,7 @@ export class AgendaCalendarComponent {
           topPx: clippedStart - visibleStart,
           heightPx: Math.max(28, clippedEnd - clippedStart),
           leftPct: (lane / laneCount) * 100,
-          widthPct: Math.max(12, (100 / laneCount) - 1.5),
+          widthPct: Math.max(4, (100 / laneCount) - 1.5),
         });
       }
       cursor = next;
