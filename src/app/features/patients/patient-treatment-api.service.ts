@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 
 export type TreatmentStatus = 'PLANNED' | 'ACCEPTED' | 'COMPLETED' | 'DECLINED';
 export type TreatmentCategory = 'EXAM' | 'HYGIENE' | 'RESTORATIVE' | 'ENDODONTICS' | 'EXTRACTION' | 'PROSTHODONTICS' | 'ORTHODONTICS' | 'PERIODONTICS' | 'IMPLANT' | 'OTHER';
-export type ToothSurface = 'WHOLE' | 'OCCLUSAL' | 'MESIAL' | 'DISTAL' | 'BUCCAL' | 'LINGUAL' | 'PALATAL' | 'CERVICAL';
+export type ToothSurface = 'WHOLE' | 'OCCLUSAL' | 'INCISAL' | 'MESIAL' | 'DISTAL' | 'BUCCAL' | 'LINGUAL' | 'PALATAL' | 'CERVICAL';
 
 export interface ToothSite {
   toothNo: number;
