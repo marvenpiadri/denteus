@@ -65,15 +65,12 @@ export class SessionService {
   }
 
   async signOut(): Promise<void> {
-    try {
-      await firstValueFrom(
-        this.http.post('/api/auth/sign-out', {}, { withCredentials: true }),
-      );
-    } finally {
-      this.user.set(null);
-      this.session.set(null);
-      this.status.set('unauthenticated');
-    }
+    await firstValueFrom(
+      this.http.post('/api/auth/sign-out', {}, { withCredentials: true }),
+    );
+    this.user.set(null);
+    this.session.set(null);
+    this.status.set('unauthenticated');
   }
 
   messageFor(error: unknown): string {
