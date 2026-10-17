@@ -14,7 +14,7 @@
 
 ## Why this reset exists
 
-The current Angular app behaves like a clickable prototype: navigation is primarily tab state, the router has no routes, the tenant service seeds fictional organizations and clinics, and several modules are designed around demo state. These are not a safe foundation for a clinical system. We will not preserve the mockup's routing or its assumptions merely to avoid rewriting them.
+The pre-refactor Angular app behaved like a clickable prototype: navigation was primarily tab state, the router had no feature routes, the tenant service seeded fictional organizations and clinics, and several modules were designed around demo state. These are not a safe foundation for a clinical system. We will not preserve the mockup's routing or its assumptions merely to avoid rewriting them.
 
 This is a phased replacement, not a cosmetic redesign. Existing UI can be inspected for useful domain ideas, but no component, route, seed record, or interaction is automatically considered correct because it already exists.
 
