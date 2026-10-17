@@ -58,6 +58,7 @@ export class PatientDetailPageComponent {
     const activeClinicId = clinicId ?? clinic?.id;
     if (!organization || !activeClinicId || !patientId) return;
     const requestSequence = ++this.requestSequence;
+    this.patient.set(null);
     this.loading.set(true);
     this.error.set('');
     this.conflict.set(false);
@@ -108,6 +109,7 @@ export class PatientDetailPageComponent {
     };
     try {
       const saved = await this.api.update(clinic.organizationId, clinic.id, patient.id, input);
+      if (this.tenant.activeClinic()?.id !== clinic.id || this.patientId() !== patient.id) return;
       this.patient.set(saved);
       this.editing.set(false);
       this.success.set('Les modifications ont été enregistrées.');
