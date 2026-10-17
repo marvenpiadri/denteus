@@ -43,6 +43,11 @@ export class PatientDetailPageComponent {
   readonly selectedTeeth = signal<number[]>([]);
   readonly showPrimaryTeeth = signal(false);
   readonly treatedTeeth = computed(() => [...new Set(this.treatments().flatMap((item) => item.toothSites.map((site) => site.toothNo)))]);
+  readonly filteredTreatments = computed(() => {
+    const selected = this.selectedTeeth();
+    if (!selected.length) return this.treatments();
+    return this.treatments().filter((item) => item.toothSites.some((site) => selected.includes(site.toothNo)));
+  });
   readonly treatmentCategories: { value: TreatmentCategory; label: string }[] = [
     { value: 'EXAM', label: 'Examen / diagnostic' }, { value: 'HYGIENE', label: 'Détartrage / hygiène' },
     { value: 'RESTORATIVE', label: 'Soin restaurateur / obturation' }, { value: 'ENDODONTICS', label: 'Endodontie' },
