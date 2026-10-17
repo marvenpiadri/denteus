@@ -1,0 +1,404 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MembershipRole {
+  ORGANIZATION_OWNER
+  ORGANIZATION_ADMIN
+  CLINIC_ADMIN
+  DENTIST
+  ORTHODONTIST
+  HYGIENIST
+  ASSISTANT
+  RECEPTIONIST
+  ACCOUNTANT
+}
+
+enum ClinicStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum WebsiteStatus {
+  DRAFT
+  PUBLISHED
+  SUSPENDED
+  ARCHIVED
+}
+
+enum WebsiteDomainType {
+  DENTEUS_SUBDOMAIN
+  CUSTOM_DOMAIN
+}
+
+enum WebsiteDomainStatus {
+  PENDING
+  ACTIVE
+  VERIFICATION_REQUIRED
+  DISABLED
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+enum ReviewStatus {
+  PENDING
+  PUBLISHED
+  REJECTED
+}
+
+model User {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  phone         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sessions      Session[]
+  accounts      Account[]
+  memberships   OrganizationMembership[]
+  clinicAccess  ClinicMembership[]
+  odontogramsUpdated OdontogramRecord[] @relation("OdontogramUpdatedBy")
+  auditEvents   AuditEvent[]
+
+  @@index([name])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String   @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt   DateTime?
+  refreshTokenExpiresAt  DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  currency    String   @default("MAD")
+  locale      String   @default("fr")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  memberships OrganizationMembership[]
+  clinics     Clinic[]
+  websites    DentalWebsite[]
+  subscription Subscription?
+  patients    Patient[]
+  appointments Appointment[]
+  auditEvents AuditEvent[]
+}
+
+model OrganizationMembership {
+  id             String         @id @default(cuid())
+  organizationId String
+  userId         String
+  role           MembershipRole
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId, role])
+}
+
+model Clinic {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  city           String?
+  address        String?
+  phone          String?
+  email          String?
+  timezone       String       @default("Africa/Casablanca")
+  openingHours   Json?
+  status         ClinicStatus @default(ACTIVE)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  memberships    ClinicMembership[]
+  websites       DentalWebsite[]
+  patientLinks   PatientClinic[]
+  appointments   Appointment[]
+  odontograms    OdontogramRecord[]
+  reviews        ClinicReview[]
+
+  @@index([organizationId, status])
+  @@index([city])
+}
+
+model ClinicMembership {
+  id        String         @id @default(cuid())
+  clinicId  String
+  userId    String
+  role      MembershipRole
+  createdAt DateTime       @default(now())
+  clinic    Clinic         @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([clinicId, userId])
+  @@index([userId])
+}
+
+model PageTemplate {
+  id          String   @id @default(cuid())
+  key         String
+  name        String
+  description String?
+  version     Int      @default(1)
+  isActive    Boolean  @default(true)
+  config      Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  websites    DentalWebsite[]
+
+  @@unique([key, version])
+  @@index([isActive])
+}
+
+model DentalWebsite {
+  id             String        @id @default(cuid())
+  organizationId String
+  clinicId       String?
+  templateId     String
+  name           String
+  status         WebsiteStatus @default(DRAFT)
+  content        Json          @default("{}")
+  theme          Json          @default("{}")
+  seo             Json          @default("{}")
+  publishedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  clinic         Clinic?       @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+  template       PageTemplate  @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  domains        WebsiteDomain[]
+
+  @@index([organizationId, status])
+  @@index([clinicId])
+}
+
+model WebsiteDomain {
+  id                 String               @id @default(cuid())
+  websiteId          String
+  hostname           String               @unique
+  type               WebsiteDomainType
+  status             WebsiteDomainStatus  @default(PENDING)
+  isPrimary          Boolean              @default(false)
+  verificationToken  String?
+  verifiedAt         DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  website            DentalWebsite        @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  @@index([websiteId, status])
+  @@index([type, status])
+}
+
+model Plan {
+  id            String   @id @default(cuid())
+  key           String   @unique
+  name          String
+  description   String?
+  monthlyPrice  Int
+  currency      String   @default("USD")
+  limits        Json     @default("{}")
+  features      Json     @default("[]")
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id                    String             @id @default(cuid())
+  organizationId        String             @unique
+  planId                String
+  status                SubscriptionStatus @default(TRIALING)
+  trialEndsAt           DateTime?
+  currentPeriodStart    DateTime?
+  currentPeriodEnd      DateTime?
+  cancelAtPeriodEnd     Boolean            @default(false)
+  provider              String?
+  providerCustomerId    String?
+  providerSubscriptionId String?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  organization          Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan                  Plan               @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@index([status, currentPeriodEnd])
+}
+
+model Patient {
+  id             String   @id @default(cuid())
+  organizationId String
+  patientNumber  String
+  firstName      String
+  lastName       String
+  birthDate      DateTime?
+  gender         String?
+  nationalId     String?
+  phone          String?
+  email          String?
+  address        String?
+  city           String?
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  clinicLinks    PatientClinic[]
+  appointments   Appointment[]
+  odontograms    OdontogramRecord[]
+
+  @@unique([organizationId, patientNumber])
+  @@index([organizationId, lastName, firstName])
+  @@index([organizationId, phone])
+  @@index([organizationId, email])
+}
+
+model PatientClinic {
+  patientId String
+  clinicId  String
+  createdAt DateTime @default(now())
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  clinic    Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@id([patientId, clinicId])
+  @@index([clinicId])
+}
+
+model Appointment {
+  id             String   @id @default(cuid())
+  organizationId String
+  clinicId       String
+  patientId      String?
+  practitionerId String?
+  startsAt       DateTime
+  endsAt         DateTime
+  status         String   @default("SCHEDULED")
+  reason         String?
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  clinic         Clinic       @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patient        Patient?     @relation(fields: [patientId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, startsAt])
+  @@index([clinicId, startsAt, endsAt])
+  @@index([patientId, startsAt])
+}
+
+model OdontogramRecord {
+  id             String   @id @default(cuid())
+  organizationId String
+  clinicId       String
+  patientId      String
+  statusPayload  Json
+  planPayload    Json?
+  planChanges    Json     @default("[]")
+  extraPayload   Json     @default("{}")
+  updatedById    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  clinic         Clinic       @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  patient        Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  updatedBy      User?        @relation("OdontogramUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@unique([patientId, clinicId])
+  @@index([organizationId, clinicId])
+}
+
+model ClinicReview {
+  id                String       @id @default(cuid())
+  clinicId          String
+  authorName        String?
+  rating            Int
+  reviewText        String?
+  status            ReviewStatus @default(PENDING)
+  verified          Boolean      @default(false)
+  source             String       @default("DENTEUS")
+  publishedAt       DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  clinic             Clinic       @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@index([clinicId, status, publishedAt])
+}
+
+model AuditEvent {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String?
+  action         String
+  resourceType   String
+  resourceId     String?
+  metadata       Json     @default("{}")
+  createdAt      DateTime @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([userId, createdAt])
+}
