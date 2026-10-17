@@ -4,6 +4,7 @@ import { requireClinicAccess } from '../auth/authorization.js';
 import { pool } from '../db/pool.js';
 import { canManageAppointments } from '../domain/appointment-policy.js';
 import { canTransitionRecallStatus, statusAfterRecallContact } from '../domain/recall-policy.js';
+import type { RecallStatus } from '../domain/recall-policy.js';
 
 export const recallRoutes: FastifyPluginAsync = async (app) => {
   app.get<{ Params: { organizationId: string; clinicId: string }; Querystring: { status?: string; q?: string } }>(
@@ -97,7 +98,7 @@ export const recallRoutes: FastifyPluginAsync = async (app) => {
           await client.query('ROLLBACK');
           return reply.code(404).send({ error: { code: 'RECALL_NOT_FOUND', message: 'Rappel introuvable.' } });
         }
-        const to = statusAfterRecallContact(from as import('../domain/recall-policy.js').RecallStatus, request.body.outcome);
+        const to = statusAfterRecallContact(from as RecallStatus, request.body.outcome);
         if (!to) {
           await client.query('ROLLBACK');
           return reply.code(409).send({ error: { code: 'RECALL_NOT_CONTACTABLE', message: 'Ce rappel n’est plus dans une file de contact active.' } });
@@ -141,7 +142,7 @@ export const recallRoutes: FastifyPluginAsync = async (app) => {
           await client.query('ROLLBACK');
           return reply.code(404).send({ error: { code: 'RECALL_NOT_FOUND', message: 'Rappel introuvable.' } });
         }
-        if (!canTransitionRecallStatus(from as import('../domain/recall-policy.js').RecallStatus, request.body.status as import('../domain/recall-policy.js').RecallStatus)) {
+        if (!canTransitionRecallStatus(from as import('../domain/recall-policy.js').RecallStatus, request.body.status as RecallStatus)) {
           await client.query('ROLLBACK');
           return reply.code(409).send({ error: { code: 'INVALID_RECALL_TRANSITION', message: 'Cette transition de rappel n’est pas autorisée.' } });
         }
