@@ -1,4 +1,4 @@
-import { DatePipe, isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -14,7 +14,7 @@ function clinicTimezone(value: string | undefined): string { return value || 'Af
 
 @Component({
   selector: 'app-recalls-page',
-  imports: [FormsModule, RouterLink, DatePipe],
+  imports: [FormsModule, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './recalls-page.component.html',
   styleUrl: './recalls-page.component.css',
