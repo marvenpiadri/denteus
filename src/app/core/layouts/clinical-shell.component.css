@@ -47,3 +47,9 @@
 .sign-out-button:focus-visible{outline:3px solid #69b9b0;outline-offset:2px}
 
 .sign-out-error{margin-bottom:16px;padding:11px 14px;border:1px solid #f2b8b5;border-left:4px solid #b42318;border-radius:8px;background:#fef3f2;color:#7a271a;font-size:12px;line-height:1.6}
+
+.clinic-context-copy{min-width:0;flex:1}
+.clinic-context-copy label{display:block;margin-bottom:5px;color:#71858c;font-size:10px;font-weight:750}
+.clinic-context-copy select{width:100%;min-width:0;border:0;background:transparent;color:#263f49;font-size:11px;font-weight:750;padding:2px 0;outline-offset:3px}
+.clinic-context-copy small a{color:#087f75;font-size:11px;font-weight:750}
+.clinic-context-copy .clinic-error{color:#b42318;overflow-wrap:anywhere}
