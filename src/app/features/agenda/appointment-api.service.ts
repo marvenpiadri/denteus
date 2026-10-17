@@ -23,6 +23,10 @@ export interface AppointmentRecord {
   endsAt: string;
   status: AppointmentStatus;
   reason: string | null;
+  providerId: string | null;
+  providerName: string | null;
+  operatoryId: string | null;
+  operatoryName: string | null;
   createdById: string | null;
   createdAt: string;
   updatedAt: string;
@@ -41,6 +45,8 @@ export interface CreateAppointmentInput {
   startsAt: string;
   endsAt: string;
   reason?: string;
+  providerId?: string | null;
+  operatoryId?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
