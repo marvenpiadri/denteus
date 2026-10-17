@@ -40,7 +40,7 @@ const patientBodySchema = {
     gender: { type: 'string', enum: ['M', 'F', 'OTHER'] },
     nationalId: { type: 'string', maxLength: 64 },
     phone: { type: 'string', maxLength: 40 },
-    email: { type: 'string', maxLength: 254 },
+    email: { type: 'string', format: 'email', maxLength: 254 },
     address: { type: 'string', maxLength: 500 },
     city: { type: 'string', maxLength: 120 },
     notes: { type: 'string', maxLength: 10_000 },
@@ -157,6 +157,14 @@ export const patientRoutes: FastifyPluginAsync = async (app) => {
       if (!access) return;
       if (!canManagePatients(access)) return denyInsufficientRole(reply);
 
+      const firstName = request.body.firstName.trim();
+      const lastName = request.body.lastName.trim();
+      if (!firstName || !lastName) {
+        return reply.code(400).send({
+          error: { code: 'INVALID_PATIENT_NAME', message: 'Le prénom et le nom sont obligatoires.' },
+        });
+      }
+
       const client = await pool.connect();
       let transactionOpen = false;
 
@@ -210,8 +218,8 @@ export const patientRoutes: FastifyPluginAsync = async (app) => {
             patientId,
             request.params.organizationId,
             patientNumber,
-            request.body.firstName.trim(),
-            request.body.lastName.trim(),
+            firstName,
+            lastName,
             request.body.birthDate ?? null,
             request.body.gender ?? null,
             request.body.nationalId?.trim() || null,
