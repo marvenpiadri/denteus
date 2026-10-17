@@ -23,7 +23,9 @@ export const recallRoutes: FastifyPluginAsync = async (app) => {
           r.recall_type AS "recallType", to_char(r.due_on, 'YYYY-MM-DD') AS "dueOn",
           to_char(r.previous_completed_on, 'YYYY-MM-DD') AS "previousCompletedOn",
           r.interval_months AS "intervalMonths", r.status, r.preferred_contact_method AS "preferredContactMethod",
-          r.last_contacted_at AS "lastContactedAt", r.note
+          r.last_contacted_at AS "lastContactedAt", r.note,
+          (SELECT count(*)::integer FROM patient_recall_events e WHERE e.organization_id=r.organization_id AND e.clinic_id=r.clinic_id AND e.recall_id=r.id AND e.event_type='CONTACT_ATTEMPT') AS "contactAttempts",
+          (SELECT e.outcome FROM patient_recall_events e WHERE e.organization_id=r.organization_id AND e.clinic_id=r.clinic_id AND e.recall_id=r.id AND e.event_type='CONTACT_ATTEMPT' ORDER BY e.created_at DESC LIMIT 1) AS "lastContactOutcome"
          FROM patient_recalls r JOIN patients p ON p.organization_id=r.organization_id AND p.id=r.patient_id
          WHERE r.organization_id=$1 AND r.clinic_id=$2
            AND ($3::text IS NULL OR r.status=$3)
