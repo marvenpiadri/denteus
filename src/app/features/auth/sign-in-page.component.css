@@ -32,3 +32,7 @@ input:disabled{background:#f5f8f9;color:#82939a}
 .spinner{width:14px;height:14px;border:2px solid #ffffff80;border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.spinner{animation:none}}
+
+.switch-auth{margin:20px 0 0;text-align:center;color:#647b84;font-size:12px}
+.switch-auth a{color:#087f75;font-weight:750}
+.switch-auth a:focus-visible{outline:3px solid #69b9b0;outline-offset:3px;border-radius:3px}
