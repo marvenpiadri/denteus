@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { isPlatformBrowser } from '@angular/common';
+import { DatePipe, isPlatformBrowser } from '@angular/common';
 import { ChangeDetectionStrategy, Component, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TenantContextService } from '../../core/tenant/tenant-context.service';
@@ -7,7 +7,7 @@ import { CreatePatientInput, PatientApiService, PatientRecord } from './patient-
 
 @Component({
   selector: 'app-patient-list-page',
-  imports: [FormsModule],
+  imports: [FormsModule, DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './patient-list-page.component.html',
   styleUrl: './patient-list-page.component.css',
@@ -22,7 +22,7 @@ export class PatientListPageComponent {
   readonly saving = signal(false);
   readonly error = signal('');
   readonly formError = signal('');
-  readonly search = signal('');
+  search = '';
   readonly showCreateForm = signal(false);
   readonly total = signal(0);
 
@@ -37,14 +37,14 @@ export class PatientListPageComponent {
     effect(() => {
       const clinic = this.tenant.activeClinic();
       if (isPlatformBrowser(this.platformId) && clinic) {
-        void this.loadPatients(clinic.organizationId, clinic.id, this.search());
+        void this.loadPatients(clinic.organizationId, clinic.id, this.search);
       }
     });
   }
 
-  async searchPatients(): Promise<void> {
+  toggleCreateForm(): void {\n    this.showCreateForm.update((open) => !open);\n  }\n\n  async searchPatients(): Promise<void> {
     const clinic = this.tenant.activeClinic();
-    if (clinic) await this.loadPatients(clinic.organizationId, clinic.id, this.search());
+    if (clinic) await this.loadPatients(clinic.organizationId, clinic.id, this.search);
   }
 
   async loadPatients(organizationId: string, clinicId: string, query = ''): Promise<void> {
