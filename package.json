@@ -10,12 +10,9 @@
     "test": "ng test",
     "lint": "ng lint",
     "serve:ssr:app": "node dist/app/server/server.mjs",
-    "db:generate": "prisma generate",
-    "db:validate": "prisma validate",
-    "db:migrate:dev": "prisma migrate dev",
-    "db:migrate:deploy": "prisma migrate deploy",
-    "db:studio": "prisma studio",
-    "postinstall": "prisma generate"
+    "backend:dev": "npm --prefix backend run dev",
+    "backend:build": "npm --prefix backend run build",
+    "backend:start": "npm --prefix backend run start"
   },
   "private": true,
   "dependencies": {
@@ -35,8 +32,6 @@
     "motion": "^12.23.24",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
-    "@prisma/adapter-pg": "^7.9.1",
-    "@prisma/client": "^7.9.1",
     "dotenv": "^17.2.3",
     "pg": "^8.16.3"
   },
@@ -55,7 +50,6 @@
     "tailwindcss": "^4.1.12",
     "typescript": "~5.9.2",
     "typescript-eslint": "8.47.0",
-    "vitest": "^4.0.0",
-    "prisma": "^7.9.1"
+    "vitest": "^4.0.0"
   }
 }
