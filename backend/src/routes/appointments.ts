@@ -307,6 +307,8 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
               patientId: request.body.patientId,
               startsAt: request.body.startsAt,
               endsAt: request.body.endsAt,
+              providerId: request.body.providerId ?? null,
+              operatoryId: request.body.operatoryId ?? null,
             }),
           ],
         );
@@ -528,7 +530,7 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
             request.params.organizationId,
             access.userId,
             request.params.appointmentId,
-            JSON.stringify({ clinicId: request.params.clinicId, startsAt: request.body.startsAt, endsAt: request.body.endsAt }),
+            JSON.stringify({ clinicId: request.params.clinicId, startsAt: request.body.startsAt, endsAt: request.body.endsAt, providerId: resource?.providerId ?? null, operatoryId: resource?.operatoryId ?? null }),
           ],
         );
         await client.query('COMMIT');
