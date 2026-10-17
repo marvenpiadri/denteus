@@ -373,9 +373,9 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
         await client.query('BEGIN');
         transactionOpen = true;
         await lockClinicSchedule(client, request.params.organizationId, request.params.clinicId);
-        const current = await client.query<{ status: AppointmentStatus }>(
+        const current = await client.query<{ status: AppointmentStatus; patientId: string }>(
           `
-            SELECT status
+            SELECT status, patient_id AS "patientId"
             FROM appointments
             WHERE organization_id = $1 AND clinic_id = $2 AND id = $3
             FOR UPDATE
