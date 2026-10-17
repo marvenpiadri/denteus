@@ -42,8 +42,8 @@
           <div class="recall-main">
             <div class="patient-line"><a [routerLink]="['/crm/patients', recall.patientId]">{{ recall.patientFirstName }} {{ recall.patientLastName }}</a><span class="patient-number">{{ recall.patientNumber }}</span></div>
             <p class="recall-type">{{ recall.recallType }} · intervalle {{ recall.intervalMonths }} mois</p>
-            <div class="recall-meta"><span class="status-label" [attr.data-status]="recall.status">{{ statusLabel(recall.status) }}</span><span>Dernier contrôle : {{ formatDate(recall.previousCompletedOn) }}</span>@if (recall.lastContactedAt) { <span>Dernier contact : {{ formatContactTimestamp(recall.lastContactedAt) }}</span> }</div>
-            @if (recall.note) { <p class="recall-note">{{ recall.note }}</p> }
+            <div class="recall-meta"><span class="status-label" [attr.data-status]="recall.status">{{ statusLabel(recall.status) }}</span><span>Dernier contrôle : {{ formatDate(recall.previousCompletedOn) }}</span>@if (recall.contactAttempts) { <span>{{ recall.contactAttempts }} tentative{{ recall.contactAttempts > 1 ? 's' : '' }}</span> } @if (recall.lastContactedAt) { <span>Dernier contact : {{ formatContactTimestamp(recall.lastContactedAt) }}</span> }</div>
+            @if (recall.lastContactOutcome) { <p class="recall-note">Dernier résultat : {{ recall.lastContactOutcome }}</p> } @if (recall.note) { <p class="recall-note">{{ recall.note }}</p> }
           </div>
           <div class="recall-actions">
             @if (recall.status === 'DUE' || recall.status === 'CONTACTED') { <button type="button" class="secondary-button" (click)="openContact(recall)">Consigner un contact</button> }
