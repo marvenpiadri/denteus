@@ -14,7 +14,7 @@ CREATE TABLE auth_sessions (
   user_id text NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
   token text NOT NULL UNIQUE,
   expires_at timestamptz NOT NULL,
-  ip_address inet,
+  ip_address text,
   user_agent text,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
