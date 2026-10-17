@@ -35,10 +35,12 @@ The API listens on `http://localhost:4100` by default.
 - `/api/auth/*` serves Better Auth endpoints.
 - `GET /api/v1/session` returns a minimal current-user/session view or `401`.
 - `GET /api/v1/organizations` returns only organizations and clinic scopes associated with the authenticated user's memberships; it never accepts a user ID from the caller.
+- Patient list/detail/create routes are nested under an authorized organization and clinic path.
+- Odontogram read/write routes are nested under an authorized organization, clinic and patient path; writes require an allowed clinical role and are audited transactionally.
 
 ## Security boundary
 
-Authentication is wired, but organization/clinic authorization is not complete yet. No patient, appointment or odontogram endpoints are exposed by this service until every request can derive the user from the server-side session and verify the user's organization and clinic membership.
+Authentication and clinic membership checks are wired for patient and odontogram routes. Appointment routes, first-clinic onboarding, frontend authentication/API integration, and automated integration tests remain incomplete. Do not use real patient data until the migration and all authorization/persistence tests have been run against PostgreSQL.
 
 The old Express-mounted demo API has been removed from Angular SSR. Do not add private clinical endpoints back to the SSR server.
 
