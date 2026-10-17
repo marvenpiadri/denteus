@@ -7,12 +7,13 @@ import { TenantContextService } from '../../core/tenant/tenant-context.service';
 import { PatientApiService } from '../patients/patient-api.service';
 import type { PatientRecord } from '../patients/patient-api.service';
 import { AppointmentApiService } from './appointment-api.service';
+import { AgendaCalendarComponent } from './agenda-calendar.component';
 import type { AppointmentRecord, AppointmentStatus } from './appointment-api.service';
 import { addCalendarDays, formatCalendarDate as formatCalendarDateValue, formatClinicDate, formatClinicTime, localDateTimeToIso, todayInTimeZone, toClinicDateTimeInput } from './clinic-date-time';
 
 @Component({
   selector: 'app-agenda-page',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, AgendaCalendarComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './agenda-page.component.html',
   styleUrl: './agenda-page.component.css',
@@ -103,6 +104,16 @@ export class AgendaPageComponent {
     } finally {
       if (this.tenant.activeClinic()?.id === clinicId) this.loadingPatients.set(false);
     }
+  }
+
+  openCreateAtTime(value: string): void {
+    this.openCreateForm();
+    if (!value) return;
+    this.startsAt = value;
+    const [datePart, timePart] = value.split('T');
+    const [hour, minute] = timePart.split(':').map(Number);
+    const end = new Date(Date.UTC(2000, 0, 1, hour, minute + 30));
+    this.endsAt = `${datePart}T${String(end.getUTCHours()).padStart(2, '0')}:${String(end.getUTCMinutes()).padStart(2, '0')}`;
   }
 
   openCreateForm(): void {
