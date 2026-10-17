@@ -1,0 +1,86 @@
+<main class="auth-page">
+  <section class="auth-panel" aria-labelledby="sign-in-title">
+    <a class="brand" routerLink="/" aria-label="Dentaleus">
+      <span class="brand-mark" aria-hidden="true">D</span>
+      <span>dentaleus</span>
+    </a>
+
+    <div class="auth-intro">
+      <span class="eyebrow">ESPACE PROFESSIONNEL</span>
+      <h1 id="sign-in-title">Connexion au cabinet</h1>
+      <p>Connectez-vous pour accéder aux espaces cliniques auxquels votre compte est autorisé.</p>
+    </div>
+
+    @if (errorMessage) {
+      <div class="form-error-summary" role="alert" aria-live="polite">
+        <strong>Connexion impossible</strong>
+        <p>{{ errorMessage }}</p>
+      </div>
+    }
+
+    @if (sessionsUnavailable) {
+      <div class="service-notice" role="status">
+        La vérification de session n’est pas disponible pour le moment. Vous pouvez réessayer de vous connecter.
+      </div>
+    }
+
+    <form (ngSubmit)="submit()" #signInForm="ngForm">
+      <div class="field">
+        <label for="email">Adresse e-mail</label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          [(ngModel)]="email"
+          autocomplete="username"
+          inputmode="email"
+          required
+          maxlength="254"
+          placeholder="vous@cabinet.ma"
+          [disabled]="submitting" />
+      </div>
+
+      <div class="field">
+        <div class="field-label-row">
+          <label for="password">Mot de passe</label>
+        </div>
+        <div class="password-control">
+          <input
+            id="password"
+            name="password"
+            [type]="showPassword ? 'text' : 'password'"
+            [(ngModel)]="password"
+            autocomplete="current-password"
+            required
+            minlength="12"
+            maxlength="128"
+            placeholder="Votre mot de passe"
+            [disabled]="submitting" />
+          <button
+            class="password-toggle"
+            type="button"
+            (click)="showPassword = !showPassword"
+            [attr.aria-pressed]="showPassword"
+            [disabled]="submitting">
+            {{ showPassword ? 'Masquer' : 'Afficher' }}
+          </button>
+        </div>
+      </div>
+
+      <button class="submit-button" type="submit" [disabled]="submitting || !signInForm.valid">
+        @if (submitting) {
+          <span class="spinner" aria-hidden="true"></span>
+          Vérification…
+        } @else {
+          Se connecter
+        }
+      </button>
+    </form>
+
+    <p class="security-note">
+      <span aria-hidden="true">▣</span>
+      L’accès aux dossiers cliniques dépend de votre session et de vos autorisations.
+    </p>
+  </section>
+  <footer class="auth-footer">Dentaleus · Espace clinique sécurisé</footer>
+</main>
