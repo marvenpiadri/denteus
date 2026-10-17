@@ -8,6 +8,9 @@ import { PatientApiService } from '../patients/patient-api.service';
 import type { PatientRecord } from '../patients/patient-api.service';
 import { RecallApiService } from './recall-api.service';
 import type { PatientRecall, RecallStatus } from './recall-api.service';
+import { formatClinicDate, formatClinicTime, todayInTimeZone } from '../agenda/clinic-date-time';
+
+function clinicTimezone(value: string | undefined): string { return value || 'Africa/Casablanca'; }
 
 @Component({
   selector: 'app-recalls-page',
@@ -93,7 +96,7 @@ export class RecallsPageComponent {
     this.formError.set('');
     this.patientId = '';
     this.recallType = 'Contrôle périodique';
-    this.dueOn = new Date().toISOString().slice(0, 10);
+    this.dueOn = todayInTimeZone(clinicTimezone(this.tenant.activeClinic()?.timezone));
     this.intervalMonths = 6;
     this.note = '';
     this.showCreateForm.set(true);
@@ -177,8 +180,13 @@ export class RecallsPageComponent {
     return match ? `${match[3]}/${match[2]}/${match[1]}` : value;
   }
 
+  formatContactTimestamp(value: string): string {
+    const timezone = this.tenant.activeClinic()?.timezone || 'Africa/Casablanca';
+    return `${formatClinicDate(value, timezone)} à ${formatClinicTime(value, timezone)}`;
+  }
+
   dueLabel(value: string): string {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayInTimeZone(this.tenant.activeClinic()?.timezone || 'Africa/Casablanca');
     if (value < today) return 'En retard';
     if (value === today) return 'Aujourd’hui';
     return 'À venir';
