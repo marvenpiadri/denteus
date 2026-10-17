@@ -92,7 +92,7 @@ export const recallRoutes: FastifyPluginAsync = async (app) => {
           await client.query('ROLLBACK');
           return reply.code(404).send({ error: { code: 'RECALL_NOT_FOUND', message: 'Rappel introuvable.' } });
         }
-        const to = from === 'DUE' ? 'CONTACTED' : from;
+        const to = request.body.outcome === 'BOOKED' ? 'SCHEDULED' : request.body.outcome === 'DECLINED' ? 'DECLINED' : from === 'DUE' ? 'CONTACTED' : from;
         await client.query(
           `INSERT INTO patient_recall_events (id, organization_id, clinic_id, recall_id, user_id, event_type, from_status, to_status, contact_method, outcome, note)
            VALUES ($1,$2,$3,$4,$5,'CONTACT_ATTEMPT',$6,$7,$8,$9,$10)`,
