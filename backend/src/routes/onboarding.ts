@@ -33,7 +33,7 @@ const createClinicSchema = {
     city: { type: 'string', maxLength: 120 },
     address: { type: 'string', maxLength: 500 },
     phone: { type: 'string', maxLength: 40 },
-    email: { type: 'string', maxLength: 254 },
+    email: { type: 'string', format: 'email', maxLength: 254 },
     timezone: { type: 'string', minLength: 1, maxLength: 100 },
     currency: { type: 'string', pattern: '^[A-Z]{3}$' },
     locale: { type: 'string', pattern: '^[a-z]{2}(-[A-Z]{2})?$' },
@@ -64,6 +64,30 @@ export const onboardingRoutes: FastifyPluginAsync = async (app) => {
       try {
         await client.query('BEGIN');
         transactionOpen = true;
+        // Serialize first-time onboarding per user and prevent duplicate workspaces.
+        await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [current.user.id]);
+        const existingMembership = await client.query(
+          'SELECT 1 FROM organization_memberships WHERE user_id = $1 LIMIT 1',
+          [current.user.id],
+        );
+        if (existingMembership.rowCount) {
+          await client.query('ROLLBACK');
+          transactionOpen = false;
+          return reply.code(409).send({
+            error: {
+              code: 'ONBOARDING_ALREADY_COMPLETED',
+              message: 'Votre compte possède déjà un espace clinique. Sélectionnez-le depuis la navigation.',
+            },
+          });
+        }
+
+        if (body.organizationName.trim().length < 2 || body.clinicName.trim().length < 2) {
+          await client.query('ROLLBACK');
+          transactionOpen = false;
+          return reply.code(400).send({
+            error: { code: 'INVALID_NAME', message: 'Les noms de l’organisation et de la clinique doivent contenir au moins deux caractères.' },
+          });
+        }
 
         const organization = await client.query(
           `
