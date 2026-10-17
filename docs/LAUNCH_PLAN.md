@@ -33,7 +33,7 @@ Target: a realistic, tested first-customer release by October 31, 2026. This is 
 - The CRM global stylesheet no longer imports Tailwind utilities or the odontogram library stylesheet. The 3D atlas and its rendering styles are not part of the CRM application.
 - Fastify has Better Auth sessions, session-scoped organization listing, and PostgreSQL-backed patient and odontogram routes scoped to authorized organization/clinic paths. Backend CI has not yet been confirmed green.
 - The new frontend CI workflow currently reports failure without useful job-step logs; build/test validation remains unverified. Do not interpret this as a code-level failure or as a passing build until a runnable job provides logs.
-- Authentication/session UI, clinic onboarding, frontend API integration, appointment routes and appointment persistence remain incomplete. Do not use real patient data.
+- A sign-in form, Better Auth email/password request, session verification and client-side route guard now exist. Sign-up, first-clinic onboarding, active clinic context, authenticated organization selection, patient API integration, appointment routes and appointment persistence remain incomplete. Do not use real patient data.
 - Angular remains on version 21; do not combine an unrequested major framework upgrade with this refactor.
 - The 3D dental atlas is not part of the CRM app. It belongs only inside an optional public clinic website Page template.
 
