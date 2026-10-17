@@ -55,8 +55,9 @@ export class AgendaCalendarComponent {
     const matching = this.appointments.map((appointment) => ({
       appointment,
       start: this.localMinutes(appointment.startsAt),
-      end: this.localMinutes(appointment.endsAt),
+      end: this.localDate(appointment.endsAt) === this.date ? this.localMinutes(appointment.endsAt) : visibleEnd,
     })).filter((item) => {
+      if (this.localDate(item.appointment.startsAt) !== this.date) return false;
       if (item.end <= visibleStart || item.start >= visibleEnd) return false;
       if (column.kind === 'all') return true;
       if (column.kind === 'unassigned') return this.viewMode() === 'provider'
@@ -105,6 +106,15 @@ export class AgendaCalendarComponent {
       cursor = next;
     }
     return result;
+  }
+
+  private localDate(value: string): string {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: this.timeZone,
+      year: 'numeric', month: '2-digit', day: '2-digit',
+    }).formatToParts(new Date(value));
+    const part = (type: string) => parts.find((item) => item.type === type)?.value ?? '';
+    return `${part('year')}-${part('month')}-${part('day')}`;
   }
 
   private localMinutes(value: string): number {
