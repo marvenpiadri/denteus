@@ -25,10 +25,13 @@ Then run:
 
 ```sh
 npm run db:migrate
+npm run typecheck
+npm run build
+npm test
 npm run dev
 ```
 
-The API listens on `http://localhost:4100` by default.
+The API listens on `http://localhost:4100` by default. The PostgreSQL integration test requires a clean test database with the migration applied; it creates and removes its own fixtures.
 
 - `GET /health` checks process health.
 - `GET /health/ready` checks PostgreSQL readiness.
