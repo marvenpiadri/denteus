@@ -3,6 +3,7 @@ import type { AppointmentRecord } from './appointment-api.service';
 import type { ClinicOperatory, ClinicProvider } from './scheduling-resource-api.service';
 
 export type CalendarResourceMode = 'day' | 'provider' | 'operatory';
+export interface CalendarResourceColumn { key: string; id: string | null; label: string; kind: 'all' | 'unassigned' | 'provider' | 'operatory'; }
 export interface CalendarSlotSelection {
   startsAt: string;
   providerId?: string;
@@ -35,14 +36,28 @@ export class AgendaCalendarComponent {
     return 1;
   }
 
-  appointmentsAt(hour: number, resourceId?: string | null): AppointmentRecord[] {
+  columns(): CalendarResourceColumn[] {
+    if (this.viewMode() === 'day') return [{ key: 'all', id: null, label: 'Rendez-vous', kind: 'all' }];
+    if (this.viewMode() === 'provider') return [
+      { key: 'unassigned', id: null, label: 'Non affectés', kind: 'unassigned' },
+      ...this.providers.map((provider) => ({ key: provider.id, id: provider.id, label: provider.displayName, kind: 'provider' as const })),
+    ];
+    return [
+      { key: 'unassigned', id: null, label: 'Non affectés', kind: 'unassigned' },
+      ...this.operatories.map((operatory) => ({ key: operatory.id, id: operatory.id, label: operatory.name, kind: 'operatory' as const })),
+    ];
+  }
+
+  appointmentsAt(hour: number, column: CalendarResourceColumn): AppointmentRecord[] {
     return this.appointments.filter((appointment) => {
       if (this.localHour(appointment.startsAt) !== hour) return false;
-      if (this.viewMode() === 'day') return true;
-      if (this.viewMode() === 'provider') return resourceId === null
+      if (column.kind === 'all') return true;
+      if (column.kind === 'unassigned') return this.viewMode() === 'provider'
         ? !appointment.providerId
-        : appointment.providerId === resourceId;
-      return resourceId === null ? !appointment.operatoryId : appointment.operatoryId === resourceId;
+        : !appointment.operatoryId;
+      return column.kind === 'provider'
+        ? appointment.providerId === column.id
+        : appointment.operatoryId === column.id;
     });
   }
 
@@ -81,13 +96,13 @@ export class AgendaCalendarComponent {
     return labels[status];
   }
 
-  selectSlot(hour: number, resourceId?: string | null): void {
+  selectSlot(hour: number, column: CalendarResourceColumn): void {
     if (!this.date || this.loading) return;
     const selection: CalendarSlotSelection = {
       startsAt: `${this.date}T${String(hour).padStart(2, '0')}:00`,
     };
-    if (this.viewMode() === 'provider' && resourceId) selection.providerId = resourceId;
-    if (this.viewMode() === 'operatory' && resourceId) selection.operatoryId = resourceId;
+    if (column.kind === 'provider' && column.id) selection.providerId = column.id;
+    if (column.kind === 'operatory' && column.id) selection.operatoryId = column.id;
     this.slotSelected.emit(selection);
   }
 
