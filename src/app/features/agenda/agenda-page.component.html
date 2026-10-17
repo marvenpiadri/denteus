@@ -30,7 +30,7 @@
   }
 
   <section class="appointment-list" aria-label="Rendez-vous de la journée">
-    <div class="list-heading"><div><h2>{{ selectedDate() ? formatDate(selectedDate() + 'T12:00:00Z') : 'Chargement de la journée' }}</h2><p>{{ appointments().length }} rendez-vous affiché{{ appointments().length > 1 ? 's' : '' }}</p></div><button type="button" class="secondary-button" (click)="refreshAppointments()" [disabled]="loading()">Actualiser</button></div>
+    <div class="list-heading"><div><h2>{{ selectedDate() ? formatCalendarDate(selectedDate()) : 'Chargement de la journée' }}</h2><p>{{ appointments().length }} rendez-vous affiché{{ appointments().length > 1 ? 's' : '' }}</p></div><button type="button" class="secondary-button" (click)="refreshAppointments()" [disabled]="loading()">Actualiser</button></div>
 
     @if (loading() && !appointments().length) {
       <div class="list-state" role="status"><span class="loading-indicator" aria-hidden="true"></span>Chargement de l’agenda…</div>
