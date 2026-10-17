@@ -57,6 +57,8 @@
 
       @if (treatmentsSuccess()) { <div class="success-message" role="status">{{ treatmentsSuccess() }}</div> }
       @if (treatmentsError()) { <div class="error-message" role="alert">{{ treatmentsError() }} <button type="button" (click)="loadPatient()">Réessayer</button></div> }
+      <app-tooth-selector [selectedTeeth]="selectedTeeth()" (selectedTeethChange)="selectedTeeth.set($event)" [treatedTeeth]="treatedTeeth()" [showPrimary]="showPrimaryTeeth()" (showPrimaryChange)="showPrimaryTeeth.set($event)" />
+      @if (selectedTeeth().length) { <p class="tooth-history-filter">Historique filtré sur les dents : {{ selectedTeeth().join(', ') }} <button type="button" (click)="selectedTeeth.set([])">Afficher toutes les dents</button></p> }
 
       @if (showTreatmentForm()) {
         <form class="treatment-entry-form" (ngSubmit)="saveTreatment()">
@@ -67,7 +69,6 @@
             <div><label for="treatment-surface">Surface dentaire</label><select id="treatment-surface" name="treatmentSurface" [(ngModel)]="treatmentSurface">@for (surface of toothSurfaces; track surface.value) { <option [value]="surface.value">{{ surface.label }}</option> }</select><small>La surface sélectionnée s’applique à chaque dent choisie ci-dessous.</small></div>
             <div class="wide-field"><label for="treatment-notes">Note clinique (facultatif)</label><textarea id="treatment-notes" name="treatmentNotes" [(ngModel)]="treatmentNotes" rows="3" maxlength="10000" placeholder="Note factuelle sur le soin, sans remplacer un dossier clinique complet."></textarea></div>
           </div>
-          <app-tooth-selector [selectedTeeth]="selectedTeeth()" (selectedTeethChange)="selectedTeeth.set($event)" [treatedTeeth]="treatedTeeth()" [showPrimary]="showPrimaryTeeth()" (showPrimaryChange)="showPrimaryTeeth.set($event)" />
           <div class="form-actions"><button class="secondary-button" type="button" (click)="showTreatmentForm.set(false)" [disabled]="treatmentsSaving()">Annuler</button><button class="primary-button" type="submit" [disabled]="!treatmentTitle.trim() || treatmentsSaving()">{{ treatmentsSaving() ? 'Enregistrement…' : 'Enregistrer le soin' }}</button></div>
         </form>
       }
@@ -76,9 +77,11 @@
         <div class="treatment-empty" role="status">Chargement de l’historique des soins…</div>
       } @else if (!treatments().length && !treatmentsError()) {
         <div class="treatment-empty"><strong>Aucun soin enregistré pour ce patient</strong><p>Ajoutez un soin prévu ou réalisé et sélectionnez les dents concernées pour commencer son historique dentaire.</p></div>
+      } @else if (!filteredTreatments().length) {
+        <div class="treatment-empty"><strong>Aucun soin associé aux dents sélectionnées</strong><p>Essayez d’autres dents ou affichez l’historique complet.</p><button class="secondary-button" type="button" (click)="selectedTeeth.set([])">Afficher tout l’historique</button></div>
       } @else {
         <div class="treatment-timeline">
-          @for (treatment of treatments(); track treatment.id) {
+          @for (treatment of filteredTreatments(); track treatment.id) {
             <article class="treatment-record">
               <div class="treatment-record-header">
                 <div><h3>{{ treatment.title }}</h3><p>{{ treatmentCategoryLabel(treatment.category) }} · {{ treatment.status === 'COMPLETED' ? 'Réalisé le ' + formatTreatmentDate(treatment.performedAt) : 'Enregistré le ' + formatTreatmentDate(treatment.createdAt) }}</p></div>
