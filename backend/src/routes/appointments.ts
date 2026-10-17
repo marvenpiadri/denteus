@@ -28,6 +28,8 @@ interface CreateAppointmentBody {
 interface RescheduleBody {
   startsAt: string;
   endsAt: string;
+  providerId?: string | null;
+  operatoryId?: string | null;
 }
 interface StatusBody {
   status: 'CONFIRMED' | 'ARRIVED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
@@ -64,6 +66,8 @@ const rescheduleSchema = {
   properties: {
     startsAt: { type: 'string', format: 'date-time' },
     endsAt: { type: 'string', format: 'date-time' },
+    providerId: { anyOf: [{ type: 'string', minLength: 1, maxLength: 100 }, { type: 'null' }] },
+    operatoryId: { anyOf: [{ type: 'string', minLength: 1, maxLength: 100 }, { type: 'null' }] },
   },
 } as const;
 
@@ -479,7 +483,13 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
           [request.params.organizationId, request.params.clinicId, request.params.appointmentId],
         );
         const resource = assigned.rows[0];
-        if (resource?.providerId && resource.operatoryId) {
+        const providerId = request.body.providerId !== undefined ? request.body.providerId : resource?.providerId ?? null;
+        const operatoryId = request.body.operatoryId !== undefined ? request.body.operatoryId : resource?.operatoryId ?? null;
+        if ((providerId && !operatoryId) || (!providerId && operatoryId)) {
+          await client.query('ROLLBACK'); transactionOpen = false;
+          return reply.code(400).send({ error: { code: 'RESOURCE_ASSIGNMENT_REQUIRED', message: 'Choisissez à la fois un praticien et un fauteuil, ou laissez les deux champs vides.' } });
+        }
+        if (providerId && operatoryId) {
           const availability = await client.query(
             `SELECT
                EXISTS (
@@ -493,6 +503,7 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
                    AND ($3::timestamptz AT TIME ZONE c.timezone)::time >= h.starts_at
                    AND ($4::timestamptz AT TIME ZONE c.timezone)::time <= h.ends_at
                ) AS provider_available,
+               EXISTS (SELECT 1 FROM clinic_operatories o WHERE o.organization_id = $1 AND o.clinic_id = $2 AND o.id = $7 AND o.active) AS operatory_available,
                EXISTS (SELECT 1 FROM appointments a WHERE a.organization_id = $1 AND a.clinic_id = $2
                  AND a.id <> $6 AND a.status NOT IN ('CANCELLED', 'NO_SHOW') AND a.provider_id = $5
                  AND a.starts_at < $4::timestamptz AND a.ends_at > $3::timestamptz) AS provider_conflict,
@@ -500,25 +511,26 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
                  AND a.id <> $6 AND a.status NOT IN ('CANCELLED', 'NO_SHOW') AND a.operatory_id = $7
                  AND a.starts_at < $4::timestamptz AND a.ends_at > $3::timestamptz) AS operatory_conflict`,
             [request.params.organizationId, request.params.clinicId, request.body.startsAt, request.body.endsAt,
-              resource.providerId, request.params.appointmentId, resource.operatoryId],
+              providerId, request.params.appointmentId, operatoryId],
           );
           const result = availability.rows[0];
-          if (!result.provider_available || result.provider_conflict || result.operatory_conflict) {
+          if (!result.provider_available || !result.operatory_available || result.provider_conflict || result.operatory_conflict) {
             await client.query('ROLLBACK'); transactionOpen = false;
             return reply.code(409).send({ error: { code: 'RESOURCE_CONFLICT', message: !result.provider_available
               ? 'Le praticien ne travaille pas à cette heure.'
-              : result.provider_conflict ? 'Le praticien a déjà un rendez-vous sur ce créneau.'
-                : 'Le fauteuil a déjà un rendez-vous sur ce créneau.' } });
+              : !result.operatory_available ? 'Le fauteuil sélectionné n’est pas disponible.'
+                : result.provider_conflict ? 'Le praticien a déjà un rendez-vous sur ce créneau.'
+                  : 'Le fauteuil a déjà un rendez-vous sur ce créneau.' } });
           }
         }
 
         await client.query(
           `
             UPDATE appointments
-            SET starts_at = $4::timestamptz, ends_at = $5::timestamptz, updated_at = clock_timestamp()
+            SET starts_at = $4::timestamptz, ends_at = $5::timestamptz, provider_id = $6, operatory_id = $7, updated_at = clock_timestamp()
             WHERE organization_id = $1 AND clinic_id = $2 AND id = $3
           `,
-          [request.params.organizationId, request.params.clinicId, request.params.appointmentId, request.body.startsAt, request.body.endsAt],
+          [request.params.organizationId, request.params.clinicId, request.params.appointmentId, request.body.startsAt, request.body.endsAt, providerId, operatoryId],
         );
         await client.query(
           `
@@ -530,12 +542,12 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
             request.params.organizationId,
             access.userId,
             request.params.appointmentId,
-            JSON.stringify({ clinicId: request.params.clinicId, startsAt: request.body.startsAt, endsAt: request.body.endsAt, providerId: resource?.providerId ?? null, operatoryId: resource?.operatoryId ?? null }),
+            JSON.stringify({ clinicId: request.params.clinicId, startsAt: request.body.startsAt, endsAt: request.body.endsAt, providerId, operatoryId }),
           ],
         );
         await client.query('COMMIT');
         transactionOpen = false;
-        return { data: { id: request.params.appointmentId, startsAt: request.body.startsAt, endsAt: request.body.endsAt } };
+        return { data: { id: request.params.appointmentId, startsAt: request.body.startsAt, endsAt: request.body.endsAt, providerId, operatoryId } };
       } catch (error) {
         if (transactionOpen) await client.query('ROLLBACK');
         throw error;
