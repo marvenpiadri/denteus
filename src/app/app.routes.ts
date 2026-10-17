@@ -6,6 +6,7 @@ import { SignUpPageComponent } from './features/auth/sign-up-page.component';
 import { ClinicOnboardingPageComponent } from './features/onboarding/clinic-onboarding-page.component';
 import { WorkspacePageComponent } from './features/workspace/workspace-page.component';
 import { PatientListPageComponent } from './features/patients/patient-list-page.component';
+import { PatientDetailPageComponent } from './features/patients/patient-detail-page.component';
 
 export const routes: Routes = [
   {
@@ -63,6 +64,11 @@ export const routes: Routes = [
         path: 'patients',
         component: PatientListPageComponent,
         title: 'Patients | Dentaleus',
+      },
+      {
+        path: 'patients/:patientId',
+        component: PatientDetailPageComponent,
+        title: 'Dossier patient | Dentaleus',
       },
       {
         path: 'clinical',
