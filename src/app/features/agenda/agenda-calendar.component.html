@@ -2,7 +2,7 @@
   <header class="calendar-heading">
     <div>
       <h2 id="calendar-heading">Planning de la journée</h2>
-      <p>Les conflits de patient, praticien et fauteuil affectés sont vérifiés par le serveur lors de l’enregistrement.</p>
+      <p>Les rendez-vous sont positionnés selon leur heure de début et leur durée. Les conflits de patient, praticien et fauteuil affectés sont vérifiés par le serveur lors de l’enregistrement.</p>
     </div>
     <div class="calendar-controls">
       <div class="view-switch" role="group" aria-label="Vue du planning">
@@ -22,32 +22,43 @@
           <span class="resource-column-heading" [class.unassigned-heading]="column.kind === 'unassigned'">{{ column.label }}</span>
         }
       </div>
-      @for (hour of hours; track hour) {
-        <div class="time-row" [style.gridTemplateColumns]="'74px repeat(' + resourceCount + ', minmax(180px, 1fr))'">
-          <div class="hour-label">{{ hour.toString().padStart(2, '0') }}:00</div>
-          @for (column of columns(); track column.key) {
-            <div class="hour-content">
-              @for (appointment of appointmentsAt(hour, column); track appointment.id) {
-                <button
-                  type="button"
-                  class="calendar-appointment"
-                  [class.is-cancelled]="appointment.status === 'CANCELLED' || appointment.status === 'NO_SHOW'"
-                  [class.is-active]="appointment.status === 'ARRIVED' || appointment.status === 'IN_PROGRESS'"
-                  [class.is-completed]="appointment.status === 'COMPLETED'"
-                  (click)="appointmentSelected.emit(appointment)"
-                  [attr.aria-label]="'Modifier le créneau de ' + patientName(appointment) + ', ' + time(appointment.startsAt) + ' à ' + time(appointment.endsAt)">
-                  <span class="event-time">{{ time(appointment.startsAt) }}–{{ time(appointment.endsAt) }}</span>
-                  <strong>{{ patientName(appointment) || 'Patient' }}</strong>
-                  <span class="event-detail">{{ appointment.reason || 'Motif non précisé' }} · {{ statusLabel(appointment.status) }}@if (appointment.providerName && viewMode() !== 'provider') { · {{ appointment.providerName }} }@if (appointment.operatoryName && viewMode() !== 'operatory') { · {{ appointment.operatoryName }} }</span>
-                </button>
-              }
-              <button type="button" class="empty-slot" (click)="selectSlot(hour, column)" [disabled]="loading" [attr.aria-label]="'Préremplir un rendez-vous à ' + hour.toString().padStart(2, '0') + ':00 pour ' + column.label">
-                <span>+</span> {{ hour.toString().padStart(2, '0') }}:00
-              </button>
-            </div>
+      <div class="calendar-day-grid" [style.gridTemplateColumns]="'74px repeat(' + resourceCount + ', minmax(180px, 1fr))'">
+        <div class="time-ruler">
+          @for (hour of hours; track hour) {
+            <button type="button" class="time-ruler-slot" (click)="selectSlot(hour, columns()[0])" [disabled]="loading" [attr.aria-label]="'Préremplir un rendez-vous à ' + hour.toString().padStart(2, '0') + ':00">
+              <span>{{ hour.toString().padStart(2, '0') }}:00</span>
+            </button>
           }
         </div>
-      }
+        @for (column of columns(); track column.key) {
+          <div class="resource-lane" [attr.aria-label]="'Planning : ' + column.label">
+            @for (hour of hours; track hour) {
+              <button type="button" class="lane-hour-action" [style.top.px]="(hour - 7) * 60" (click)="selectSlot(hour, column)" [disabled]="loading" [attr.aria-label]="'Préremplir un rendez-vous à ' + hour.toString().padStart(2, '0') + ':00 pour ' + column.label"><span>+</span></button>
+            }
+            @for (item of positionedAppointments(column); track item.appointment.id) {
+              <button
+                type="button"
+                class="calendar-appointment"
+                [class.is-cancelled]="item.appointment.status === 'CANCELLED' || item.appointment.status === 'NO_SHOW'"
+                [class.is-active]="item.appointment.status === 'ARRIVED' || item.appointment.status === 'IN_PROGRESS'"
+                [class.is-completed]="item.appointment.status === 'COMPLETED'"
+                [class.is-compact]="item.heightPx < 46"
+                [style.top.px]="item.topPx"
+                [style.height.px]="item.heightPx"
+                [style.left.%]="item.leftPct"
+                [style.width.%]="item.widthPct"
+                (click)="appointmentSelected.emit(item.appointment)"
+                [attr.aria-label]="'Modifier le créneau de ' + patientName(item.appointment) + ', ' + time(item.appointment.startsAt) + ' à ' + time(item.appointment.endsAt)">
+                <span class="event-time">{{ time(item.appointment.startsAt) }}–{{ time(item.appointment.endsAt) }}</span>
+                <strong>{{ patientName(item.appointment) || 'Patient' }}</strong>
+                @if (item.heightPx >= 46) {
+                  <span class="event-detail">{{ item.appointment.reason || 'Motif non précisé' }} · {{ statusLabel(item.appointment.status) }}@if (item.appointment.providerName && viewMode() !== 'provider') { · {{ item.appointment.providerName }} }@if (item.appointment.operatoryName && viewMode() !== 'operatory') { · {{ item.appointment.operatoryName }} }</span>
+                }
+              </button>
+            }
+          </div>
+        }
+      </div>
     </div>
   </div>
   <footer class="calendar-legend">
