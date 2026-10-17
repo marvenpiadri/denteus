@@ -81,6 +81,7 @@
       <div class="card-heading"><div><h2 id="new-appointment-title">Nouveau rendez-vous</h2><p>La durée doit être comprise entre 5 minutes et 8 heures. Le serveur vérifie les conflits de patient, praticien et fauteuil.</p></div><button type="button" class="close-button" (click)="showCreateForm.set(false)" aria-label="Fermer le formulaire">×</button></div>
       @if (formError()) { <div class="error-message" role="alert">{{ formError() }}</div> }
       @if (patientsError()) { <div class="error-message" role="alert">{{ patientsError() }} <button type="button" (click)="retryPatientOptions()">Réessayer</button></div> }
+      @if (resourceError()) { <div class="error-message" role="alert">{{ resourceError() }} <button type="button" (click)="retryResources()">Réessayer</button></div> }
       <form (ngSubmit)="createAppointment()" #appointmentForm="ngForm">
         <div class="form-grid">
           <div class="wide-field"><label for="patientId">Patient *</label><select id="patientId" name="patientId" [(ngModel)]="patientId" required [disabled]="loadingPatients()"><option value="" disabled>{{ loadingPatients() ? 'Chargement des patients…' : 'Sélectionner un patient' }}</option>@for (patient of patients(); track patient.id) { <option [value]="patient.id">{{ patient.lastName }} {{ patient.firstName }} · {{ patient.patientNumber }}</option> }</select><small>Seuls les patients autorisés dans la clinique active sont proposés.</small></div>
@@ -90,7 +91,7 @@
           <div><label for="endsAt">Fin *</label><input id="endsAt" name="endsAt" type="datetime-local" [(ngModel)]="endsAt" required></div>
           <div class="wide-field"><label for="reason">Motif (facultatif)</label><input id="reason" name="reason" [(ngModel)]="reason" maxlength="300" placeholder="Ex. contrôle, consultation, suivi"></div>
         </div>
-        <div class="form-actions"><button type="button" class="secondary-button" (click)="showCreateForm.set(false)" [disabled]="saving()">Annuler</button><button type="submit" class="primary-button" [disabled]="appointmentForm.invalid || saving() || loadingPatients() || !patients().length">{{ saving() ? 'Enregistrement…' : 'Enregistrer le rendez-vous' }}</button></div>
+        <div class="form-actions"><button type="button" class="secondary-button" (click)="showCreateForm.set(false)" [disabled]="saving()">Annuler</button><button type="submit" class="primary-button" [disabled]="appointmentForm.invalid || saving() || loadingPatients() || loadingResources() || !!resourceError() || !patients().length">{{ saving() ? 'Enregistrement…' : 'Enregistrer le rendez-vous' }}</button></div>
       </form>
     </section>
   }
@@ -139,7 +140,7 @@
                 <label [for]="'reschedule-provider-' + appointment.id">Praticien</label><select [id]="'reschedule-provider-' + appointment.id" name="rescheduleProvider" [(ngModel)]="rescheduleProviderId" [required]="providers().length > 0 || operatories().length > 0"><option value="">Non affecté</option>@for (provider of providers(); track provider.id) { <option [value]="provider.id">{{ provider.displayName }}</option> }</select>
                 <label [for]="'reschedule-operatory-' + appointment.id">Fauteuil</label><select [id]="'reschedule-operatory-' + appointment.id" name="rescheduleOperatory" [(ngModel)]="rescheduleOperatoryId" [required]="providers().length > 0 || operatories().length > 0"><option value="">Non affecté</option>@for (operatory of operatories(); track operatory.id) { <option [value]="operatory.id">{{ operatory.name }}</option> }</select>
                 @if (rescheduleError()) { <p class="inline-error" role="alert">{{ rescheduleError() }}</p> }
-                <div class="reschedule-actions"><button type="button" class="secondary-button" (click)="reschedulingId.set(null)" [disabled]="saving()">Annuler</button><button type="submit" class="primary-button" [disabled]="saving()">{{ saving() ? 'Déplacement…' : 'Confirmer le déplacement' }}</button></div>
+                <div class="reschedule-actions"><button type="button" class="secondary-button" (click)="reschedulingId.set(null)" [disabled]="saving()">Annuler</button><button type="submit" class="primary-button" [disabled]="saving() || loadingResources() || !!resourceError()">{{ saving() ? 'Déplacement…' : 'Confirmer le déplacement' }}</button></div>
               </form>
             }
           </article>
