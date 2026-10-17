@@ -2,14 +2,14 @@
   <header class="calendar-heading">
     <div>
       <h2 id="calendar-heading">Planning de la journée</h2>
-      <p>Choisissez un créneau libre pour planifier un rendez-vous. Les rendez-vous sont affichés dans le fuseau de la clinique.</p>
+      <p>Choisissez une heure pour préremplir le formulaire de rendez-vous. La disponibilité du praticien et du fauteuil n’est pas encore vérifiée.</p>
     </div>
     <span class="calendar-range">07:00–20:00</span>
   </header>
 
   <div class="calendar-scroll" [attr.aria-busy]="loading">
     <div class="time-grid">
-      <div class="time-grid-header"><span>Heure</span><span>Rendez-vous · sélectionner un créneau libre pour ajouter</span></div>
+      <div class="time-grid-header"><span>Heure</span><span>Rendez-vous · choisir une heure pour préremplir le formulaire</span></div>
       @for (hour of hours; track hour) {
         <div class="time-row">
           <div class="hour-label">{{ hour.toString().padStart(2, '0') }}:00</div>
