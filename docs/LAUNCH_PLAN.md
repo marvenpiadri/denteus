@@ -51,8 +51,9 @@ Acceptance: agreed data model and launch checklist; no Dali-specific identity in
 - Keep Angular SSR as the frontend application and establish a separately runnable Fastify + TypeScript API.
 - Use PostgreSQL through `pg`; manage schema changes with versioned, transactional SQL migrations. Do not use Prisma or another mandatory ORM.
 - Add environment configuration, safe health/readiness endpoints, connection pooling and graceful shutdown.
-- Implement authentication and server-derived user identity.
-- Enforce organization and clinic membership on every private API route.
+- Implement Better Auth email/password sessions with PostgreSQL-backed session storage.
+- Derive user identity from the server-validated session; never trust user IDs supplied in request bodies or query strings.
+- Enforce organization and clinic membership on every private API route before adding patient endpoints.
 - Replace demo patient/odontogram storage with database repositories.
 - Remove production dependence on hardcoded demo records.
 - Add automated tests for cross-organization and cross-clinic access denial.
@@ -119,6 +120,6 @@ Acceptance: public SEO pages contain only public-safe, accurate information; pri
 
 1. Complete the standalone Fastify backend foundation and run its TypeScript checks.
 2. Review and test the initial SQL migration against a real PostgreSQL instance.
-3. Implement authentication and server-derived organization/clinic permissions before exposing patient endpoints.
+3. Implement server-derived organization/clinic membership authorization and test it before exposing patient endpoints.
 4. Add secure Fastify patient and odontogram endpoints and configure the frontend API origin only after authentication and tenant authorization are in place.
 5. Add integration tests for persistence, authentication and tenant isolation before the pilot uses real data.
