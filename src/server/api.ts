@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { getOdontogram, saveOdontogram } from './backend/odontogram-store';
+import { checkDatabaseConnection } from './backend/database';
 
 export const apiRouter = Router();
 
@@ -38,6 +39,20 @@ apiRouter.get('/health', (req: Request, res: Response) => {
     locale: 'fr',
     timestamp: new Date().toISOString(),
   });
+});
+
+// Database readiness check. Does not disclose credentials or database errors.
+apiRouter.get('/health/database', async (_req: Request, res: Response) => {
+  try {
+    await checkDatabaseConnection();
+    return res.json({ status: 'ok', database: 'connected' });
+  } catch {
+    return res.status(503).json({
+      status: 'unavailable',
+      database: 'disconnected',
+      error: { code: 'DATABASE_UNAVAILABLE', message: 'Database is not available.' },
+    });
+  }
 });
 
 // Patients API
