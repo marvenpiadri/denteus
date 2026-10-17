@@ -19,6 +19,7 @@ test('tenant constraints isolate clinics and odontogram data persists across con
   const clinicB = `clinic-b-${suffix}`;
   const patientId = `patient-${suffix}`;
   const appointmentId = `appointment-${suffix}`;
+  const recallId = `recall-${suffix}`;
 
   const writer = await pool.connect();
   let committed = false;
@@ -97,6 +98,30 @@ test('tenant constraints isolate clinics and odontogram data persists across con
       ],
     );
 
+    await writer.query(
+      `INSERT INTO patient_recalls (id, organization_id, clinic_id, patient_id, recall_type, due_on, interval_months, created_by_id)
+       VALUES ($1, $2, $3, $4, $5, $6::date, $7, $8)`,
+      [recallId, orgA, clinicA, patientId, 'Periodic check-up', '2026-10-17', 6, userId],
+    );
+    await writer.query(
+      `INSERT INTO patient_recall_events (id, organization_id, clinic_id, recall_id, user_id, event_type, to_status)
+       VALUES ($1, $2, $3, $4, $5, 'CREATED', 'DUE')`,
+      [`recall-event-${suffix}`, orgA, clinicA, recallId, userId],
+    );
+
+    await writer.query('SAVEPOINT expected_recall_scope_failure');
+    await assert.rejects(
+      writer.query(
+        `INSERT INTO patient_recall_events (id, organization_id, clinic_id, recall_id, user_id, event_type)
+         VALUES ($1, $2, $3, $4, $5, 'NOTE_ADDED')`,
+        [`bad-recall-event-${suffix}`, orgA, clinicA2, recallId, userId],
+      ),
+      (error: unknown) => (error as { code?: string }).code === '23503',
+      'recall history cannot be attached to a different clinic',
+    );
+    await writer.query('ROLLBACK TO SAVEPOINT expected_recall_scope_failure');
+    await writer.query('RELEASE SAVEPOINT expected_recall_scope_failure');
+
     await writer.query('SAVEPOINT expected_appointment_scope_failure');
     await assert.rejects(
       writer.query(
@@ -137,6 +162,19 @@ test('tenant constraints isolate clinics and odontogram data persists across con
       );
       assert.equal(appointmentReadBack.rows[0]?.status, 'SCHEDULED');
       assert.equal(appointmentReadBack.rows[0]?.reason, 'Integration test');
+
+      const recallReadBack = await reader.query(
+        'SELECT status, recall_type FROM patient_recalls WHERE organization_id = $1 AND clinic_id = $2 AND id = $3',
+        [orgA, clinicA, recallId],
+      );
+      assert.equal(recallReadBack.rows[0]?.status, 'DUE');
+      assert.equal(recallReadBack.rows[0]?.recall_type, 'Periodic check-up');
+      const recallEventReadBack = await reader.query(
+        'SELECT event_type, to_status FROM patient_recall_events WHERE organization_id = $1 AND clinic_id = $2 AND recall_id = $3',
+        [orgA, clinicA, recallId],
+      );
+      assert.equal(recallEventReadBack.rows[0]?.event_type, 'CREATED');
+      assert.equal(recallEventReadBack.rows[0]?.to_status, 'DUE');
     } finally {
       reader.release();
     }
