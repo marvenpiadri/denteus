@@ -28,6 +28,9 @@ export class RecallApiService {
     const response = await firstValueFrom(this.http.post<CreateResponse>(this.url(org, clinic), input, { withCredentials: true }));
     return response.data;
   }
+  async changeStatus(org: string, clinic: string, recallId: string, status: RecallStatus): Promise<void> {
+    await firstValueFrom(this.http.patch(`${this.url(org, clinic)}/${encodeURIComponent(recallId)}/status`, { status }, { withCredentials: true }));
+  }
   async recordContact(org: string, clinic: string, recallId: string, input: { contactMethod: string; outcome: string; note?: string }): Promise<void> {
     await firstValueFrom(this.http.post(`${this.url(org, clinic)}/${encodeURIComponent(recallId)}/contacts`, input, { withCredentials: true }));
   }
