@@ -7,7 +7,7 @@ export interface PatientRecall {
   id: string; patientId: string; patientNumber: string; patientFirstName: string; patientLastName: string;
   patientPhone: string | null; recallType: string; dueOn: string; previousCompletedOn: string | null;
   intervalMonths: number; status: RecallStatus; preferredContactMethod: string | null;
-  lastContactedAt: string | null; note: string | null;
+  lastContactedAt: string | null; note: string | null; contactAttempts: number; lastContactOutcome: string | null;
 }
 interface ListResponse { data: PatientRecall[]; count: number }
 interface CreateResponse { data: { id: string; status: RecallStatus } }
