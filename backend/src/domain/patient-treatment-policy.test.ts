@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { canTransitionTreatmentStatus, isValidFdiTooth, isValidToothSurface } from './patient-treatment-policy.js';
+import { canTransitionTreatmentStatus, isValidFdiTooth, isValidToothSurface, isValidToothSurfaceForTooth } from './patient-treatment-policy.js';
 
 test('FDI tooth validation accepts permanent and primary teeth only', () => {
   for (const tooth of [11, 18, 21, 28, 31, 38, 41, 48, 51, 55, 61, 65, 71, 75, 81, 85]) {
@@ -14,8 +14,14 @@ test('FDI tooth validation accepts permanent and primary teeth only', () => {
 test('tooth surface validation rejects unknown surface names', () => {
   assert.equal(isValidToothSurface('WHOLE'), true);
   assert.equal(isValidToothSurface('PALATAL'), true);
+  assert.equal(isValidToothSurface('INCISAL'), true);
   assert.equal(isValidToothSurface('MESIAL'), true);
   assert.equal(isValidToothSurface('GINGIVAL'), false);
+  assert.equal(isValidToothSurfaceForTooth(11, 'INCISAL'), true);
+  assert.equal(isValidToothSurfaceForTooth(36, 'OCCLUSAL'), true);
+  assert.equal(isValidToothSurfaceForTooth(11, 'OCCLUSAL'), false);
+  assert.equal(isValidToothSurfaceForTooth(36, 'INCISAL'), false);
+  assert.equal(isValidToothSurfaceForTooth(36, 'PALATAL'), false);
 });
 
 test('treatment status transitions preserve completed and declined history', () => {
