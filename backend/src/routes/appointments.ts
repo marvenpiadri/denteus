@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { FastifyPluginAsync, FastifyReply } from 'fastify';
-import { canManagePatients, denyInsufficientRole, requireClinicAccess } from '../auth/authorization.js';
+import { denyInsufficientRole, requireClinicAccess } from '../auth/authorization.js';
+import type { PoolClient } from 'pg';
 import { pool } from '../db/pool.js';
 
 interface ClinicParams {
@@ -116,7 +117,7 @@ function validDuration(startsAt: string, endsAt: string): boolean {
   return Number.isFinite(start) && Number.isFinite(end) && duration >= 5 * 60_000 && duration <= 8 * 60 * 60_000;
 }
 
-async function lockClinicSchedule(client: { query: (sql: string, values?: unknown[]) => Promise<unknown> }, organizationId: string, clinicId: string): Promise<void> {
+async function lockClinicSchedule(client: PoolClient, organizationId: string, clinicId: string): Promise<void> {
   await client.query('SELECT pg_advisory_xact_lock(hashtext($1), hashtext($2))', [organizationId, clinicId]);
 }
 
@@ -200,11 +201,12 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
             WHERE organization_id = $1
               AND clinic_id = $2
               AND status NOT IN ('CANCELLED', 'NO_SHOW')
+              AND patient_id = $5
               AND starts_at < $4::timestamptz
               AND ends_at > $3::timestamptz
             LIMIT 1
           `,
-          [request.params.organizationId, request.params.clinicId, request.body.startsAt, request.body.endsAt],
+          [request.params.organizationId, request.params.clinicId, request.body.startsAt, request.body.endsAt, request.body.patientId],
         );
         if (overlap.rowCount) {
           await client.query('ROLLBACK');
@@ -288,9 +290,9 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
         await client.query('BEGIN');
         transactionOpen = true;
         await lockClinicSchedule(client, request.params.organizationId, request.params.clinicId);
-        const current = await client.query<{ status: AppointmentStatus }>(
+        const current = await client.query<{ status: AppointmentStatus; patientId: string }>(
           `
-            SELECT status
+            SELECT status, patient_id AS "patientId"
             FROM appointments
             WHERE organization_id = $1 AND clinic_id = $2 AND id = $3
             FOR UPDATE
@@ -401,13 +403,14 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
             SELECT 1 FROM appointments
             WHERE organization_id = $1
               AND clinic_id = $2
-              AND id <> $5
+              AND patient_id = $5
+              AND id <> $6
               AND status NOT IN ('CANCELLED', 'NO_SHOW')
               AND starts_at < $4::timestamptz
               AND ends_at > $3::timestamptz
             LIMIT 1
           `,
-          [request.params.organizationId, request.params.clinicId, request.body.startsAt, request.body.endsAt, request.params.appointmentId],
+          [request.params.organizationId, request.params.clinicId, request.body.startsAt, request.body.endsAt, current.rows[0].patientId, request.params.appointmentId],
         );
         if (overlap.rowCount) {
           await client.query('ROLLBACK');
