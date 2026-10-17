@@ -2,13 +2,14 @@ import { DatePipe, isPlatformBrowser } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { TenantContextService } from '../../core/tenant/tenant-context.service';
 import { PatientApiService } from './patient-api.service';
 import type { CreatePatientInput, PatientRecord } from './patient-api.service';
 
 @Component({
   selector: 'app-patient-list-page',
-  imports: [FormsModule, DatePipe],
+  imports: [FormsModule, DatePipe, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './patient-list-page.component.html',
   styleUrl: './patient-list-page.component.css',
