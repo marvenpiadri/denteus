@@ -6,18 +6,11 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import {join} from 'node:path';
-import { apiRouter } from './server/api';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
 const angularApp = new AngularNodeAppEngine();
-
-// JSON body parser for API requests
-app.use(express.json());
-
-// Mount Dentaleus REST API under /api/v1
-app.use('/api/v1', apiRouter);
 
 /**
  * Serve static files from /browser
@@ -32,7 +25,7 @@ app.use(
 
 
 /**
- * Handle all other requests by rendering the Angular application.
+ * Render the Angular application. The API runs as an independent Fastify service.
  */
 app.use((req, res, next) => {
   angularApp
@@ -54,7 +47,7 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
       throw error;
     }
 
-    console.log(`Node Express server listening on http://localhost:${port}`);
+    console.log(`Dentaleus Angular SSR server listening on http://localhost:${port}`);
   });
 }
 
