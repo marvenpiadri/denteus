@@ -75,12 +75,16 @@ export class AgendaCalendarComponent {
     const result: PositionedCalendarAppointment[] = [];
     let cursor = 0;
     while (cursor < matching.length) {
-      const cluster = [matching[cursor]];
-      let clusterEnd = matching[cursor].end;
+      const first = matching[cursor];
+      if (!first) break;
+      const cluster = [first];
+      let clusterEnd = first.end;
       let next = cursor + 1;
-      while (next < matching.length && matching[next].start < clusterEnd) {
-        cluster.push(matching[next]);
-        clusterEnd = Math.max(clusterEnd, matching[next].end);
+      while (next < matching.length) {
+        const candidate = matching[next];
+        if (!candidate || candidate.start >= clusterEnd) break;
+        cluster.push(candidate);
+        clusterEnd = Math.max(clusterEnd, candidate.end);
         next++;
       }
       const laneEnds: number[] = [];
@@ -131,15 +135,6 @@ export class AgendaCalendarComponent {
     const hour = Number(parts.find((part) => part.type === 'hour')?.value ?? 0);
     const minute = Number(parts.find((part) => part.type === 'minute')?.value ?? 0);
     return hour * 60 + minute;
-  }
-
-  localHour(value: string): number {
-    const parts = new Intl.DateTimeFormat('en-GB', {
-      timeZone: this.timeZone,
-      hour: '2-digit',
-      hourCycle: 'h23',
-    }).formatToParts(new Date(value));
-    return Number(parts.find((part) => part.type === 'hour')?.value ?? 0);
   }
 
   time(value: string): string {
