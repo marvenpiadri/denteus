@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import Fastify from 'fastify';
 import { checkDatabaseConnection, pool } from './db/pool.js';
 
