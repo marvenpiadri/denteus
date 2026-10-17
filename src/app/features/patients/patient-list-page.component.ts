@@ -3,7 +3,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TenantContextService } from '../../core/tenant/tenant-context.service';
-import { CreatePatientInput, PatientApiService, PatientRecord } from './patient-api.service';
+import { PatientApiService } from './patient-api.service';
+import type { CreatePatientInput, PatientRecord } from './patient-api.service';
 
 @Component({
   selector: 'app-patient-list-page',
