@@ -1,11 +1,11 @@
 /**
- * Denteus clinical backend boundary.
+ * Dentaleus clinical backend boundary.
  *
  * This module intentionally contains no Express/Angular code. It can be moved
  * into the future standalone Node/Fastify server without changing the clinical
  * data contract.
  *
- * The odontogram library is the clinical chart engine. Denteus stores its
+ * The odontogram library is the clinical chart engine. Dentaleus stores its
  * versioned JSON status/plan payloads as the canonical dental chart, while
  * treatment-plan records remain separate for billing, scheduling and workflow.
  */
