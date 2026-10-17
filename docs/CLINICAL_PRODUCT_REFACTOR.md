@@ -1,6 +1,6 @@
 # Dentaleus clinical product refactor
 
-**Status:** Phase 0 / product and architecture reset  
+**Status:** Phases 0–2 foundation in progress; patient-list vertical slice started  
 **Branch:** `refactor/clinical-product-foundation`  
 **Product boundary:** authenticated CRM and public clinic Pages are separate experiences. The optional 3D dental atlas belongs only in a public clinic Page template; it is never a CRM feature.
 
