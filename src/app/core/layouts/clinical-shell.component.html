@@ -20,7 +20,7 @@
       <span class="context-icon" aria-hidden="true">⌂</span>
       <span>
         <strong>Clinique non sélectionnée</strong>
-        <small>Contexte à charger après connexion</small>
+        <small>Sélection de clinique à intégrer</small>
       </span>
     </div>
 
@@ -70,6 +70,9 @@
     </header>
 
     <main id="main-content" class="main-content">
+      @if (signOutError()) {
+        <div class="sign-out-error" role="alert">{{ signOutError() }}</div>
+      }
       <div class="foundation-notice" role="status">
         <span class="notice-icon" aria-hidden="true">i</span>
         <p><strong>Fondation en reconstruction.</strong> Les écrans sont reconstruits autour des données authentifiées. Aucun dossier fictif n’est affiché et cet espace ne doit pas encore être utilisé avec des données patient réelles.</p>
