@@ -1,0 +1,66 @@
+<section class="recalls-page" aria-labelledby="recalls-title">
+  <header class="page-heading">
+    <div><p class="eyebrow">CONTINUITÉ DES SOINS</p><h1 id="recalls-title">Rappels patients</h1><p class="page-description">Suivez les échéances de contrôle et consignez chaque tentative de contact. Aucun message n’est envoyé automatiquement.</p></div>
+    <button type="button" class="primary-button" (click)="openCreate()" [disabled]="!tenant.activeClinic()">+ Nouveau rappel</button>
+  </header>
+
+  @if (success()) { <div class="success-message" role="status">{{ success() }}</div> }
+  @if (error()) { <div class="error-message" role="alert">{{ error() }} <button type="button" (click)="tenant.load(true)">Réessayer</button></div> }
+
+  <section class="recall-filters" aria-label="Filtres des rappels">
+    <div><label for="recall-search">Rechercher un patient</label><input id="recall-search" type="search" [ngModel]="query()" (ngModelChange)="query.set($event)" placeholder="Nom ou numéro patient"></div>
+    <div><label for="recall-status">Statut</label><select id="recall-status" [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event)"><option value="">Tous les statuts</option><option value="DUE">À contacter</option><option value="CONTACTED">Contact tenté</option><option value="SCHEDULED">Rendez-vous planifié</option><option value="COMPLETED">Effectué</option><option value="DECLINED">Refusé</option><option value="INACTIVE">Inactif</option></select></div>
+    <span class="result-count">{{ recalls().length }} rappel{{ recalls().length > 1 ? 's' : '' }}</span>
+  </section>
+
+  @if (showCreateForm()) {
+    <section class="recall-form-card" aria-labelledby="new-recall-title">
+      <div class="card-heading"><div><h2 id="new-recall-title">Créer un rappel</h2><p>Créez une échéance de suivi pour un patient de la clinique active.</p></div><button type="button" class="close-button" (click)="showCreateForm.set(false)" aria-label="Fermer">×</button></div>
+      @if (formError()) { <div class="error-message" role="alert">{{ formError() }}</div> }
+      <form (ngSubmit)="createRecall()" #recallForm="ngForm">
+        <div class="form-grid">
+          <div class="wide-field"><label for="recall-patient">Patient *</label><select id="recall-patient" name="patientId" [(ngModel)]="patientId" required [disabled]="loadingPatients()"><option value="" disabled>Sélectionner un patient</option>@for (patient of patients(); track patient.id) { <option [value]="patient.id">{{ patient.lastName }} {{ patient.firstName }} · {{ patient.patientNumber }}</option> }</select></div>
+          <div><label for="recall-type">Type de rappel *</label><input id="recall-type" name="recallType" [(ngModel)]="recallType" required maxlength="100"></div>
+          <div><label for="recall-due">Date d’échéance *</label><input id="recall-due" name="dueOn" type="date" [(ngModel)]="dueOn" required></div>
+          <div><label for="recall-interval">Intervalle (mois)</label><input id="recall-interval" name="intervalMonths" type="number" [(ngModel)]="intervalMonths" min="1" max="120" required></div>
+          <div class="wide-field"><label for="recall-note">Note administrative (facultatif)</label><textarea id="recall-note" name="note" [(ngModel)]="note" rows="2" maxlength="2000"></textarea></div>
+        </div>
+        <div class="form-actions"><button type="button" class="secondary-button" (click)="showCreateForm.set(false)" [disabled]="saving()">Annuler</button><button type="submit" class="primary-button" [disabled]="recallForm.invalid || saving() || loadingPatients() || !patients().length">{{ saving() ? 'Enregistrement…' : 'Créer le rappel' }}</button></div>
+      </form>
+    </section>
+  }
+
+  <section class="recall-list" aria-label="Liste des rappels">
+    @if (loading() && !recalls().length) {
+      <div class="list-state" role="status">Chargement des rappels…</div>
+    } @else if (!recalls().length && !error()) {
+      <div class="empty-state"><span class="empty-icon" aria-hidden="true">↻</span><h2>Aucun rappel pour ces filtres</h2><p>Les rappels servent à organiser les contrôles et à garder une trace des suivis à effectuer.</p><button type="button" class="secondary-button" (click)="openCreate()">Créer un rappel</button></div>
+    } @else {
+      @for (recall of recalls(); track recall.id) {
+        <article class="recall-item">
+          <div class="due-date" [class.due-date--late]="dueLabel(recall.dueOn) === 'En retard'"><strong>{{ formatDate(recall.dueOn) }}</strong><span>{{ dueLabel(recall.dueOn) }}</span></div>
+          <div class="recall-main">
+            <div class="patient-line"><a [routerLink]="['/crm/patients', recall.patientId]">{{ recall.patientFirstName }} {{ recall.patientLastName }}</a><span class="patient-number">{{ recall.patientNumber }}</span></div>
+            <p class="recall-type">{{ recall.recallType }} · intervalle {{ recall.intervalMonths }} mois</p>
+            <div class="recall-meta"><span class="status-label" [attr.data-status]="recall.status">{{ statusLabel(recall.status) }}</span><span>Dernier contrôle : {{ formatDate(recall.previousCompletedOn) }}</span>@if (recall.lastContactedAt) { <span>Dernier contact : {{ recall.lastContactedAt | date:'dd/MM/yyyy HH:mm' }}</span> }</div>
+            @if (recall.note) { <p class="recall-note">{{ recall.note }}</p> }
+          </div>
+          <div class="recall-actions">
+            @if (recall.status === 'DUE' || recall.status === 'CONTACTED') { <button type="button" class="secondary-button" (click)="openContact(recall)">Consigner un contact</button> }
+            @if (recall.patientPhone) { <a class="contact-link" [href]="'tel:' + recall.patientPhone">Appeler le patient</a> }
+          </div>
+          @if (contactRecallId() === recall.id) {
+            <form class="contact-form" (ngSubmit)="saveContact(recall)">
+              <div><label [for]="'contact-method-' + recall.id">Canal *</label><select [id]="'contact-method-' + recall.id" name="contactMethod" [(ngModel)]="contactMethod" required><option value="PHONE">Téléphone</option><option value="SMS">SMS</option><option value="EMAIL">E-mail</option><option value="WHATSAPP">WhatsApp</option><option value="IN_PERSON">En personne</option><option value="UNKNOWN">Autre / inconnu</option></select></div>
+              <div><label [for]="'contact-outcome-' + recall.id">Résultat *</label><select [id]="'contact-outcome-' + recall.id" name="contactOutcome" [(ngModel)]="contactOutcome" required><option value="NO_ANSWER">Pas de réponse</option><option value="REACHED">Patient joint</option><option value="CALL_BACK">Rappeler plus tard</option><option value="BOOKED">Rendez-vous pris</option><option value="DECLINED">Patient refuse</option><option value="INVALID_CONTACT">Coordonnées invalides</option></select></div>
+              <div class="wide-field"><label [for]="'contact-note-' + recall.id">Note de suivi (facultatif)</label><input [id]="'contact-note-' + recall.id" name="contactNote" [(ngModel)]="contactNote" maxlength="2000"></div>
+              @if (contactError()) { <p class="inline-error" role="alert">{{ contactError() }}</p> }
+              <div class="form-actions"><button type="button" class="secondary-button" (click)="contactRecallId.set(null)" [disabled]="contactSaving()">Annuler</button><button type="submit" class="primary-button" [disabled]="contactSaving()">{{ contactSaving() ? 'Enregistrement…' : 'Enregistrer la tentative' }}</button></div>
+            </form>
+          }
+        </article>
+      }
+    }
+  </section>
+  <p class="privacy-note">Les tentatives de contact sont enregistrées dans l’historique interne. Cet écran ne déclenche pas de SMS, d’e-mail ou de message WhatsApp.</p>
+</section>
