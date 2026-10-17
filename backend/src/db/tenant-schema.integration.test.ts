@@ -18,33 +18,34 @@ test('tenant constraints isolate clinics, patients, and odontograms', async () =
   const clinicB = `clinic-b-${suffix}`;
   const patientId = `patient-${suffix}`;
 
+  const client = await pool.connect();
   try {
-    await pool.query('BEGIN');
-    await pool.query(
+    await client.query('BEGIN');
+    await client.query(
       'INSERT INTO app_users (id, name, email) VALUES ($1, $2, $3)',
       [userId, 'Integration Test', `${suffix}@example.invalid`],
     );
-    await pool.query(
+    await client.query(
       'INSERT INTO organizations (id, name, slug) VALUES ($1, $2, $3), ($4, $5, $6)',
       [orgA, 'Test Organization A', `test-a-${suffix}`, orgB, 'Test Organization B', `test-b-${suffix}`],
     );
-    await pool.query(
+    await client.query(
       'INSERT INTO organization_memberships (id, organization_id, user_id, role) VALUES ($1, $2, $3, $4)',
       [`membership-${suffix}`, orgA, userId, 'ORGANIZATION_OWNER'],
     );
-    await pool.query(
+    await client.query(
       'INSERT INTO clinics (id, organization_id, name) VALUES ($1, $2, $3), ($4, $5, $6)',
       [clinicA, orgA, 'Clinic A', clinicB, orgB, 'Clinic B'],
     );
-    await pool.query(
+    await client.query(
       'INSERT INTO clinic_memberships (id, organization_id, clinic_id, user_id, role) VALUES ($1, $2, $3, $4, $5)',
       [`clinic-membership-${suffix}`, orgA, clinicA, userId, 'ORGANIZATION_OWNER'],
     );
-    await pool.query(
+    await client.query(
       'INSERT INTO patients (id, organization_id, patient_number, first_name, last_name) VALUES ($1, $2, $3, $4, $5)',
       [patientId, orgA, `DEN-TEST-${suffix}`, 'Test', 'Patient'],
     );
-    await pool.query(
+    await client.query(
       'INSERT INTO patient_clinics (organization_id, patient_id, clinic_id) VALUES ($1, $2, $3)',
       [orgA, patientId, clinicA],
     );
@@ -66,22 +67,26 @@ test('tenant constraints isolate clinics, patients, and odontograms', async () =
       (error: unknown) => (error as { code?: string }).code === '23503',
       'an odontogram cannot associate a patient with a clinic from another organization',
     );
+    await client.query('ROLLBACK TO SAVEPOINT expected_odontogram_failure');
+    await client.query('RELEASE SAVEPOINT expected_odontogram_failure');
 
-    await pool.query(
+    await client.query(
       'INSERT INTO odontogram_records (id, organization_id, clinic_id, patient_id, status_payload) VALUES ($1, $2, $3, $4, $5::jsonb)',
       [`odonto-${suffix}`, orgA, clinicA, patientId, JSON.stringify({ '11': 'healthy' })],
     );
 
-    const readBack = await pool.query(
+    const readBack = await client.query(
       'SELECT status_payload FROM odontogram_records WHERE organization_id = $1 AND clinic_id = $2 AND patient_id = $3',
       [orgA, clinicA, patientId],
     );
     assert.deepEqual(readBack.rows[0]?.status_payload, { '11': 'healthy' });
 
-    await pool.query('ROLLBACK');
+    await client.query('ROLLBACK');
   } catch (error) {
-    try { await pool.query('ROLLBACK'); } catch { /* ignore rollback errors */ }
+    try { await client.query('ROLLBACK'); } catch { /* ignore rollback errors */ }
     throw error;
+  } finally {
+    client.release();
   }
 });
 
