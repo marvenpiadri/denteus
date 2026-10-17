@@ -88,6 +88,12 @@ export class PatientDetailPageComponent {
     }
   }
 
+  formatBirthDate(value: string | null): string {
+    if (!value) return 'Non renseignée';
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+    return match ? `${match[3]}/${match[2]}/${match[1]}` : value;
+  }
+
   async save(): Promise<void> {
     const clinic = this.tenant.activeClinic();
     const patient = this.patient();
