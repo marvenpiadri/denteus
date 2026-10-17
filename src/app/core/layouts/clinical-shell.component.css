@@ -45,3 +45,5 @@
 .sign-out-button{align-self:center;flex:none;padding:6px 7px;border:1px solid #e0e8ec;border-radius:6px;background:#fff;color:#627780;font-size:10px;font-weight:700}
 .sign-out-button:hover{border-color:#c4d8dc;background:#f5f8f9;color:#17343d}
 .sign-out-button:focus-visible{outline:3px solid #69b9b0;outline-offset:2px}
+
+.sign-out-error{margin-bottom:16px;padding:11px 14px;border:1px solid #f2b8b5;border-left:4px solid #b42318;border-radius:8px;background:#fef3f2;color:#7a271a;font-size:12px;line-height:1.6}
