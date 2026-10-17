@@ -50,9 +50,16 @@
         <span class="nav-icon" aria-hidden="true">⚙</span><span>Paramètres du cabinet</span>
       </a>
       <div class="session-placeholder">
-        <span class="session-avatar" aria-hidden="true">{{ userInitial }}</span>
-        <span class="session-copy"><strong>{{ sessions.user()?.name || sessions.user()?.email || 'Compte connecté' }}</strong><small>{{ sessions.user()?.email || 'Session vérifiée' }}</small></span>
-        <button class="sign-out-button" type="button" (click)="signOut()">Déconnexion</button>
+        @if (sessions.user(); as user) {
+          <span class="session-avatar" aria-hidden="true">{{ userInitial }}</span>
+          <span class="session-copy"><strong>{{ user.name || user.email }}</strong><small>{{ user.email }}</small></span>
+          <button class="sign-out-button" type="button" (click)="signOut()" [disabled]="signingOut()">
+            {{ signingOut() ? '…' : 'Déconnexion' }}
+          </button>
+        } @else {
+          <span class="session-avatar" aria-hidden="true">…</span>
+          <span class="session-copy"><strong>Vérification de session</strong><small>Aucune identité affichée côté serveur</small></span>
+        }
       </div>
     </div>
   </aside>
