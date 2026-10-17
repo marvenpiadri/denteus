@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { FastifyPluginAsync, FastifyReply } from 'fastify';
-import { denyInsufficientRole, requireClinicAccess } from '../auth/authorization.js';
+import { requireClinicAccess } from '../auth/authorization.js';
 import type { PoolClient } from 'pg';
 import { pool } from '../db/pool.js';
 
@@ -255,9 +255,7 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
           ],
         );
 
-        await client.query('COMMIT');
-        transactionOpen = false;
-        const created = await pool.query(
+        const created = await client.query(
           `
             SELECT ${appointmentSelect}
             FROM appointments a
@@ -266,6 +264,8 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
           `,
           [request.params.organizationId, request.params.clinicId, appointmentId],
         );
+        await client.query('COMMIT');
+        transactionOpen = false;
         return reply.code(201).send({ data: created.rows[0] });
       } catch (error) {
         if (transactionOpen) await client.query('ROLLBACK');
