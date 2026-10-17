@@ -150,6 +150,7 @@ CREATE TABLE patient_clinics (
   clinic_id text NOT NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (patient_id, clinic_id),
+  UNIQUE (organization_id, patient_id, clinic_id),
   FOREIGN KEY (organization_id, patient_id)
     REFERENCES patients(organization_id, id) ON DELETE CASCADE,
   FOREIGN KEY (organization_id, clinic_id)
@@ -173,7 +174,9 @@ CREATE TABLE odontogram_records (
   FOREIGN KEY (organization_id, clinic_id)
     REFERENCES clinics(organization_id, id) ON DELETE CASCADE,
   FOREIGN KEY (organization_id, patient_id)
-    REFERENCES patients(organization_id, id) ON DELETE CASCADE
+    REFERENCES patients(organization_id, id) ON DELETE CASCADE,
+  FOREIGN KEY (organization_id, patient_id, clinic_id)
+    REFERENCES patient_clinics(organization_id, patient_id, clinic_id) ON DELETE CASCADE
 );
 CREATE INDEX odontogram_records_org_clinic_idx ON odontogram_records(organization_id, clinic_id);
 
