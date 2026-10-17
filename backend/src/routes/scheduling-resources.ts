@@ -141,4 +141,23 @@ export const schedulingResourceRoutes: FastifyPluginAsync = async (app) => {
       return { data: result.rows[0] };
     },
   );
+
+  app.delete<{ Params: ProviderParams & { dayOfWeek: string } }>(
+    '/organizations/:organizationId/clinics/:clinicId/scheduling-resources/providers/:providerId/working-hours/:dayOfWeek',
+    async (request, reply) => {
+      const access = await requireClinicAccess(request, reply, request.params.organizationId, request.params.clinicId);
+      if (!access) return;
+      if (!canManageAppointments(access.effectiveRole)) return deny(reply);
+      const dayOfWeek = Number(request.params.dayOfWeek);
+      if (!Number.isInteger(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) {
+        return reply.code(400).send({ error: { code: 'INVALID_WEEKDAY', message: 'Jour de semaine invalide.' } });
+      }
+      await pool.query(
+        'DELETE FROM provider_working_hours WHERE organization_id = $1 AND clinic_id = $2 AND provider_id = $3 AND day_of_week = $4',
+        [request.params.organizationId, request.params.clinicId, request.params.providerId, dayOfWeek],
+      );
+      return reply.code(204).send();
+    },
+  );
+
 };
