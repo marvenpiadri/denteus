@@ -29,8 +29,8 @@ Target: a realistic, tested first-customer release by October 31, 2026. This is 
 
 - The old Angular root was a single tab-state prototype with an empty router. The refactor branch now has a route-driven clinical shell and explicit URLs for today's work, agenda, patients, clinical chart, team, reports and settings.
 - The new workspace intentionally shows no fictional patients, appointments, user identity or metrics while the authenticated API context is unavailable.
-- The old demo feature components and hardcoded services remain in the repository for inventory only; they are not mounted by the new root shell. They must be removed or rewritten in follow-up commits, not silently reused.
-- The old `TenantService` and `DentalDataService` contain hardcoded organizations, clinics, staff, patients, procedures and subscription plans. These are not an acceptable production source of truth.
+- The disconnected prototype feature components, hardcoded data services, mock tenancy state, and legacy tab-navigation components have been removed from the refactor branch. Clinical screens and domain types will be rebuilt against typed API contracts rather than ported wholesale.
+- The CRM global stylesheet no longer imports Tailwind utilities or the odontogram library stylesheet. The 3D atlas and its rendering styles are not part of the CRM application.
 - Fastify has Better Auth sessions, session-scoped organization listing, and PostgreSQL-backed patient and odontogram routes scoped to authorized organization/clinic paths. Backend CI has not yet been confirmed green.
 - The new frontend CI workflow currently reports failure without useful job-step logs; build/test validation remains unverified. Do not interpret this as a code-level failure or as a passing build until a runnable job provides logs.
 - Authentication/session UI, clinic onboarding, frontend API integration, appointment routes and appointment persistence remain incomplete. Do not use real patient data.
