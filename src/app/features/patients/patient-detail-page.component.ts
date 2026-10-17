@@ -11,6 +11,8 @@ import type { PatientRecord, UpdatePatientInput } from './patient-api.service';
 import { PatientTreatmentApiService } from './patient-treatment-api.service';
 import type { CreatePatientTreatmentInput, PatientTreatment, ToothSurface, TreatmentCategory, TreatmentStatus } from './patient-treatment-api.service';
 import { ToothSelectorComponent } from './tooth-selector.component';
+import { AppointmentApiService } from '../agenda/appointment-api.service';
+import type { AppointmentRecord, AppointmentStatus } from '../agenda/appointment-api.service';
 
 @Component({
   selector: 'app-patient-detail-page',
@@ -23,6 +25,7 @@ export class PatientDetailPageComponent {
   readonly tenant = inject(TenantContextService);
   private readonly api = inject(PatientApiService);
   private readonly treatmentApi = inject(PatientTreatmentApiService);
+  private readonly appointmentsApi = inject(AppointmentApiService);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly route = inject(ActivatedRoute);
   readonly patientId = toSignal(this.route.paramMap.pipe(map((params) => params.get('patientId'))), { initialValue: null });
@@ -36,6 +39,9 @@ export class PatientDetailPageComponent {
   readonly conflict = signal(false);
   readonly treatments = signal<PatientTreatment[]>([]);
   readonly treatmentsLoading = signal(false);
+  readonly patientAppointments = signal<AppointmentRecord[]>([]);
+  readonly patientAppointmentsLoading = signal(false);
+  readonly availableTreatmentAppointments = computed(() => this.patientAppointments().filter((item) => item.status !== 'CANCELLED' && item.status !== 'NO_SHOW'));
   readonly treatmentsSaving = signal(false);
   readonly treatmentsError = signal('');
   readonly treatmentsSuccess = signal('');
@@ -72,6 +78,7 @@ export class PatientDetailPageComponent {
   city = '';
   notes = '';
   treatmentTitle = '';
+  treatmentAppointmentId = '';
   treatmentCategory: TreatmentCategory = 'RESTORATIVE';
   treatmentStatus: TreatmentStatus = 'PLANNED';
   treatmentSurface: ToothSurface = 'WHOLE';
@@ -103,7 +110,9 @@ export class PatientDetailPageComponent {
       if (requestSequence !== this.requestSequence) return;
       this.patient.set(patient);
       this.treatments.set([]);
+      this.patientAppointments.set([]);
       void this.loadTreatments(organization, activeClinicId, patientId, requestSequence);
+      void this.loadPatientAppointments(organization, activeClinicId, patientId, requestSequence);
       this.firstName = patient.firstName;
       this.lastName = patient.lastName;
       this.birthDate = patient.birthDate ? patient.birthDate.slice(0, 10) : '';
@@ -144,6 +153,31 @@ export class PatientDetailPageComponent {
     }
   }
 
+  private async loadPatientAppointments(organizationId: string, clinicId: string, patientId: string, requestSequence: number): Promise<void> {
+    this.patientAppointmentsLoading.set(true);
+    try {
+      const records = await this.appointmentsApi.listForPatient(organizationId, clinicId, patientId);
+      if (requestSequence !== this.requestSequence || this.patientId() !== patientId || this.tenant.activeClinic()?.id !== clinicId) return;
+      this.patientAppointments.set(records);
+    } catch {
+      if (requestSequence !== this.requestSequence) return;
+      this.patientAppointments.set([]);
+    } finally {
+      if (requestSequence === this.requestSequence) this.patientAppointmentsLoading.set(false);
+    }
+  }
+
+  appointmentStatusLabel(status: AppointmentStatus): string {
+    return ({
+      SCHEDULED: 'Planifié', CONFIRMED: 'Confirmé', ARRIVED: 'Arrivé',
+      IN_PROGRESS: 'En soin', COMPLETED: 'Terminé', CANCELLED: 'Annulé', NO_SHOW: 'Absent',
+    })[status];
+  }
+
+  appointmentOptionLabel(appointment: AppointmentRecord): string {
+    return `${this.formatTreatmentDate(appointment.startsAt)} · ${appointment.reason || 'Rendez-vous'} · ${this.appointmentStatusLabel(appointment.status)}`;
+  }
+
   async saveTreatment(): Promise<void> {
     const clinic = this.tenant.activeClinic();
     const patient = this.patient();
@@ -155,6 +189,7 @@ export class PatientDetailPageComponent {
       title: this.treatmentTitle.trim(),
       category: this.treatmentCategory,
       status: this.treatmentStatus,
+      ...(this.treatmentAppointmentId ? { appointmentId: this.treatmentAppointmentId } : {}),
       notes: this.treatmentNotes.trim() || null,
       toothSites: this.selectedTeeth().map((toothNo) => ({ toothNo, surface: this.treatmentSurface })),
     };
@@ -163,6 +198,7 @@ export class PatientDetailPageComponent {
       if (this.tenant.activeClinic()?.id !== clinic.id || this.patientId() !== patient.id) return;
       this.treatments.set([created, ...this.treatments()]);
       this.treatmentTitle = '';
+      this.treatmentAppointmentId = '';
       this.treatmentCategory = 'RESTORATIVE';
       this.treatmentStatus = 'PLANNED';
       this.treatmentSurface = 'WHOLE';
