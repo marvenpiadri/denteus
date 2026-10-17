@@ -76,8 +76,12 @@ export class TenantContextService {
   setActiveClinic(clinicId: string | null): void {
     this.activeClinicId.set(clinicId);
     if (isPlatformBrowser(this.platformId)) {
-      if (clinicId) localStorage.setItem(ACTIVE_CLINIC_KEY, clinicId);
-      else localStorage.removeItem(ACTIVE_CLINIC_KEY);
+      try {
+        if (clinicId) localStorage.setItem(ACTIVE_CLINIC_KEY, clinicId);
+        else localStorage.removeItem(ACTIVE_CLINIC_KEY);
+      } catch {
+        // Clinic selection still works in memory when browser storage is unavailable.
+      }
     }
   }
 
