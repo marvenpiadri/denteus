@@ -175,6 +175,19 @@ export class PatientDetailPageComponent {
     }
   }
 
+  formatTreatmentDate(value: string | null): string {
+    if (!value) return '—';
+    return new Intl.DateTimeFormat('fr-FR', {
+      timeZone: this.tenant.activeClinic()?.timezone || 'Africa/Casablanca',
+      dateStyle: 'short',
+      timeStyle: 'short',
+    }).format(new Date(value));
+  }
+
+  surfaceLabel(surface: ToothSurface): string {
+    return this.toothSurfaces.find((item) => item.value === surface)?.label ?? surface;
+  }
+
   treatmentStatusLabel(status: TreatmentStatus): string {
     return ({ PLANNED: 'Prévu', ACCEPTED: 'Accepté', COMPLETED: 'Réalisé', DECLINED: 'Refusé' })[status];
   }
