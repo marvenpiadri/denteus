@@ -2,6 +2,8 @@ import { Routes } from '@angular/router';
 import { requireSessionGuard } from './core/auth/session.guard';
 import { ClinicalShellComponent } from './core/layouts/clinical-shell.component';
 import { SignInPageComponent } from './features/auth/sign-in-page.component';
+import { SignUpPageComponent } from './features/auth/sign-up-page.component';
+import { ClinicOnboardingPageComponent } from './features/onboarding/clinic-onboarding-page.component';
 import { WorkspacePageComponent } from './features/workspace/workspace-page.component';
 
 export const routes: Routes = [
@@ -14,6 +16,17 @@ export const routes: Routes = [
     path: 'sign-in',
     component: SignInPageComponent,
     title: 'Connexion | Dentaleus',
+  },
+  {
+    path: 'sign-up',
+    component: SignUpPageComponent,
+    title: 'Créer un compte | Dentaleus',
+  },
+  {
+    path: 'onboarding/clinic',
+    component: ClinicOnboardingPageComponent,
+    canActivate: [requireSessionGuard],
+    title: 'Configurer la clinique | Dentaleus',
   },
   {
     path: 'crm',
