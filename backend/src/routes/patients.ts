@@ -92,8 +92,8 @@ const patientSelect = `
   p.address,
   p.city,
   p.notes,
-  p.created_at AS "createdAt",
-  p.updated_at AS "updatedAt"
+  to_char(p.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS "createdAt",
+  to_char(p.updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS "updatedAt"
 `;
 
 export const patientRoutes: FastifyPluginAsync = async (app) => {
@@ -238,8 +238,8 @@ export const patientRoutes: FastifyPluginAsync = async (app) => {
               p.address,
               p.city,
               p.notes,
-              p.created_at AS "createdAt",
-              p.updated_at AS "updatedAt"
+              to_char(p.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS "createdAt",
+              to_char(p.updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS "updatedAt"
           `,
           [
             request.params.organizationId,
