@@ -1,7 +1,7 @@
 <section class="patients-page" aria-labelledby="patients-title">
   <header class="page-heading">
     <div><p class="eyebrow">DOSSIERS CLINIQUES</p><h1 id="patients-title">Patients</h1><p class="page-description">Retrouvez et gérez les dossiers de la clinique active.</p></div>
-    <button class="primary-button" type="button" (click)="showCreateForm.update(open => !open)" [disabled]="!tenant.activeClinic()">
+    <button class="primary-button" type="button" (click)="toggleCreateForm()" [disabled]="!tenant.activeClinic()">
       {{ showCreateForm() ? 'Fermer le formulaire' : '+ Nouveau patient' }}
     </button>
   </header>
@@ -12,7 +12,7 @@
     <section class="patient-tools" aria-label="Recherche de patients">
       <form class="search-form" (ngSubmit)="searchPatients()">
         <label for="patient-search">Rechercher un patient</label>
-        <div class="search-row"><input id="patient-search" name="search" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Nom, numéro de dossier ou téléphone"><button type="submit" [disabled]="loading()">Rechercher</button></div>
+        <div class="search-row"><input id="patient-search" name="search" [(ngModel)]="search" placeholder="Nom, numéro de dossier ou téléphone"><button type="submit" [disabled]="loading()">Rechercher</button></div>
       </form>
       <div class="result-count" aria-live="polite">{{ total() }} dossier{{ total() > 1 ? 's' : '' }}</div>
     </section>
@@ -41,7 +41,7 @@
       @if (loading() && !patients().length) {
         <div class="list-state" role="status"><span class="loading-indicator" aria-hidden="true"></span>Chargement des dossiers autorisés…</div>
       } @else if (!loading() && !patients().length && !error()) {
-        <div class="empty-state"><span class="empty-icon" aria-hidden="true">♙</span><h2>Aucun patient trouvé</h2><p>{{ search() ? 'Essayez un autre nom, numéro de dossier ou téléphone.' : 'Ce cabinet ne contient encore aucun dossier patient.' }}</p>@if (!search()) { <button class="secondary-button" type="button" (click)="showCreateForm.set(true)">Créer le premier dossier</button> }</div>
+        <div class="empty-state"><span class="empty-icon" aria-hidden="true">♙</span><h2>Aucun patient trouvé</h2><p>{{ search ? 'Essayez un autre nom, numéro de dossier ou téléphone.' : 'Ce cabinet ne contient encore aucun dossier patient.' }}</p>@if (!search) { <button class="secondary-button" type="button" (click)="showCreateForm.set(true)">Créer le premier dossier</button> }</div>
       } @else if (patients().length) {
         <div class="table-scroll"><table><thead><tr><th scope="col">Patient</th><th scope="col">N° de dossier</th><th scope="col">Téléphone</th><th scope="col">Ville</th><th scope="col">Créé le</th></tr></thead><tbody>
           @for (patient of patients(); track patient.id) {
