@@ -3,14 +3,16 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { auth } from './auth.js';
 import { pool } from '../db/pool.js';
 
+import { isOrganizationWideRole } from './role-policy.js';
+
+export { canManagePatients, canReadOdontogram, canWriteOdontogram } from './role-policy.js';
+
 export interface ClinicAccess {
   userId: string;
   organizationRole: string;
   clinicRole: string | null;
   effectiveRole: string;
 }
-
-const organizationWideRoles = new Set(['ORGANIZATION_OWNER', 'ORGANIZATION_ADMIN']);
 
 export async function requireClinicAccess(
   request: FastifyRequest,
@@ -64,7 +66,7 @@ export async function requireClinicAccess(
     return null;
   }
 
-  const effectiveRole = organizationWideRoles.has(membership.organization_role)
+  const effectiveRole = isOrganizationWideRole(membership.organization_role)
     ? membership.organization_role
     : membership.clinic_role ?? membership.organization_role;
 
@@ -74,21 +76,6 @@ export async function requireClinicAccess(
     clinicRole: membership.clinic_role,
     effectiveRole,
   };
-}
-
-export function canManagePatients(access: ClinicAccess): boolean {
-  return !['ACCOUNTANT'].includes(access.effectiveRole);
-}
-
-export function canWriteOdontogram(access: ClinicAccess): boolean {
-  return [
-    'ORGANIZATION_OWNER',
-    'ORGANIZATION_ADMIN',
-    'CLINIC_ADMIN',
-    'DENTIST',
-    'ORTHODONTIST',
-    'HYGIENIST',
-  ].includes(access.effectiveRole);
 }
 
 export function denyInsufficientRole(reply: FastifyReply): null {
