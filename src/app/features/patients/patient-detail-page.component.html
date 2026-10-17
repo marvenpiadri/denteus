@@ -40,7 +40,7 @@
         <div class="card-heading"><h2 id="patient-info-title">Informations du patient</h2><p>Informations administratives enregistrées dans la clinique active.</p></div>
         <dl class="info-grid">
           <div><dt>Prénom et nom</dt><dd>{{ record.firstName }} {{ record.lastName }}</dd></div>
-          <div><dt>Date de naissance</dt><dd>{{ record.birthDate ? (record.birthDate | date:'dd/MM/yyyy') : 'Non renseignée' }}</dd></div>
+          <div><dt>Date de naissance</dt><dd>{{ formatBirthDate(record.birthDate) }}</dd></div>
           <div><dt>Téléphone</dt><dd>{{ record.phone || 'Non renseigné' }}</dd></div>
           <div><dt>E-mail</dt><dd>{{ record.email || 'Non renseigné' }}</dd></div>
           <div><dt>Adresse</dt><dd>{{ record.address || 'Non renseignée' }}</dd></div>
