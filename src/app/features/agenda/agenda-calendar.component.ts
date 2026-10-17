@@ -37,6 +37,10 @@ export class AgendaCalendarComponent {
     return 1;
   }
 
+  defaultColumn(): CalendarResourceColumn {
+    return this.columns()[0] ?? { key: 'all', id: null, label: 'Rendez-vous', kind: 'all' };
+  }
+
   columns(): CalendarResourceColumn[] {
     if (this.viewMode() === 'day') return [{ key: 'all', id: null, label: 'Rendez-vous', kind: 'all' }];
     if (this.viewMode() === 'provider') return [
