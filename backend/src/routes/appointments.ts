@@ -113,6 +113,32 @@ async function lockClinicSchedule(client: PoolClient, organizationId: string, cl
 }
 
 export const appointmentRoutes: FastifyPluginAsync = async (app) => {
+  app.get<{ Params: { organizationId: string; clinicId: string; patientId: string } }>(
+    '/organizations/:organizationId/clinics/:clinicId/patients/:patientId/appointments',
+    async (request, reply) => {
+      const access = await requireClinicAccess(request, reply, request.params.organizationId, request.params.clinicId);
+      if (!access) return;
+      if (!canManageAppointments(access.effectiveRole)) return denyAppointmentRole(reply);
+      const patient = await pool.query(
+        'SELECT 1 FROM patient_clinics WHERE organization_id = $1 AND clinic_id = $2 AND patient_id = $3',
+        [request.params.organizationId, request.params.clinicId, request.params.patientId],
+      );
+      if (!patient.rowCount) return reply.code(404).send({ error: { code: 'PATIENT_NOT_FOUND', message: 'Patient introuvable dans cette clinique.' } });
+      const result = await pool.query(
+        `SELECT ${appointmentSelect}
+         FROM appointments a
+         JOIN patients p ON p.organization_id = a.organization_id AND p.id = a.patient_id
+         LEFT JOIN clinic_providers pr ON pr.organization_id = a.organization_id AND pr.clinic_id = a.clinic_id AND pr.id = a.provider_id
+         LEFT JOIN clinic_operatories op ON op.organization_id = a.organization_id AND op.clinic_id = a.clinic_id AND op.id = a.operatory_id
+         WHERE a.organization_id = $1 AND a.clinic_id = $2 AND a.patient_id = $3
+         ORDER BY a.starts_at DESC
+         LIMIT 100`,
+        [request.params.organizationId, request.params.clinicId, request.params.patientId],
+      );
+      return { data: result.rows, count: result.rows.length };
+    },
+  );
+
   app.get<{ Params: ClinicParams; Querystring: ScheduleQuery }>(
     '/organizations/:organizationId/clinics/:clinicId/appointments',
     { schema: { querystring: scheduleQuerySchema } },
