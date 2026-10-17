@@ -15,6 +15,7 @@ export class ClinicalShellComponent {
 
   readonly mobileNavigationOpen = signal(false);
   readonly signingOut = signal(false);
+  readonly signOutError = signal('');
 
   get userInitial(): string {
     const name = this.sessions.user()?.name || this.sessions.user()?.email || 'D';
@@ -32,11 +33,14 @@ export class ClinicalShellComponent {
   async signOut(): Promise<void> {
     if (this.signingOut()) return;
     this.signingOut.set(true);
+    this.signOutError.set('');
     try {
       await this.sessions.signOut();
+      await this.router.navigateByUrl('/sign-in');
+    } catch {
+      this.signOutError.set('La déconnexion n’a pas pu être confirmée par le serveur. Votre session reste affichée comme active.');
     } finally {
       this.signingOut.set(false);
-      await this.router.navigateByUrl('/sign-in');
     }
   }
 }
