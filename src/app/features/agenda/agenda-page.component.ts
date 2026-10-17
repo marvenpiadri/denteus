@@ -74,6 +74,8 @@ export class AgendaPageComponent {
   ];
   rescheduleStartsAt = '';
   rescheduleEndsAt = '';
+  rescheduleProviderId = '';
+  rescheduleOperatoryId = '';
 
   constructor() {
     effect(() => {
@@ -352,6 +354,8 @@ export class AgendaPageComponent {
     this.rescheduleError.set('');
     this.rescheduleStartsAt = toClinicDateTimeInput(appointment.startsAt, timezone);
     this.rescheduleEndsAt = toClinicDateTimeInput(appointment.endsAt, timezone);
+    this.rescheduleProviderId = appointment.providerId ?? '';
+    this.rescheduleOperatoryId = appointment.operatoryId ?? '';
   }
 
   async saveReschedule(appointment: AppointmentRecord): Promise<void> {
@@ -363,7 +367,7 @@ export class AgendaPageComponent {
       const timezone = clinic.timezone || 'Africa/Casablanca';
       const startsAt = localDateTimeToIso(this.rescheduleStartsAt, timezone);
       const endsAt = localDateTimeToIso(this.rescheduleEndsAt, timezone);
-      await this.appointmentsApi.reschedule(clinic.organizationId, clinic.id, appointment.id, startsAt, endsAt);
+      await this.appointmentsApi.reschedule(clinic.organizationId, clinic.id, appointment.id, startsAt, endsAt, this.rescheduleProviderId || null, this.rescheduleOperatoryId || null);
       this.reschedulingId.set(null);
       this.success.set('Le rendez-vous a été déplacé.');
       const rescheduledDate = toClinicDateTimeInput(startsAt, timezone).slice(0, 10);
