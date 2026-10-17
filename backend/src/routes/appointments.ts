@@ -3,6 +3,8 @@ import type { FastifyPluginAsync, FastifyReply } from 'fastify';
 import { requireClinicAccess } from '../auth/authorization.js';
 import type { PoolClient } from 'pg';
 import { pool } from '../db/pool.js';
+import { canManageAppointments, canTransitionAppointmentStatus, isValidAppointmentDuration } from '../domain/appointment-policy.js';
+import type { AppointmentStatus } from '../domain/appointment-policy.js';
 
 interface ClinicParams {
   organizationId: string;
@@ -28,9 +30,6 @@ interface RescheduleBody {
 interface StatusBody {
   status: 'CONFIRMED' | 'ARRIVED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
 }
-
-const statuses = ['SCHEDULED', 'CONFIRMED', 'ARRIVED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'NO_SHOW'] as const;
-type AppointmentStatus = typeof statuses[number];
 
 const scheduleQuerySchema = {
   type: 'object',
@@ -90,31 +89,11 @@ const appointmentSelect = `
   to_char(a.updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS "updatedAt"
 `;
 
-function canManageAppointments(role: string): boolean {
-  return [
-    'ORGANIZATION_OWNER',
-    'ORGANIZATION_ADMIN',
-    'CLINIC_ADMIN',
-    'DENTIST',
-    'ORTHODONTIST',
-    'HYGIENIST',
-    'ASSISTANT',
-    'RECEPTIONIST',
-  ].includes(role);
-}
-
 function denyAppointmentRole(reply: FastifyReply): null {
   reply.code(403).send({
     error: { code: 'FORBIDDEN', message: 'Your role does not permit managing appointments.' },
   });
   return null;
-}
-
-function validDuration(startsAt: string, endsAt: string): boolean {
-  const start = Date.parse(startsAt);
-  const end = Date.parse(endsAt);
-  const duration = end - start;
-  return Number.isFinite(start) && Number.isFinite(end) && duration >= 5 * 60_000 && duration <= 8 * 60 * 60_000;
 }
 
 async function lockClinicSchedule(client: PoolClient, organizationId: string, clinicId: string): Promise<void> {
@@ -166,7 +145,7 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
       if (!access) return;
       if (!canManageAppointments(access.effectiveRole)) return denyAppointmentRole(reply);
 
-      if (!validDuration(request.body.startsAt, request.body.endsAt)) {
+      if (!isValidAppointmentDuration(request.body.startsAt, request.body.endsAt)) {
         return reply.code(400).send({
           error: { code: 'INVALID_APPOINTMENT_DURATION', message: 'Un rendez-vous doit durer entre 5 minutes et 8 heures.' },
         });
@@ -308,16 +287,7 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
           });
         }
 
-        const transitions: Record<AppointmentStatus, AppointmentStatus[]> = {
-          SCHEDULED: ['CONFIRMED', 'ARRIVED', 'CANCELLED', 'NO_SHOW'],
-          CONFIRMED: ['ARRIVED', 'CANCELLED', 'NO_SHOW'],
-          ARRIVED: ['IN_PROGRESS', 'CANCELLED'],
-          IN_PROGRESS: ['COMPLETED'],
-          COMPLETED: [],
-          CANCELLED: [],
-          NO_SHOW: [],
-        };
-        if (!transitions[currentStatus].includes(request.body.status)) {
+        if (!canTransitionAppointmentStatus(currentStatus, request.body.status)) {
           await client.query('ROLLBACK');
           transactionOpen = false;
           return reply.code(409).send({
@@ -361,7 +331,7 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
       const access = await requireClinicAccess(request, reply, request.params.organizationId, request.params.clinicId);
       if (!access) return;
       if (!canManageAppointments(access.effectiveRole)) return denyAppointmentRole(reply);
-      if (!validDuration(request.body.startsAt, request.body.endsAt)) {
+      if (!isValidAppointmentDuration(request.body.startsAt, request.body.endsAt)) {
         return reply.code(400).send({
           error: { code: 'INVALID_APPOINTMENT_DURATION', message: 'Un rendez-vous doit durer entre 5 minutes et 8 heures.' },
         });
