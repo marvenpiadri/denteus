@@ -1,5 +1,5 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { DatePipe, isPlatformBrowser } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TenantContextService } from '../../core/tenant/tenant-context.service';
@@ -42,7 +42,11 @@ export class PatientListPageComponent {
     });
   }
 
-  toggleCreateForm(): void {\n    this.showCreateForm.update((open) => !open);\n  }\n\n  async searchPatients(): Promise<void> {
+  toggleCreateForm(): void {
+    this.showCreateForm.update((open) => !open);
+  }
+
+  async searchPatients(): Promise<void> {
     const clinic = this.tenant.activeClinic();
     if (clinic) await this.loadPatients(clinic.organizationId, clinic.id, this.search);
   }
@@ -89,7 +93,7 @@ export class PatientListPageComponent {
       this.phone = '';
       this.email = '';
       this.showCreateForm.set(false);
-      await this.loadPatients(clinic.organizationId, clinic.id, this.search());
+      await this.loadPatients(clinic.organizationId, clinic.id, this.search);
     } catch (error) {
       this.formError.set(error instanceof HttpErrorResponse && error.status === 403
         ? 'Votre rôle ne permet pas de créer un dossier patient.'
