@@ -5,6 +5,7 @@ import { SignInPageComponent } from './features/auth/sign-in-page.component';
 import { SignUpPageComponent } from './features/auth/sign-up-page.component';
 import { ClinicOnboardingPageComponent } from './features/onboarding/clinic-onboarding-page.component';
 import { WorkspacePageComponent } from './features/workspace/workspace-page.component';
+import { PatientListPageComponent } from './features/patients/patient-list-page.component';
 
 export const routes: Routes = [
   {
@@ -60,13 +61,8 @@ export const routes: Routes = [
       },
       {
         path: 'patients',
-        component: WorkspacePageComponent,
+        component: PatientListPageComponent,
         title: 'Patients | Dentaleus',
-        data: {
-          title: 'Patients',
-          description: 'Retrouvez le dossier du patient autorisé dans le contexte de la clinique active.',
-          nextStep: 'La liste et la recherche seront connectées à l’API tenant-scoped, sans dossiers fictifs.',
-        },
       },
       {
         path: 'clinical',
