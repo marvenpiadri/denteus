@@ -8,6 +8,7 @@ import { PatientApiService } from '../patients/patient-api.service';
 import type { PatientRecord } from '../patients/patient-api.service';
 import { AppointmentApiService } from './appointment-api.service';
 import { AgendaCalendarComponent } from './agenda-calendar.component';
+import type { CalendarSlotSelection } from './agenda-calendar.component';
 import { SchedulingResourceApiService } from './scheduling-resource-api.service';
 import type { ClinicOperatory, ClinicProvider, ProviderRole, ProviderWorkingHour } from './scheduling-resource-api.service';
 import type { AppointmentRecord, AppointmentStatus } from './appointment-api.service';
@@ -240,11 +241,13 @@ export class AgendaPageComponent {
     }
   }
 
-  openCreateAtTime(value: string): void {
+  openCreateAtTime(selection: CalendarSlotSelection): void {
     this.openCreateForm();
-    if (!value) return;
-    this.startsAt = value;
-    const [datePart, timePart] = value.split('T');
+    if (!selection.startsAt) return;
+    this.startsAt = selection.startsAt;
+    if (selection.providerId) this.providerId = selection.providerId;
+    if (selection.operatoryId) this.operatoryId = selection.operatoryId;
+    const [datePart, timePart] = selection.startsAt.split('T');
     const [hour, minute] = timePart.split(':').map(Number);
     const end = new Date(Date.UTC(2000, 0, 1, hour, minute + 30));
     this.endsAt = `${datePart}T${String(end.getUTCHours()).padStart(2, '0')}:${String(end.getUTCMinutes()).padStart(2, '0')}`;
