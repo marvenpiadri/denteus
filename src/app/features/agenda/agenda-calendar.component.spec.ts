@@ -20,10 +20,10 @@ describe('AgendaCalendarComponent', () => {
       appointment('one', '2026-10-18T09:15:00.000Z', '2026-10-18T09:45:00.000Z'),
     ];
 
-    const positioned = component.positionedAppointments(component.columns()[0]);
+    const positioned = component.positionedAppointments(component.defaultColumn());
     expect(positioned).toHaveLength(1);
-    expect(positioned[0].topPx).toBe(195);
-    expect(positioned[0].heightPx).toBe(30);
+    expect(positioned[0]?.topPx).toBe(195);
+    expect(positioned[0]?.heightPx).toBe(30);
   });
 
   it('splits overlapping appointment cards into visible side-by-side lanes', () => {
