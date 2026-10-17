@@ -16,7 +16,7 @@ const angularApp = new AngularNodeAppEngine();
 // JSON body parser for API requests
 app.use(express.json());
 
-// Mount Denteus REST API under /api/v1
+// Mount Dentaleus REST API under /api/v1
 app.use('/api/v1', apiRouter);
 
 /**
