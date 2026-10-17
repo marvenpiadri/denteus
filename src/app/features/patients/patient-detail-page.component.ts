@@ -57,11 +57,13 @@ export class PatientDetailPageComponent {
     const organization = organizationId ?? clinic?.organizationId;
     const activeClinicId = clinicId ?? clinic?.id;
     if (!organization || !activeClinicId || !patientId) return;
+    const requestSequence = ++this.requestSequence;
     this.loading.set(true);
     this.error.set('');
     this.conflict.set(false);
     try {
       const patient = await this.api.get(organization, activeClinicId, patientId);
+      if (requestSequence !== this.requestSequence) return;
       this.patient.set(patient);
       this.firstName = patient.firstName;
       this.lastName = patient.lastName;
@@ -73,6 +75,7 @@ export class PatientDetailPageComponent {
       this.city = patient.city ?? '';
       this.notes = patient.notes ?? '';
     } catch (error) {
+      if (requestSequence !== this.requestSequence) return;
       this.patient.set(null);
       this.error.set(error instanceof HttpErrorResponse && error.status === 404
         ? 'Ce dossier n’existe pas dans la clinique active ou vous n’y avez pas accès.'
@@ -80,7 +83,7 @@ export class PatientDetailPageComponent {
           ? 'Votre session a expiré. Reconnectez-vous.'
           : 'Le dossier ne peut pas être chargé. Vérifiez votre connexion puis réessayez.');
     } finally {
-      this.loading.set(false);
+      if (requestSequence === this.requestSequence) this.loading.set(false);
     }
   }
 
