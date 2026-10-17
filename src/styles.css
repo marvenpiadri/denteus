@@ -1,62 +1,94 @@
-/* Global styles for Denteus */
-@import url('https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined|Material+Icons+Round');
-@import "tailwindcss";
-@import "angular-advanced-odontogram/styles.css";
-
-/* Denteus Design Tokens & Clinical Styling */
+/* Dentaleus clinical workspace foundation.
+   Feature styling lives beside each component; the CRM does not load atlas styles. */
 :root {
-  --color-primary: #0d9488; /* Clinical Teal */
-  --color-primary-hover: #0f766e;
-  --surface-bg: #f8fafc;
-  --surface-card: #ffffff;
-  --surface-border: #e2e8f0;
-  --text-primary: #0f172a;
-  --text-muted: #64748b;
+  color-scheme: light;
+  --color-brand: #087f75;
+  --color-brand-hover: #066a63;
+  --color-brand-soft: #e5f4f1;
+  --color-text: #17343d;
+  --color-text-secondary: #647b84;
+  --color-text-subtle: #71868e;
+  --color-surface: #ffffff;
+  --color-page: #f5f8fa;
+  --color-border: #e0e8ec;
+  --color-border-strong: #c8d6dc;
+  --color-danger: #b42318;
+  --color-danger-soft: #fef3f2;
+  --color-warning: #8a5b00;
+  --color-warning-soft: #fff8e6;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --shadow-panel: 0 10px 35px rgb(27 70 96 / 3%);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.dark {
-  --color-primary: #14b8a6;
-  --color-primary-hover: #2dd4bf;
-  --surface-bg: #090d16;
-  --surface-card: #0f172a;
-  --surface-border: #1e293b;
-  --text-primary: #f8fafc;
-  --text-muted: #94a3b8;
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-/* Custom scrollbars for clinical data views */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.4);
-  border-radius: 9999px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 116, 139, 0.6);
+html {
+  min-width: 320px;
+  min-height: 100%;
+  background: var(--color-page);
+  scroll-behavior: smooth;
 }
 
-/* Keep the clinical controls, but remove library branding and developer-only links. */
-aao-odontogram-topbar .brand,
-aao-odontogram-topbar #btnGithubLink,
-aao-odontogram-topbar #btnCreditsMenu {
-  display: none !important;
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background: var(--color-page);
+  color: var(--color-text);
 }
 
-aao-odontogram-topbar > header {
-  justify-content: flex-end !important;
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
-.odontogram-root {
-  --odon-accent: #0d9488;
-  --odon-accent2: #0f766e;
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
 }
 
-.dark .odontogram-root {
-  --odon-accent: #14b8a6;
-  --odon-accent2: #2dd4bf;
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid #69b9b0;
+  outline-offset: 3px;
+}
+
+::selection {
+  color: #123d3a;
+  background: #c9ebe5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
