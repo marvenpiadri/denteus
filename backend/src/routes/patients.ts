@@ -297,7 +297,7 @@ export const patientRoutes: FastifyPluginAsync = async (app) => {
             request.params.patientId,
             JSON.stringify({
               clinicId: request.params.clinicId,
-              changedFields: ['firstName', 'lastName', 'birthDate', 'gender', 'phone', 'email', 'address', 'city', 'notes'],
+              updatedFields: ['firstName', 'lastName', 'birthDate', 'gender', 'phone', 'email', 'address', 'city', 'notes'],
             }),
           ],
         );
