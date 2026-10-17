@@ -51,7 +51,7 @@ export class PatientDetailPageComponent {
     { value: 'IMPLANT', label: 'Implantologie' }, { value: 'OTHER', label: 'Autre soin' },
   ];
   readonly toothSurfaces: { value: ToothSurface; label: string }[] = [
-    { value: 'WHOLE', label: 'Dent entière' }, { value: 'OCCLUSAL', label: 'Occlusale' },
+    { value: 'WHOLE', label: 'Dent entière' }, { value: 'OCCLUSAL', label: 'Occlusale' }, { value: 'INCISAL', label: 'Incisale' },
     { value: 'MESIAL', label: 'Mésiale' }, { value: 'DISTAL', label: 'Distale' },
     { value: 'BUCCAL', label: 'Vestibulaire' }, { value: 'LINGUAL', label: 'Linguale' },
     { value: 'PALATAL', label: 'Palatine' }, { value: 'CERVICAL', label: 'Cervicale' },
