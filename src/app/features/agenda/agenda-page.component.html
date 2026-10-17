@@ -136,6 +136,8 @@
               <form class="reschedule-form" (ngSubmit)="saveReschedule(appointment)">
                 <label [for]="'reschedule-start-' + appointment.id">Nouveau début</label><input [id]="'reschedule-start-' + appointment.id" name="rescheduleStart" type="datetime-local" [(ngModel)]="rescheduleStartsAt" required>
                 <label [for]="'reschedule-end-' + appointment.id">Nouvelle fin</label><input [id]="'reschedule-end-' + appointment.id" name="rescheduleEnd" type="datetime-local" [(ngModel)]="rescheduleEndsAt" required>
+                <label [for]="'reschedule-provider-' + appointment.id">Praticien</label><select [id]="'reschedule-provider-' + appointment.id" name="rescheduleProvider" [(ngModel)]="rescheduleProviderId" [required]="providers().length > 0 || operatories().length > 0"><option value="">Non affecté</option>@for (provider of providers(); track provider.id) { <option [value]="provider.id">{{ provider.displayName }}</option> }</select>
+                <label [for]="'reschedule-operatory-' + appointment.id">Fauteuil</label><select [id]="'reschedule-operatory-' + appointment.id" name="rescheduleOperatory" [(ngModel)]="rescheduleOperatoryId" [required]="providers().length > 0 || operatories().length > 0"><option value="">Non affecté</option>@for (operatory of operatories(); track operatory.id) { <option [value]="operatory.id">{{ operatory.name }}</option> }</select>
                 @if (rescheduleError()) { <p class="inline-error" role="alert">{{ rescheduleError() }}</p> }
                 <div class="reschedule-actions"><button type="button" class="secondary-button" (click)="reschedulingId.set(null)" [disabled]="saving()">Annuler</button><button type="submit" class="primary-button" [disabled]="saving()">{{ saving() ? 'Déplacement…' : 'Confirmer le déplacement' }}</button></div>
               </form>
@@ -143,7 +145,7 @@
           </article>
         }
       </div>
-      <p class="list-footnote">Les rendez-vous sont enregistrés dans PostgreSQL. Les conflits de fauteuil et de praticien nécessitent encore la configuration des ressources du cabinet.</p>
+      <p class="list-footnote">Les rendez-vous sont enregistrés dans PostgreSQL. Les conflits de praticien et de fauteuil sont vérifiés lorsqu’ils sont affectés; configurez les horaires avant d’attribuer un praticien.</p>
     }
   </section>
 </section>
