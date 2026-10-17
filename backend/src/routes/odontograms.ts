@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { FastifyPluginAsync } from 'fastify';
 import {
+  canReadOdontogram,
   canWriteOdontogram,
   denyInsufficientRole,
   requireClinicAccess,
@@ -63,6 +64,7 @@ export const odontogramRoutes: FastifyPluginAsync = async (app) => {
         request.params.clinicId,
       );
       if (!access) return;
+      if (!canReadOdontogram(access)) return denyInsufficientRole(reply);
 
       const linkedPatient = await pool.query(
         `
