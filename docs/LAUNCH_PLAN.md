@@ -29,12 +29,13 @@ Target: a realistic, tested first-customer release by October 31, 2026. This is 
 
 - The CRM UI has useful existing modules for patients, appointments, odontograms, treatment plans, reports, clinic settings and subscriptions.
 - The old Express-mounted demo API and its hardcoded/in-memory patient and report endpoints have been removed from the SSR server.
-- Fastify now has Better Auth sessions, session-scoped organization listing, and PostgreSQL-backed patient and odontogram routes scoped to authorized organization/clinic paths. These routes and the initial migration have not yet been build-tested or integration-tested.
+- Fastify now has Better Auth sessions, session-scoped organization listing, and PostgreSQL-backed patient and odontogram routes scoped to authorized organization/clinic paths. Added role-policy unit tests, a PostgreSQL tenant-constraint/persistence integration test, and a CI workflow; execution results still need confirmation.
 - Appointment routes, frontend API/auth integration, and first-clinic onboarding are not yet implemented. Do not use real patient data until migration, authentication, tenant isolation and restart-persistence tests pass.
 - Tenant state in `TenantService` is initialized with hardcoded organizations, clinics and users.
 - `src/app/app.routes.ts` is currently empty; the shell uses tab state rather than actual feature routes.
 - Both `denteus` and `dentist-page` currently declare Angular 21 packages. Confirm the desired Angular target before changing framework versions.
 - The current odontogram integration correctly treats the Advanced Odontogram payload as the clinical chart source of truth. Preserve that boundary.
+- The interactive 3D dental atlas is not part of the CRM app. It belongs only inside an optional public clinic website Page template.
 
 ## Phases and acceptance gates
 
