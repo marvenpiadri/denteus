@@ -32,7 +32,7 @@ export class PatientListPageComponent {
   birthDate = '';
   gender: '' | 'M' | 'F' | 'OTHER' = '';
   phone = '';
-  email = '';
+  email = '';\n  private requestSequence = 0;
 
   constructor() {
     effect(() => {
