@@ -102,12 +102,11 @@ This is a phased replacement, not a cosmetic redesign. Existing UI can be inspec
 
 ## First implementation sequence
 
-1. Fix/understand the failing backend CI before relying on the merged foundation.
-2. Audit the Angular shell and mock-data services on the new refactor branch.
-3. Define route map and typed API contracts before rewriting individual screens.
-4. Implement a vertical slice: sign-in/session → clinic context → patient list → patient detail → persisted chart.
-5. Add appointment persistence only after the identity and tenant boundaries are tested.
-6. Keep the PR small enough that CI and the resulting behavior can be reviewed.
+1. Finish the signup → onboarding → clinic context → patient list/detail/edit vertical slice and add backend integration tests.
+2. Add patient API/database tests for cross-tenant denial, durable writes, audit events, and optimistic concurrency.
+3. Implement appointment persistence and scheduling conflict checks only after tenant tests exist.
+4. Rebuild the clinical chart UI against the persisted odontogram contract; the 3D atlas remains exclusive to public clinic Pages.
+5. Keep the PR in draft until a local build/test run or a usable CI run verifies the code.
 
 ## Research basis
 
