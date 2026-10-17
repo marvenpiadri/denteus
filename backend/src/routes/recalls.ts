@@ -3,6 +3,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import { requireClinicAccess } from '../auth/authorization.js';
 import { pool } from '../db/pool.js';
 import { canManageAppointments } from '../domain/appointment-policy.js';
+import { canTransitionRecallStatus, statusAfterRecallContact } from '../domain/recall-policy.js';
 
 export const recallRoutes: FastifyPluginAsync = async (app) => {
   app.get<{ Params: { organizationId: string; clinicId: string }; Querystring: { status?: string; q?: string } }>(
@@ -96,11 +97,11 @@ export const recallRoutes: FastifyPluginAsync = async (app) => {
           await client.query('ROLLBACK');
           return reply.code(404).send({ error: { code: 'RECALL_NOT_FOUND', message: 'Rappel introuvable.' } });
         }
-        if (!['DUE', 'CONTACTED'].includes(from)) {
+        const to = statusAfterRecallContact(from as import('../domain/recall-policy.js').RecallStatus, request.body.outcome);
+        if (!to) {
           await client.query('ROLLBACK');
           return reply.code(409).send({ error: { code: 'RECALL_NOT_CONTACTABLE', message: 'Ce rappel n’est plus dans une file de contact active.' } });
         }
-        const to = request.body.outcome === 'BOOKED' ? 'SCHEDULED' : request.body.outcome === 'DECLINED' ? 'DECLINED' : 'CONTACTED';
         await client.query(
           `INSERT INTO patient_recall_events (id, organization_id, clinic_id, recall_id, user_id, event_type, from_status, to_status, contact_method, outcome, note)
            VALUES ($1,$2,$3,$4,$5,'CONTACT_ATTEMPT',$6,$7,$8,$9,$10)`,
@@ -139,6 +140,10 @@ export const recallRoutes: FastifyPluginAsync = async (app) => {
         if (!from) {
           await client.query('ROLLBACK');
           return reply.code(404).send({ error: { code: 'RECALL_NOT_FOUND', message: 'Rappel introuvable.' } });
+        }
+        if (!canTransitionRecallStatus(from as import('../domain/recall-policy.js').RecallStatus, request.body.status as import('../domain/recall-policy.js').RecallStatus)) {
+          await client.query('ROLLBACK');
+          return reply.code(409).send({ error: { code: 'INVALID_RECALL_TRANSITION', message: 'Cette transition de rappel n’est pas autorisée.' } });
         }
         await client.query(
           'UPDATE patient_recalls SET status=$4, updated_at=clock_timestamp() WHERE organization_id=$1 AND clinic_id=$2 AND id=$3',
