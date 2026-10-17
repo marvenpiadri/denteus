@@ -8,6 +8,8 @@ import { PatientApiService } from '../patients/patient-api.service';
 import type { PatientRecord } from '../patients/patient-api.service';
 import { AppointmentApiService } from './appointment-api.service';
 import { AgendaCalendarComponent } from './agenda-calendar.component';
+import { SchedulingResourceApiService } from './scheduling-resource-api.service';
+import type { ClinicOperatory, ClinicProvider, ProviderRole, ProviderWorkingHour } from './scheduling-resource-api.service';
 import type { AppointmentRecord, AppointmentStatus } from './appointment-api.service';
 import { addCalendarDays, formatCalendarDate as formatCalendarDateValue, formatClinicDate, formatClinicTime, localDateTimeToIso, todayInTimeZone, toClinicDateTimeInput } from './clinic-date-time';
 
@@ -22,11 +24,18 @@ export class AgendaPageComponent {
   readonly tenant = inject(TenantContextService);
   private readonly appointmentsApi = inject(AppointmentApiService);
   private readonly patientsApi = inject(PatientApiService);
+  private readonly resourcesApi = inject(SchedulingResourceApiService);
   private readonly platformId = inject(PLATFORM_ID);
 
   readonly selectedDate = signal('');
   readonly appointments = signal<AppointmentRecord[]>([]);
   readonly patients = signal<PatientRecord[]>([]);
+  readonly providers = signal<ClinicProvider[]>([]);
+  readonly operatories = signal<ClinicOperatory[]>([]);
+  readonly loadingResources = signal(false);
+  readonly showResourceSetup = signal(false);
+  readonly resourceSaving = signal(false);
+  readonly resourceError = signal('');
   readonly loading = signal(false);
   readonly loadingPatients = signal(false);
   readonly saving = signal(false);
@@ -40,11 +49,28 @@ export class AgendaPageComponent {
   readonly success = signal('');
   readonly pendingStatusChange = signal<{ appointmentId: string; status: Exclude<AppointmentStatus, 'SCHEDULED'> } | null>(null);
   private patientOptionsClinicId = '';
+  private resourceOptionsClinicId = '';
 
   patientId = '';
   startsAt = '';
   endsAt = '';
   reason = '';
+  providerId = '';
+  operatoryId = '';
+  providerName = '';
+  providerRole: ProviderRole = 'DENTIST';
+  operatoryName = '';
+  chairNumber = '';
+  hoursProviderId = '';
+  readonly weekdays = [
+    { dayOfWeek: 1, label: 'Lundi', enabled: false, startsAt: '09:00', endsAt: '18:00' },
+    { dayOfWeek: 2, label: 'Mardi', enabled: false, startsAt: '09:00', endsAt: '18:00' },
+    { dayOfWeek: 3, label: 'Mercredi', enabled: false, startsAt: '09:00', endsAt: '18:00' },
+    { dayOfWeek: 4, label: 'Jeudi', enabled: false, startsAt: '09:00', endsAt: '18:00' },
+    { dayOfWeek: 5, label: 'Vendredi', enabled: false, startsAt: '09:00', endsAt: '18:00' },
+    { dayOfWeek: 6, label: 'Samedi', enabled: false, startsAt: '09:00', endsAt: '13:00' },
+    { dayOfWeek: 0, label: 'Dimanche', enabled: false, startsAt: '09:00', endsAt: '13:00' },
+  ];
   rescheduleStartsAt = '';
   rescheduleEndsAt = '';
 
@@ -65,6 +91,13 @@ export class AgendaPageComponent {
       if (!isPlatformBrowser(this.platformId) || !clinic || this.patientOptionsClinicId === clinic.id) return;
       this.patientOptionsClinicId = clinic.id;
       void this.loadPatientOptions(clinic.organizationId, clinic.id);
+    });
+
+    effect(() => {
+      const clinic = this.tenant.activeClinic();
+      if (!isPlatformBrowser(this.platformId) || !clinic || this.resourceOptionsClinicId === clinic.id) return;
+      this.resourceOptionsClinicId = clinic.id;
+      void this.loadResources(clinic.organizationId, clinic.id);
     });
   }
 
@@ -87,6 +120,107 @@ export class AgendaPageComponent {
         : 'L’agenda ne peut pas être chargé. Vérifiez votre connexion puis réessayez.');
     } finally {
       if (this.tenant.activeClinic()?.id === clinicId && this.selectedDate() === date) this.loading.set(false);
+    }
+  }
+
+  private async loadResources(organizationId: string, clinicId: string): Promise<void> {
+    this.loadingResources.set(true);
+    this.resourceError.set('');
+    try {
+      const result = await this.resourcesApi.list(organizationId, clinicId);
+      if (this.tenant.activeClinic()?.id !== clinicId) return;
+      this.providers.set(result.providers);
+      this.operatories.set(result.operatories);
+      if (!this.providerId || !result.providers.some((item) => item.id === this.providerId)) this.providerId = '';
+      if (!this.operatoryId || !result.operatories.some((item) => item.id === this.operatoryId)) this.operatoryId = '';
+      if (!this.hoursProviderId || !result.providers.some((item) => item.id === this.hoursProviderId)) this.hoursProviderId = result.providers[0]?.id ?? '';
+      this.syncHoursDraft();
+    } catch {
+      if (this.tenant.activeClinic()?.id !== clinicId) return;
+      this.providers.set([]);
+      this.operatories.set([]);
+      this.resourceError.set('Les ressources du planning ne peuvent pas être chargées.');
+    } finally {
+      if (this.tenant.activeClinic()?.id === clinicId) this.loadingResources.set(false);
+    }
+  }
+
+  async createProvider(): Promise<void> {
+    const clinic = this.tenant.activeClinic();
+    if (!clinic || this.resourceSaving() || !this.providerName.trim()) return;
+    this.resourceSaving.set(true);
+    this.resourceError.set('');
+    try {
+      const provider = await this.resourcesApi.createProvider(clinic.organizationId, clinic.id, {
+        displayName: this.providerName.trim(), role: this.providerRole,
+      });
+      this.providerName = '';
+      this.hoursProviderId = provider.id;
+      await this.loadResources(clinic.organizationId, clinic.id);
+      this.success.set('Praticien ajouté. Configurez ses horaires avant de lui attribuer des rendez-vous.');
+    } catch {
+      this.resourceError.set('Le praticien n’a pas pu être ajouté. Vérifiez le nom et réessayez.');
+    } finally {
+      this.resourceSaving.set(false);
+    }
+  }
+
+  async createOperatory(): Promise<void> {
+    const clinic = this.tenant.activeClinic();
+    if (!clinic || this.resourceSaving() || !this.operatoryName.trim()) return;
+    const parsedChair = this.chairNumber.trim() ? Number(this.chairNumber) : null;
+    if (parsedChair !== null && (!Number.isInteger(parsedChair) || parsedChair < 1 || parsedChair > 999)) {
+      this.resourceError.set('Le numéro de fauteuil doit être compris entre 1 et 999.');
+      return;
+    }
+    this.resourceSaving.set(true);
+    this.resourceError.set('');
+    try {
+      await this.resourcesApi.createOperatory(clinic.organizationId, clinic.id, {
+        name: this.operatoryName.trim(), chairNumber: parsedChair,
+      });
+      this.operatoryName = '';
+      this.chairNumber = '';
+      await this.loadResources(clinic.organizationId, clinic.id);
+      this.success.set('Fauteuil ajouté au planning.');
+    } catch {
+      this.resourceError.set('Le fauteuil n’a pas pu être ajouté. Vérifiez le nom (il doit être unique dans cette clinique).');
+    } finally {
+      this.resourceSaving.set(false);
+    }
+  }
+
+  syncHoursDraft(): void {
+    const provider = this.providers().find((item) => item.id === this.hoursProviderId);
+    for (const day of this.weekdays) {
+      const existing = provider?.workingHours.find((hour) => hour.dayOfWeek === day.dayOfWeek);
+      day.enabled = Boolean(existing);
+      day.startsAt = existing?.startsAt ?? '09:00';
+      day.endsAt = existing?.endsAt ?? (day.dayOfWeek === 0 || day.dayOfWeek === 6 ? '13:00' : '18:00');
+    }
+  }
+
+  async saveProviderHours(): Promise<void> {
+    const clinic = this.tenant.activeClinic();
+    const provider = this.providers().find((item) => item.id === this.hoursProviderId);
+    if (!clinic || !provider || this.resourceSaving()) return;
+    const hours: ProviderWorkingHour[] = this.weekdays.filter((day) => day.enabled).map((day) => ({
+      dayOfWeek: day.dayOfWeek, startsAt: day.startsAt, endsAt: day.endsAt,
+    }));
+    if (hours.some((hour) => hour.endsAt <= hour.startsAt)) {
+      this.resourceError.set('Pour chaque journée activée, l’heure de fin doit être après l’heure de début.');
+      return;
+    }
+    this.resourceSaving.set(true);
+    this.resourceError.set('');
+    try {
+      await this.resourcesApi.saveWorkingHours(clinic.organizationId, clinic.id, provider.id, hours);
+      await this.loadResources(clinic.organizationId, clinic.id);
+      this.success.set('Horaires du praticien enregistrés.');
+    } catch {
+      this.resourceError.set('Les horaires n’ont pas tous été enregistrés. Rechargez les ressources et vérifiez le planning.');
+    } finally {
+      this.resourceSaving.set(false);
     }
   }
 
@@ -125,6 +259,8 @@ export class AgendaPageComponent {
     this.startsAt = `${date}T09:00`;
     this.endsAt = `${date}T09:30`;
     this.reason = '';
+    this.providerId = '';
+    this.operatoryId = '';
     this.showCreateForm.set(true);
   }
 
@@ -143,6 +279,7 @@ export class AgendaPageComponent {
         startsAt,
         endsAt,
         ...(this.reason.trim() ? { reason: this.reason.trim() } : {}),
+        ...(this.providerId && this.operatoryId ? { providerId: this.providerId, operatoryId: this.operatoryId } : {}),
       });
       this.showCreateForm.set(false);
       this.success.set('Le rendez-vous a été enregistré.');
@@ -153,7 +290,7 @@ export class AgendaPageComponent {
       this.formError.set(error instanceof Error && !(error instanceof HttpErrorResponse)
         ? error.message
         : error instanceof HttpErrorResponse && error.status === 409
-          ? 'Ce patient a déjà un rendez-vous qui chevauche ce créneau. Choisissez une autre heure.'
+          ? error.error?.error?.message || 'Ce créneau entre en conflit avec un rendez-vous, un praticien ou un fauteuil. Choisissez une autre heure.'
           : error instanceof HttpErrorResponse && error.status === 404
             ? 'Le patient n’est pas accessible dans la clinique active. Rechargez la liste.'
             : error instanceof HttpErrorResponse && error.status === 403
