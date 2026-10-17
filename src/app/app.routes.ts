@@ -7,6 +7,7 @@ import { ClinicOnboardingPageComponent } from './features/onboarding/clinic-onbo
 import { WorkspacePageComponent } from './features/workspace/workspace-page.component';
 import { PatientListPageComponent } from './features/patients/patient-list-page.component';
 import { PatientDetailPageComponent } from './features/patients/patient-detail-page.component';
+import { AgendaPageComponent } from './features/agenda/agenda-page.component';
 
 export const routes: Routes = [
   {
@@ -52,13 +53,8 @@ export const routes: Routes = [
       },
       {
         path: 'agenda',
-        component: WorkspacePageComponent,
+        component: AgendaPageComponent,
         title: 'Agenda | Dentaleus',
-        data: {
-          title: 'Agenda',
-          description: 'Organisez les rendez-vous, les salles et les fauteuils autour du rythme réel du cabinet.',
-          nextStep: 'Les rendez-vous doivent être persistés et les conflits de planning vérifiés côté serveur.',
-        },
       },
       {
         path: 'patients',
