@@ -97,6 +97,8 @@
 
   <app-agenda-calendar
     [appointments]="appointments()"
+    [providers]="providers()"
+    [operatories]="operatories()"
     [date]="selectedDate()"
     [timeZone]="tenant.activeClinic()?.timezone || 'Africa/Casablanca'"
     [loading]="loading()"
