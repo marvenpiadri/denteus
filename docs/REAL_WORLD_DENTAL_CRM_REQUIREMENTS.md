@@ -51,7 +51,7 @@ These sources describe established product patterns, mainly from the US market. 
 - [ ] Separate financial ledger, estimates, invoices, payments and reconciliation.
 - [ ] Staff invitation/provisioning, role matrix and clinic-level permissions.
 - [ ] Reports derived from real data; exports and patient-record access workflow.
-- [ ] HTTP integration tests for authentication, tenant isolation, permission boundaries, concurrent scheduling and audit history. PostgreSQL integration coverage now includes recall/event persistence and cross-clinic FK rejection, but has not been executed in this environment.
+- [ ] HTTP integration tests for authentication, tenant isolation, permission boundaries, concurrent scheduling and audit history. PostgreSQL integration coverage now includes recall/event persistence, resource assignments, tooth-specific treatment persistence and cross-clinic FK rejection, but has not been executed in this environment.
 - [ ] Public clinic Page template with an explicit public-data allowlist; 3D atlas only in that public template.
 
 ## Acceptance gates
