@@ -29,6 +29,15 @@
     </section>
   }
 
+  <app-agenda-calendar
+    [appointments]="appointments()"
+    [date]="selectedDate()"
+    [timeZone]="tenant.activeClinic()?.timezone || 'Africa/Casablanca'"
+    [loading]="loading()"
+    (slotSelected)="openCreateAtTime($event)"
+    (appointmentSelected)="openReschedule($event)"
+  />
+
   <section class="appointment-list" aria-label="Rendez-vous de la journée">
     <div class="list-heading"><div><h2>{{ selectedDate() ? formatCalendarDate(selectedDate()) : 'Chargement de la journée' }}</h2><p>{{ appointments().length }} rendez-vous affiché{{ appointments().length > 1 ? 's' : '' }}</p></div><button type="button" class="secondary-button" (click)="refreshAppointments()" [disabled]="loading()">Actualiser</button></div>
 
