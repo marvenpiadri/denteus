@@ -1,0 +1,42 @@
+name: Frontend checks
+
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'angular.json'
+      - 'package.json'
+      - 'bun.lock'
+      - 'tsconfig*.json'
+      - '.github/workflows/frontend-checks.yml'
+  push:
+    branches:
+      - main
+      - refactor/clinical-product-foundation
+    paths:
+      - 'src/**'
+      - 'angular.json'
+      - 'package.json'
+      - 'bun.lock'
+      - 'tsconfig*.json'
+      - '.github/workflows/frontend-checks.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Build Angular SSR application
+        run: npm run build
+      - name: Run frontend tests
+        run: npm test -- --watch=false
