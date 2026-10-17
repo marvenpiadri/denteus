@@ -1,0 +1,79 @@
+<div class="clinical-app">
+  <a class="skip-link" href="#main-content">Passer au contenu principal</a>
+
+  @if (mobileNavigationOpen()) {
+    <button
+      class="navigation-backdrop"
+      type="button"
+      aria-label="Fermer le menu"
+      (click)="closeMobileNavigation()"></button>
+  }
+
+  <aside class="sidebar" [class.sidebar--mobile-open]="mobileNavigationOpen()" aria-label="Navigation principale">
+    <a class="brand" routerLink="/crm/today" (click)="closeMobileNavigation()" aria-label="Dentaleus — espace clinique">
+      <span class="brand-mark" aria-hidden="true">D</span>
+      <span class="brand-name">dentaleus</span>
+    </a>
+
+    <div class="workspace-label">ESPACE CLINIQUE</div>
+    <div class="clinic-context">
+      <span class="context-icon" aria-hidden="true">⌂</span>
+      <span>
+        <strong>Clinique non sélectionnée</strong>
+        <small>Contexte à charger après connexion</small>
+      </span>
+    </div>
+
+    <nav class="primary-navigation" aria-label="Modules cliniques">
+      <a routerLink="/crm/today" routerLinkActive="nav-link--active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMobileNavigation()">
+        <span class="nav-icon" aria-hidden="true">◷</span><span>Aujourd’hui</span>
+      </a>
+      <a routerLink="/crm/agenda" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
+        <span class="nav-icon" aria-hidden="true">▦</span><span>Agenda</span>
+      </a>
+      <a routerLink="/crm/patients" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
+        <span class="nav-icon" aria-hidden="true">♙</span><span>Patients</span>
+      </a>
+      <a routerLink="/crm/clinical" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
+        <span class="nav-icon" aria-hidden="true">✚</span><span>Soins et odontogramme</span>
+      </a>
+      <a routerLink="/crm/team" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
+        <span class="nav-icon" aria-hidden="true">♧</span><span>Équipe et accès</span>
+      </a>
+      <a routerLink="/crm/reports" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
+        <span class="nav-icon" aria-hidden="true">▤</span><span>Rapports</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a routerLink="/crm/settings" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
+        <span class="nav-icon" aria-hidden="true">⚙</span><span>Paramètres du cabinet</span>
+      </a>
+      <div class="session-placeholder">
+        <span class="session-avatar" aria-hidden="true">—</span>
+        <span><strong>Session non chargée</strong><small>Authentification à intégrer</small></span>
+      </div>
+    </div>
+  </aside>
+
+  <div class="workspace">
+    <header class="topbar">
+      <button class="mobile-menu-button" type="button" (click)="toggleMobileNavigation()" [attr.aria-expanded]="mobileNavigationOpen()" aria-label="Ouvrir la navigation">
+        <span aria-hidden="true">☰</span>
+      </button>
+      <div class="topbar-context">
+        <span class="eyebrow">DENTALEUS CLINICAL</span>
+        <span class="topbar-title">Espace de travail</span>
+      </div>
+      <div class="topbar-status"><span class="status-dot" aria-hidden="true"></span> Données réelles non connectées</div>
+    </header>
+
+    <main id="main-content" class="main-content">
+      <div class="foundation-notice" role="status">
+        <span class="notice-icon" aria-hidden="true">i</span>
+        <p><strong>Fondation en reconstruction.</strong> Les écrans sont reconstruits autour des données authentifiées. Aucun dossier fictif n’est affiché et cet espace ne doit pas encore être utilisé avec des données patient réelles.</p>
+      </div>
+      <router-outlet />
+    </main>
+  </div>
+</div>
