@@ -18,10 +18,23 @@
     <div class="workspace-label">ESPACE CLINIQUE</div>
     <div class="clinic-context">
       <span class="context-icon" aria-hidden="true">⌂</span>
-      <span>
-        <strong>Clinique non sélectionnée</strong>
-        <small>Sélection de clinique à intégrer</small>
-      </span>
+      <div class="clinic-context-copy">
+        @if (tenantContext.loading()) {
+          <strong>Chargement des cliniques…</strong>
+          <small>Vérification des accès</small>
+        } @else if (tenantContext.clinics().length) {
+          <label for="active-clinic">Clinique active</label>
+          <select id="active-clinic" [value]="tenantContext.activeClinic()?.id ?? ''" (change)="selectClinic($any($event.target).value)">
+            @for (clinic of tenantContext.clinics(); track clinic.id) {
+              <option [value]="clinic.id">{{ clinic.name }} · {{ clinic.organizationName }}</option>
+            }
+          </select>
+        } @else {
+          <strong>Aucune clinique disponible</strong>
+          <small><a routerLink="/onboarding/clinic">Créer une clinique</a></small>
+        }
+        @if (tenantContext.error()) { <small class="clinic-error" role="alert">{{ tenantContext.error() }}</small> }
+      </div>
     </div>
 
     <nav class="primary-navigation" aria-label="Modules cliniques">
