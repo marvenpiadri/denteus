@@ -42,7 +42,7 @@
           <div class="recall-main">
             <div class="patient-line"><a [routerLink]="['/crm/patients', recall.patientId]">{{ recall.patientFirstName }} {{ recall.patientLastName }}</a><span class="patient-number">{{ recall.patientNumber }}</span></div>
             <p class="recall-type">{{ recall.recallType }} · intervalle {{ recall.intervalMonths }} mois</p>
-            <div class="recall-meta"><span class="status-label" [attr.data-status]="recall.status">{{ statusLabel(recall.status) }}</span><span>Dernier contrôle : {{ formatDate(recall.previousCompletedOn) }}</span>@if (recall.lastContactedAt) { <span>Dernier contact : {{ recall.lastContactedAt | date:'dd/MM/yyyy HH:mm' }}</span> }</div>
+            <div class="recall-meta"><span class="status-label" [attr.data-status]="recall.status">{{ statusLabel(recall.status) }}</span><span>Dernier contrôle : {{ formatDate(recall.previousCompletedOn) }}</span>@if (recall.lastContactedAt) { <span>Dernier contact : {{ formatContactTimestamp(recall.lastContactedAt) }}</span> }</div>
             @if (recall.note) { <p class="recall-note">{{ recall.note }}</p> }
           </div>
           <div class="recall-actions">
