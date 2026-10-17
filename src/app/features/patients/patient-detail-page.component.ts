@@ -1,8 +1,10 @@
 import { DatePipe, isPlatformBrowser } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, PLATFORM_ID, effect, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { map } from 'rxjs';
 import { TenantContextService } from '../../core/tenant/tenant-context.service';
 import { PatientApiService } from './patient-api.service';
 import type { PatientRecord, UpdatePatientInput } from './patient-api.service';
@@ -18,7 +20,8 @@ export class PatientDetailPageComponent {
   readonly tenant = inject(TenantContextService);
   private readonly api = inject(PatientApiService);
   private readonly platformId = inject(PLATFORM_ID);
-  private readonly patientId = inject(ActivatedRoute).snapshot.paramMap.get('patientId');
+  private readonly route = inject(ActivatedRoute);
+  readonly patientId = toSignal(this.route.paramMap.pipe(map((params) => params.get('patientId'))), { initialValue: null });
 
   readonly patient = signal<PatientRecord | null>(null);
   readonly loading = signal(false);
@@ -42,13 +45,14 @@ export class PatientDetailPageComponent {
   constructor() {
     effect(() => {
       const clinic = this.tenant.activeClinic();
-      if (isPlatformBrowser(this.platformId) && clinic && this.patientId) {
-        void this.loadPatient(clinic.organizationId, clinic.id, this.patientId);
+      const patientId = this.patientId();
+      if (isPlatformBrowser(this.platformId) && clinic && patientId) {
+        void this.loadPatient(clinic.organizationId, clinic.id, patientId);
       }
     });
   }
 
-  async loadPatient(organizationId?: string, clinicId?: string, patientId = this.patientId ?? ''): Promise<void> {
+  async loadPatient(organizationId?: string, clinicId?: string, patientId = this.patientId() ?? ''): Promise<void> {
     const clinic = this.tenant.activeClinic();
     const organization = organizationId ?? clinic?.organizationId;
     const activeClinicId = clinicId ?? clinic?.id;
