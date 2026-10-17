@@ -85,7 +85,7 @@
                 <span class="treatment-status" [attr.data-status]="treatment.status">{{ treatmentStatusLabel(treatment.status) }}</span>
               </div>
               @if (treatment.toothSites.length) {
-                <div class="treatment-teeth"><span>Dents concernées</span>@for (site of treatment.toothSites; track site.toothNo + ':' + site.surface) { <span class="tooth-chip">FDI {{ site.toothNo }} · {{ toothSurfaces.find(s => s.value === site.surface)?.label || site.surface }}</span> }</div>
+                <div class="treatment-teeth"><span>Dents concernées</span>@for (site of treatment.toothSites; track site.toothNo + ':' + site.surface) { <span class="tooth-chip">FDI {{ site.toothNo }} · {{ surfaceLabel(site.surface) }}</span> }</div>
               } @else { <p class="treatment-no-teeth">Aucune dent associée à ce soin.</p> }
               @if (treatment.notes) { <p class="treatment-note">{{ treatment.notes }}</p> }
               <div class="treatment-attribution">
