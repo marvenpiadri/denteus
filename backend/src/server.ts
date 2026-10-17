@@ -7,6 +7,7 @@ import { checkDatabaseConnection, pool } from './db/pool.js';
 import { organizationRoutes } from './routes/organizations.js';
 import { patientRoutes } from './routes/patients.js';
 import { odontogramRoutes } from './routes/odontograms.js';
+import { onboardingRoutes } from './routes/onboarding.js';
 
 const clientOrigins = (process.env['CLIENT_ORIGINS'] ?? 'http://localhost:3000')
   .split(',')
@@ -125,6 +126,7 @@ app.get('/api/v1/session', async (request, reply) => {
 });
 
 await app.register(organizationRoutes, { prefix: '/api/v1' });
+await app.register(onboardingRoutes, { prefix: '/api/v1' });
 await app.register(patientRoutes, { prefix: '/api/v1' });
 await app.register(odontogramRoutes, { prefix: '/api/v1' });
 
