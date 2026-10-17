@@ -37,6 +37,7 @@ export class AgendaPageComponent {
   readonly patientsError = signal('');
   readonly rescheduleError = signal('');
   readonly success = signal('');
+  readonly pendingStatusChange = signal<{ appointmentId: string; status: Exclude<AppointmentStatus, 'SCHEDULED'> } | null>(null);
   private patientOptionsClinicId = '';
 
   patientId = '';
@@ -124,7 +125,7 @@ export class AgendaPageComponent {
       const timezone = clinic.timezone || 'Africa/Casablanca';
       const startsAt = localDateTimeToIso(this.startsAt, timezone);
       const endsAt = localDateTimeToIso(this.endsAt, timezone);
-      await this.appointmentsApi.create(clinic.organizationId, clinic.id, {
+      const created = await this.appointmentsApi.create(clinic.organizationId, clinic.id, {
         patientId: this.patientId,
         startsAt,
         endsAt,
@@ -132,7 +133,9 @@ export class AgendaPageComponent {
       });
       this.showCreateForm.set(false);
       this.success.set('Le rendez-vous a été enregistré.');
-      await this.loadAppointments(clinic.organizationId, clinic.id, this.selectedDate(), timezone);
+      const createdDate = toClinicDateTimeInput(created.startsAt, timezone).slice(0, 10);
+      if (createdDate !== this.selectedDate()) this.selectedDate.set(createdDate);
+      else await this.loadAppointments(clinic.organizationId, clinic.id, this.selectedDate(), timezone);
     } catch (error) {
       this.formError.set(error instanceof Error && !(error instanceof HttpErrorResponse)
         ? error.message
@@ -201,16 +204,14 @@ export class AgendaPageComponent {
     this.saving.set(true);
     try {
       const timezone = clinic.timezone || 'Africa/Casablanca';
-      await this.appointmentsApi.reschedule(
-        clinic.organizationId,
-        clinic.id,
-        appointment.id,
-        localDateTimeToIso(this.rescheduleStartsAt, timezone),
-        localDateTimeToIso(this.rescheduleEndsAt, timezone),
-      );
+      const startsAt = localDateTimeToIso(this.rescheduleStartsAt, timezone);
+      const endsAt = localDateTimeToIso(this.rescheduleEndsAt, timezone);
+      await this.appointmentsApi.reschedule(clinic.organizationId, clinic.id, appointment.id, startsAt, endsAt);
       this.reschedulingId.set(null);
       this.success.set('Le rendez-vous a été déplacé.');
-      await this.loadAppointments(clinic.organizationId, clinic.id, this.selectedDate(), timezone);
+      const rescheduledDate = toClinicDateTimeInput(startsAt, timezone).slice(0, 10);
+      if (rescheduledDate !== this.selectedDate()) this.selectedDate.set(rescheduledDate);
+      else await this.loadAppointments(clinic.organizationId, clinic.id, this.selectedDate(), timezone);
     } catch (error) {
       this.rescheduleError.set(error instanceof Error && !(error instanceof HttpErrorResponse)
         ? error.message
@@ -220,6 +221,36 @@ export class AgendaPageComponent {
     } finally {
       this.saving.set(false);
     }
+  }
+
+  requestStatusChange(appointment: AppointmentRecord, status: Exclude<AppointmentStatus, 'SCHEDULED'>): void {
+    if (status === 'CANCELLED' || status === 'NO_SHOW') {
+      this.pendingStatusChange.set({ appointmentId: appointment.id, status });
+      return;
+    }
+    void this.changeStatus(appointment, status);
+  }
+
+  confirmStatusChange(): void {
+    const pending = this.pendingStatusChange();
+    const appointment = this.appointments().find((item) => item.id === pending?.appointmentId);
+    if (!pending || !appointment) return;
+    this.pendingStatusChange.set(null);
+    void this.changeStatus(appointment, pending.status);
+  }
+
+  async refreshAppointments(): Promise<void> {
+    const clinic = this.tenant.activeClinic();
+    const date = this.selectedDate();
+    if (clinic && date) await this.loadAppointments(clinic.organizationId, clinic.id, date, clinic.timezone || 'Africa/Casablanca');
+  }
+
+  retryPatientOptions(): void {
+    const clinic = this.tenant.activeClinic();
+    if (!clinic) return;
+    this.patientOptionsClinicId = '';
+    void this.loadPatientOptions(clinic.organizationId, clinic.id);
+    this.patientOptionsClinicId = clinic.id;
   }
 
   async changeStatus(appointment: AppointmentRecord, status: Exclude<AppointmentStatus, 'SCHEDULED'>): Promise<void> {
