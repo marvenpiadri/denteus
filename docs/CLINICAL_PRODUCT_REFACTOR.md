@@ -1,6 +1,6 @@
 # Dentaleus clinical product refactor
 
-**Status:** Phases 0–2 foundation in progress; patient-list vertical slice started  
+**Status:** Shell, auth/onboarding, patient admin, appointment scheduling and first recall workflow are implemented on the refactor branch; clinical chart and production acceptance gates remain open  
 **Branch:** `refactor/clinical-product-foundation`  
 **Product boundary:** authenticated CRM and public clinic Pages are separate experiences. The optional 3D dental atlas belongs only in a public clinic Page template; it is never a CRM feature.
 
@@ -74,7 +74,9 @@ This is a phased replacement, not a cosmetic redesign. Existing UI can be inspec
 - Added tenant-scoped API endpoints to list a bounded date range, create appointments, reschedule, and advance status through explicit transitions. Writes are audited.
 - Creation/rescheduling serialize schedule writes per clinic and prevent the same patient from being booked in overlapping appointments. Parallel appointments for different patients remain allowed because rooms/chairs and provider assignment have not yet been modeled.
 - Added pure unit tests for duration bounds, role access, and status transitions; they are authored but not verified as passing.
-- Remaining: timezone-aware agenda UI, room/chair/provider resource conflict rules, API/database integration tests, and usability validation.
+- Added a clinic-timezone-aware agenda UI with create, reschedule, explicit status transitions, patient links, loading/error states and cancellation/no-show confirmation.
+- Added an initial recall/continuing-care queue with due dates, status filters, persisted contact-attempt history, status transitions and tenant-scoped API endpoints.
+- Remaining: provider availability and room/chair resource conflict rules, richer appointment confirmation/waiting-room/planned-treatment queues, recall automation and scheduled-appointment linkage, API/database integration tests, and usability validation.
 
 **Gate:** appointment workflows are durable, auditable, timezone-correct, and tested for patient/resource collisions and tenant isolation. This gate is not yet verified.
 
@@ -103,15 +105,16 @@ This is a phased replacement, not a cosmetic redesign. Existing UI can be inspec
 
 ## First implementation sequence
 
-1. Finish the signup → onboarding → clinic context → patient list/detail/edit vertical slice and add backend integration tests.
-2. Add patient API/database tests for cross-tenant denial, durable writes, audit events, and optimistic concurrency.
-3. Implement appointment persistence and scheduling conflict checks only after tenant tests exist.
-4. Rebuild the clinical chart UI against the persisted odontogram contract; the 3D atlas remains exclusive to public clinic Pages.
-5. Keep the PR in draft until a local build/test run or a usable CI run verifies the code.
+1. Add and execute API/database tests for auth, tenant denial, durable patient/appointment/recall writes, audit events, and optimistic concurrency.
+2. Extend the agenda to real provider/operatory schedules and prevent provider/chair double-booking; add confirmation, waiting-room, unscheduled and ASAP workflows.
+3. Rebuild the clinical chart UI against a versioned, dated clinical-record contract, including history and safe correction semantics.
+4. Implement structured treatment plans, procedure tracking, consent/acceptance/refusal, and planned appointments linked to scheduling.
+5. Add medical/dental history, allergies/medication reconciliation, imaging metadata and append-only signed clinical notes.
+6. Keep the PR in draft until a local build/test run or a usable CI run verifies the code.
 
 ## Research basis
 
-This is product and engineering guidance, not a claim of clinical validation. The standards below inform accessibility and service UX; dental-specific workflows must still be validated with practicing clinicians.
+This is product and engineering guidance, not a claim of clinical validation. The standards below inform accessibility and service UX; dental-specific workflows must still be validated with practicing clinicians. The detailed dental product benchmark is maintained in [REAL_WORLD_DENTAL_CRM_REQUIREMENTS.md](./REAL_WORLD_DENTAL_CRM_REQUIREMENTS.md).
 
 - NHS Service Manual, accessibility design guidance (WCAG 2.2, clear labels, error handling, do not rely on colour alone): https://service-manual.nhs.uk/accessibility/design
 - NHS Service Manual, error messages (explain what went wrong and how to fix it; preserve entered data): https://service-manual.nhs.uk/design-system/components/error-message
