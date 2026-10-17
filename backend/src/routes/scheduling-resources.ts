@@ -84,6 +84,21 @@ export const schedulingResourceRoutes: FastifyPluginAsync = async (app) => {
       const access = await requireClinicAccess(request, reply, request.params.organizationId, request.params.clinicId);
       if (!access) return;
       if (!canManageAppointments(access.effectiveRole)) return deny(reply);
+      if (request.body.userId) {
+        const linkedUser = await pool.query(
+          `SELECT 1
+           FROM organization_memberships om
+           LEFT JOIN clinic_memberships cm
+             ON cm.organization_id = om.organization_id AND cm.clinic_id = $2 AND cm.user_id = om.user_id
+           WHERE om.organization_id = $1 AND om.user_id = $3
+             AND (om.role IN ('ORGANIZATION_OWNER', 'ORGANIZATION_ADMIN') OR cm.user_id IS NOT NULL)
+           LIMIT 1`,
+          [request.params.organizationId, request.params.clinicId, request.body.userId],
+        );
+        if (!linkedUser.rowCount) {
+          return reply.code(400).send({ error: { code: 'PROVIDER_USER_OUT_OF_SCOPE', message: 'Le compte sélectionné n’appartient pas à cette organisation ou clinique.' } });
+        }
+      }
       const result = await pool.query(
         `INSERT INTO clinic_providers (id, organization_id, clinic_id, user_id, display_name, role, color)
          VALUES ($1, $2, $3, $4, $5, $6, $7)
