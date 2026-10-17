@@ -67,7 +67,7 @@
             <div><label for="treatment-surface">Surface dentaire</label><select id="treatment-surface" name="treatmentSurface" [(ngModel)]="treatmentSurface">@for (surface of toothSurfaces; track surface.value) { <option [value]="surface.value">{{ surface.label }}</option> }</select><small>La surface sélectionnée s’applique à chaque dent choisie ci-dessous.</small></div>
             <div class="wide-field"><label for="treatment-notes">Note clinique (facultatif)</label><textarea id="treatment-notes" name="treatmentNotes" [(ngModel)]="treatmentNotes" rows="3" maxlength="10000" placeholder="Note factuelle sur le soin, sans remplacer un dossier clinique complet."></textarea></div>
           </div>
-          <app-tooth-selector [selectedTeeth]="selectedTeeth()" (selectedTeethChange)="selectedTeeth.set($event)" [treatedTeeth]="treatedTeeth()" />
+          <app-tooth-selector [selectedTeeth]="selectedTeeth()" (selectedTeethChange)="selectedTeeth.set($event)" [treatedTeeth]="treatedTeeth()" [showPrimary]="showPrimaryTeeth()" (showPrimaryChange)="showPrimaryTeeth.set($event)" />
           <div class="form-actions"><button class="secondary-button" type="button" (click)="showTreatmentForm.set(false)" [disabled]="treatmentsSaving()">Annuler</button><button class="primary-button" type="submit" [disabled]="!treatmentTitle.trim() || treatmentsSaving()">{{ treatmentsSaving() ? 'Enregistrement…' : 'Enregistrer le soin' }}</button></div>
         </form>
       }
