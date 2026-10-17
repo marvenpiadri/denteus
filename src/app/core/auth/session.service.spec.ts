@@ -60,6 +60,7 @@ describe('SessionService', () => {
     });
     expect(login.request.withCredentials).toBe(true);
     login.flush({ token: 'test-only' });
+    await Promise.resolve();
 
     const session = http.expectOne('/api/v1/session');
     session.flush({
