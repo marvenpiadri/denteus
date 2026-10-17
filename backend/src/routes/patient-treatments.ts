@@ -56,6 +56,8 @@ const treatmentSelect = `
   pt.id,
   pt.patient_id AS "patientId",
   pt.appointment_id AS "appointmentId",
+  to_char(ap.starts_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS "appointmentStartsAt",
+  ap.reason AS "appointmentReason",
   pt.title,
   pt.category,
   pt.status,
@@ -84,6 +86,7 @@ const treatmentSelect = `
   ), '[]'::jsonb) AS events
 `;
 const joins = `
+  LEFT JOIN appointments ap ON ap.organization_id = pt.organization_id AND ap.clinic_id = pt.clinic_id AND ap.id = pt.appointment_id
   LEFT JOIN app_users performer ON performer.id = pt.performed_by_id
   LEFT JOIN app_users recorder ON recorder.id = pt.recorded_by_id
 `;
