@@ -11,6 +11,10 @@ export const recallRoutes: FastifyPluginAsync = async (app) => {
       const access = await requireClinicAccess(request, reply, request.params.organizationId, request.params.clinicId);
       if (!access) return;
       if (!canManageAppointments(access.effectiveRole)) return reply.code(403).send({ error: { code: 'FORBIDDEN', message: 'Accès refusé.' } });
+      const allowedStatuses = ['DUE', 'CONTACTED', 'SCHEDULED', 'COMPLETED', 'DECLINED', 'INACTIVE'];
+      if (request.query.status && !allowedStatuses.includes(request.query.status)) {
+        return reply.code(400).send({ error: { code: 'INVALID_RECALL_STATUS', message: 'Filtre de rappel invalide.' } });
+      }
       const result = await pool.query(
         `SELECT r.id, r.patient_id AS "patientId", p.patient_number AS "patientNumber",
           p.first_name AS "patientFirstName", p.last_name AS "patientLastName", p.phone AS "patientPhone",
