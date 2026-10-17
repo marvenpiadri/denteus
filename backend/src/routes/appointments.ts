@@ -22,6 +22,8 @@ interface CreateAppointmentBody {
   startsAt: string;
   endsAt: string;
   reason?: string;
+  providerId?: string | null;
+  operatoryId?: string | null;
 }
 interface RescheduleBody {
   startsAt: string;
@@ -50,6 +52,8 @@ const createAppointmentSchema = {
     startsAt: { type: 'string', format: 'date-time' },
     endsAt: { type: 'string', format: 'date-time' },
     reason: { type: 'string', maxLength: 300 },
+    providerId: { anyOf: [{ type: 'string', minLength: 1, maxLength: 100 }, { type: 'null' }] },
+    operatoryId: { anyOf: [{ type: 'string', minLength: 1, maxLength: 100 }, { type: 'null' }] },
   },
 } as const;
 
@@ -84,6 +88,10 @@ const appointmentSelect = `
   to_char(a.ends_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS "endsAt",
   a.status,
   a.reason,
+  a.provider_id AS "providerId",
+  pr.display_name AS "providerName",
+  a.operatory_id AS "operatoryId",
+  op.name AS "operatoryName",
   a.created_by_id AS "createdById",
   to_char(a.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS "createdAt",
   to_char(a.updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS "updatedAt"
@@ -124,6 +132,10 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
           JOIN patients p
             ON p.organization_id = a.organization_id
            AND p.id = a.patient_id
+          LEFT JOIN clinic_providers pr
+            ON pr.organization_id = a.organization_id AND pr.clinic_id = a.clinic_id AND pr.id = a.provider_id
+          LEFT JOIN clinic_operatories op
+            ON op.organization_id = a.organization_id AND op.clinic_id = a.clinic_id AND op.id = a.operatory_id
           WHERE a.organization_id = $1
             AND a.clinic_id = $2
             AND a.starts_at < $4::timestamptz
@@ -195,12 +207,75 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
           });
         }
 
+        if ((request.body.providerId && !request.body.operatoryId) || (!request.body.providerId && request.body.operatoryId)) {
+          await client.query('ROLLBACK');
+          transactionOpen = false;
+          return reply.code(400).send({
+            error: { code: 'RESOURCE_ASSIGNMENT_REQUIRED', message: 'Choisissez à la fois un praticien et un fauteuil, ou laissez les deux champs vides.' },
+          });
+        }
+
+        if (request.body.providerId && request.body.operatoryId) {
+          const availability = await client.query(
+            `SELECT
+               EXISTS (
+                 SELECT 1 FROM clinic_providers p
+                 JOIN clinics c ON c.organization_id = p.organization_id AND c.id = p.clinic_id
+                 JOIN provider_working_hours h
+                   ON h.organization_id = p.organization_id AND h.clinic_id = p.clinic_id
+                  AND h.provider_id = p.id
+                  AND h.day_of_week = EXTRACT(DOW FROM ($3::timestamptz AT TIME ZONE c.timezone))::int
+                 WHERE p.organization_id = $1 AND p.clinic_id = $2 AND p.id = $5 AND p.active
+                   AND ($3::timestamptz AT TIME ZONE c.timezone)::date = ($4::timestamptz AT TIME ZONE c.timezone)::date
+                   AND ($3::timestamptz AT TIME ZONE c.timezone)::time >= h.starts_at
+                   AND ($4::timestamptz AT TIME ZONE c.timezone)::time <= h.ends_at
+               ) AS provider_available,
+               EXISTS (
+                 SELECT 1 FROM clinic_operatories o
+                 WHERE o.organization_id = $1 AND o.clinic_id = $2 AND o.id = $6 AND o.active
+               ) AS operatory_available,
+               EXISTS (
+                 SELECT 1 FROM appointments a
+                 WHERE a.organization_id = $1 AND a.clinic_id = $2
+                   AND a.status NOT IN ('CANCELLED', 'NO_SHOW')
+                   AND a.provider_id = $5
+                   AND a.starts_at < $4::timestamptz AND a.ends_at > $3::timestamptz
+               ) AS provider_conflict,
+               EXISTS (
+                 SELECT 1 FROM appointments a
+                 WHERE a.organization_id = $1 AND a.clinic_id = $2
+                   AND a.status NOT IN ('CANCELLED', 'NO_SHOW')
+                   AND a.operatory_id = $6
+                   AND a.starts_at < $4::timestamptz AND a.ends_at > $3::timestamptz
+               ) AS operatory_conflict`,
+            [request.params.organizationId, request.params.clinicId, request.body.startsAt, request.body.endsAt,
+              request.body.providerId, request.body.operatoryId],
+          );
+          const available = availability.rows[0];
+          if (!available.provider_available) {
+            await client.query('ROLLBACK'); transactionOpen = false;
+            return reply.code(409).send({ error: { code: 'PROVIDER_UNAVAILABLE', message: 'Le praticien n’a pas d’horaires configurés pour ce créneau ou ne travaille pas à cette heure.' } });
+          }
+          if (!available.operatory_available) {
+            await client.query('ROLLBACK'); transactionOpen = false;
+            return reply.code(409).send({ error: { code: 'OPERATORY_UNAVAILABLE', message: 'Le fauteuil sélectionné n’est pas disponible dans cette clinique.' } });
+          }
+          if (available.provider_conflict) {
+            await client.query('ROLLBACK'); transactionOpen = false;
+            return reply.code(409).send({ error: { code: 'PROVIDER_CONFLICT', message: 'Ce praticien a déjà un rendez-vous sur ce créneau.' } });
+          }
+          if (available.operatory_conflict) {
+            await client.query('ROLLBACK'); transactionOpen = false;
+            return reply.code(409).send({ error: { code: 'OPERATORY_CONFLICT', message: 'Ce fauteuil a déjà un rendez-vous sur ce créneau.' } });
+          }
+        }
+
         const result = await client.query(
           `
             INSERT INTO appointments (
-              id, organization_id, clinic_id, patient_id, starts_at, ends_at, reason, created_by_id
+              id, organization_id, clinic_id, patient_id, starts_at, ends_at, reason, created_by_id, provider_id, operatory_id
             )
-            VALUES ($1, $2, $3, $4, $5::timestamptz, $6::timestamptz, $7, $8)
+            VALUES ($1, $2, $3, $4, $5::timestamptz, $6::timestamptz, $7, $8, $9, $10)
             RETURNING id
           `,
           [
@@ -212,6 +287,8 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
             request.body.endsAt,
             request.body.reason?.trim() || null,
             access.userId,
+            request.body.providerId ?? null,
+            request.body.operatoryId ?? null,
           ],
         );
 
@@ -239,6 +316,10 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
             SELECT ${appointmentSelect}
             FROM appointments a
             JOIN patients p ON p.organization_id = a.organization_id AND p.id = a.patient_id
+            LEFT JOIN clinic_providers pr
+            ON pr.organization_id = a.organization_id AND pr.clinic_id = a.clinic_id AND pr.id = a.provider_id
+          LEFT JOIN clinic_operatories op
+            ON op.organization_id = a.organization_id AND op.clinic_id = a.clinic_id AND op.id = a.operatory_id
             WHERE a.organization_id = $1 AND a.clinic_id = $2 AND a.id = $3
           `,
           [request.params.organizationId, request.params.clinicId, appointmentId],
@@ -389,6 +470,44 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
           return reply.code(409).send({
             error: { code: 'APPOINTMENT_OVERLAP', message: 'Ce créneau chevauche un autre rendez-vous de la clinique.' },
           });
+        }
+
+        const assigned = await client.query<{ providerId: string | null; operatoryId: string | null }>(
+          'SELECT provider_id AS "providerId", operatory_id AS "operatoryId" FROM appointments WHERE organization_id = $1 AND clinic_id = $2 AND id = $3',
+          [request.params.organizationId, request.params.clinicId, request.params.appointmentId],
+        );
+        const resource = assigned.rows[0];
+        if (resource?.providerId && resource.operatoryId) {
+          const availability = await client.query(
+            `SELECT
+               EXISTS (
+                 SELECT 1 FROM clinic_providers p
+                 JOIN clinics c ON c.organization_id = p.organization_id AND c.id = p.clinic_id
+                 JOIN provider_working_hours h ON h.organization_id = p.organization_id AND h.clinic_id = p.clinic_id
+                   AND h.provider_id = p.id
+                   AND h.day_of_week = EXTRACT(DOW FROM ($3::timestamptz AT TIME ZONE c.timezone))::int
+                 WHERE p.organization_id = $1 AND p.clinic_id = $2 AND p.id = $5 AND p.active
+                   AND ($3::timestamptz AT TIME ZONE c.timezone)::date = ($4::timestamptz AT TIME ZONE c.timezone)::date
+                   AND ($3::timestamptz AT TIME ZONE c.timezone)::time >= h.starts_at
+                   AND ($4::timestamptz AT TIME ZONE c.timezone)::time <= h.ends_at
+               ) AS provider_available,
+               EXISTS (SELECT 1 FROM appointments a WHERE a.organization_id = $1 AND a.clinic_id = $2
+                 AND a.id <> $6 AND a.status NOT IN ('CANCELLED', 'NO_SHOW') AND a.provider_id = $5
+                 AND a.starts_at < $4::timestamptz AND a.ends_at > $3::timestamptz) AS provider_conflict,
+               EXISTS (SELECT 1 FROM appointments a WHERE a.organization_id = $1 AND a.clinic_id = $2
+                 AND a.id <> $6 AND a.status NOT IN ('CANCELLED', 'NO_SHOW') AND a.operatory_id = $7
+                 AND a.starts_at < $4::timestamptz AND a.ends_at > $3::timestamptz) AS operatory_conflict`,
+            [request.params.organizationId, request.params.clinicId, request.body.startsAt, request.body.endsAt,
+              resource.providerId, request.params.appointmentId, resource.operatoryId],
+          );
+          const result = availability.rows[0];
+          if (!result.provider_available || result.provider_conflict || result.operatory_conflict) {
+            await client.query('ROLLBACK'); transactionOpen = false;
+            return reply.code(409).send({ error: { code: 'RESOURCE_CONFLICT', message: !result.provider_available
+              ? 'Le praticien ne travaille pas à cette heure.'
+              : result.provider_conflict ? 'Le praticien a déjà un rendez-vous sur ce créneau.'
+                : 'Le fauteuil a déjà un rendez-vous sur ce créneau.' } });
+          }
         }
 
         await client.query(
