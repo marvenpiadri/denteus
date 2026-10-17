@@ -3,7 +3,11 @@ import { pool } from '../db/pool.js';
 
 const configuredBaseUrl = process.env['BETTER_AUTH_URL'];
 const secret = process.env['BETTER_AUTH_SECRET'];
-const trustedOrigins = (process.env['CLIENT_ORIGINS'] ?? 'http://localhost:3000')
+const configuredOrigins = process.env['CLIENT_ORIGINS'];
+if (!configuredOrigins && process.env['NODE_ENV'] === 'production') {
+  throw new Error('CLIENT_ORIGINS must be configured in production.');
+}
+const trustedOrigins = (configuredOrigins ?? 'http://localhost:3000')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
@@ -26,6 +30,19 @@ export const auth = betterAuth({
     minPasswordLength: 12,
     maxPasswordLength: 128,
     revokeSessionsOnPasswordReset: true,
+  },
+  rateLimit: {
+    enabled: true,
+    window: 60,
+    max: 100,
+    customRules: {
+      '/sign-in/email': { window: 60, max: 5 },
+      '/sign-up/email': { window: 3_600, max: 5 },
+      '/request-password-reset': { window: 3_600, max: 5 },
+    },
+  },
+  advanced: {
+    useSecureCookies: process.env['NODE_ENV'] === 'production',
   },
   user: {
     modelName: 'app_users',
