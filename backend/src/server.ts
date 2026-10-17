@@ -1,6 +1,19 @@
 import 'dotenv/config';
 import Fastify from 'fastify';
+import fastifyCors from '@fastify/cors';
+import { fromNodeHeaders } from 'better-auth/node';
+import { auth } from './auth/auth.js';
 import { checkDatabaseConnection, pool } from './db/pool.js';
+
+const clientOrigins = (process.env['CLIENT_ORIGINS'] ?? 'http://localhost:3000')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const authBaseUrl = process.env['BETTER_AUTH_URL'];
+if (!authBaseUrl) {
+  throw new Error('BETTER_AUTH_URL must be configured explicitly.');
+}
 
 const app = Fastify({
   logger: {
@@ -15,6 +28,14 @@ const app = Fastify({
   },
   bodyLimit: 1_048_576,
   trustProxy: process.env['TRUST_PROXY'] === 'true',
+});
+
+await app.register(fastifyCors, {
+  origin: clientOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  maxAge: 86_400,
 });
 
 app.get('/health', async () => ({
@@ -38,6 +59,62 @@ app.get('/health/ready', async (_request, reply) => {
       },
     });
   }
+});
+
+app.route({
+  method: ['GET', 'POST'],
+  url: '/api/auth/*',
+  async handler(request, reply) {
+    try {
+      const url = new URL(request.url, authBaseUrl);
+      const headers = fromNodeHeaders(request.headers);
+      const authRequest = new Request(url.toString(), {
+        method: request.method,
+        headers,
+        ...(request.body !== undefined
+          ? { body: JSON.stringify(request.body) }
+          : {}),
+      });
+
+      const response = await auth.handler(authRequest);
+      reply.status(response.status);
+      response.headers.forEach((value, key) => reply.header(key, value));
+      return reply.send(response.body ? await response.text() : null);
+    } catch (error) {
+      request.log.error({ err: error }, 'Authentication handler failed');
+      return reply.code(500).send({
+        error: {
+          code: 'AUTH_FAILURE',
+          message: 'The authentication request could not be completed.',
+        },
+      });
+    }
+  },
+});
+
+app.get('/api/v1/session', async (request, reply) => {
+  const result = await auth.api.getSession({
+    headers: fromNodeHeaders(request.headers),
+  });
+
+  if (!result) {
+    return reply.code(401).send({
+      error: { code: 'UNAUTHENTICATED', message: 'Authentication is required.' },
+    });
+  }
+
+  return {
+    user: {
+      id: result.user.id,
+      name: result.user.name,
+      email: result.user.email,
+      emailVerified: result.user.emailVerified,
+      image: result.user.image,
+    },
+    session: {
+      expiresAt: result.session.expiresAt,
+    },
+  };
 });
 
 app.setNotFoundHandler(async (_request, reply) => {
