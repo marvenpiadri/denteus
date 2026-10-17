@@ -8,6 +8,8 @@ export interface ClinicContext {
   id: string;
   name: string;
   role: string;
+  timezone: string;
+  city: string | null;
 }
 
 export interface OrganizationContext {
