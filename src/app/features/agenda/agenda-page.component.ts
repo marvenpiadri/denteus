@@ -148,6 +148,14 @@ export class AgendaPageComponent {
     }
   }
 
+  retryResources(): void {
+    const clinic = this.tenant.activeClinic();
+    if (!clinic) return;
+    this.resourceOptionsClinicId = '';
+    void this.loadResources(clinic.organizationId, clinic.id);
+    this.resourceOptionsClinicId = clinic.id;
+  }
+
   async createProvider(): Promise<void> {
     const clinic = this.tenant.activeClinic();
     if (!clinic || this.resourceSaving() || !this.providerName.trim()) return;
