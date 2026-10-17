@@ -34,6 +34,7 @@ The API listens on `http://localhost:4100` by default.
 - `GET /health/ready` checks PostgreSQL readiness.
 - `/api/auth/*` serves Better Auth endpoints.
 - `GET /api/v1/session` returns a minimal current-user/session view or `401`.
+- `GET /api/v1/organizations` returns only organizations and clinic scopes associated with the authenticated user's memberships; it never accepts a user ID from the caller.
 
 ## Security boundary
 
