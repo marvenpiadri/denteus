@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { FastifyPluginAsync, FastifyReply } from 'fastify';
 import { canReadOdontogram, canWriteOdontogram, denyInsufficientRole, requireClinicAccess } from '../auth/authorization.js';
 import { pool } from '../db/pool.js';
+import { canTransitionTreatmentStatus, isValidFdiTooth, isValidToothSurface } from '../domain/patient-treatment-policy.js';
 
 interface PatientParams { organizationId: string; clinicId: string; patientId: string; }
 interface TreatmentParams extends PatientParams { treatmentId: string; }
@@ -21,13 +22,6 @@ interface ChangeTreatmentStatusBody { status: TreatmentStatus; }
 
 const categories: TreatmentCategory[] = ['EXAM','HYGIENE','RESTORATIVE','ENDODONTICS','EXTRACTION','PROSTHODONTICS','ORTHODONTICS','PERIODONTICS','IMPLANT','OTHER'];
 const statuses: TreatmentStatus[] = ['PLANNED','ACCEPTED','COMPLETED','DECLINED'];
-const surfaces: ToothSurface[] = ['WHOLE','OCCLUSAL','MESIAL','DISTAL','BUCCAL','LINGUAL','PALATAL','CERVICAL'];
-const validFdiTeeth = new Set([
-  11,12,13,14,15,16,17,18,21,22,23,24,25,26,27,28,
-  31,32,33,34,35,36,37,38,41,42,43,44,45,46,47,48,
-  51,52,53,54,55,61,62,63,64,65,71,72,73,74,75,81,82,83,84,85,
-]);
-
 const createSchema = {
   type: 'object', additionalProperties: false, required: ['title', 'category'],
   properties: {
@@ -52,16 +46,6 @@ const statusSchema = {
   type: 'object', additionalProperties: false, required: ['status'],
   properties: { status: { type: 'string', enum: statuses } },
 } as const;
-
-function canTransition(from: TreatmentStatus, to: TreatmentStatus): boolean {
-  const transitions: Record<TreatmentStatus, TreatmentStatus[]> = {
-    PLANNED: ['ACCEPTED', 'COMPLETED', 'DECLINED'],
-    ACCEPTED: ['COMPLETED', 'DECLINED'],
-    COMPLETED: [],
-    DECLINED: [],
-  };
-  return transitions[from].includes(to);
-}
 
 function deny(reply: FastifyReply): null {
   return denyInsufficientRole(reply);
@@ -149,7 +133,7 @@ export const patientTreatmentRoutes: FastifyPluginAsync = async (app) => {
       if (!categories.includes(request.body.category) || !statuses.includes(status)) {
         return reply.code(400).send({ error: { code: 'INVALID_TREATMENT', message: 'Catégorie ou statut de soin invalide.' } });
       }
-      if (toothSites.some((site) => !validFdiTeeth.has(site.toothNo) || !surfaces.includes(site.surface))) {
+      if (toothSites.some((site) => !isValidFdiTooth(site.toothNo) || !isValidToothSurface(site.surface))) {
         return reply.code(400).send({ error: { code: 'INVALID_TOOTH_SITE', message: 'Numéro de dent ou surface FDI invalide.' } });
       }
       const uniqueSites = new Set(toothSites.map((site) => `${site.toothNo}:${site.surface}`));
@@ -241,7 +225,7 @@ export const patientTreatmentRoutes: FastifyPluginAsync = async (app) => {
           await client.query('ROLLBACK'); transactionOpen = false;
           return reply.code(404).send({ error: { code: 'TREATMENT_NOT_FOUND', message: 'Soin introuvable.' } });
         }
-        if (!canTransition(from, request.body.status)) {
+        if (!canTransitionTreatmentStatus(from, request.body.status)) {
           await client.query('ROLLBACK'); transactionOpen = false;
           return reply.code(409).send({ error: { code: 'INVALID_STATUS_TRANSITION', message: 'Cette transition de statut n’est pas autorisée.' } });
         }
