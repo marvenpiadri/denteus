@@ -38,3 +38,10 @@
 @media(max-width:900px){.clinical-app{grid-template-columns:minmax(0,1fr)}.sidebar{position:fixed;left:0;top:0;width:272px;transform:translateX(-105%);transition:transform .2s ease;box-shadow:12px 0 40px #18343e12}.sidebar--mobile-open{transform:translateX(0)}.navigation-backdrop{display:block;position:fixed;inset:0;z-index:20;border:0;background:#122b33a6}.mobile-menu-button{display:inline-grid;place-items:center}.topbar{height:68px;gap:12px}.topbar-status{font-size:10px;padding:7px 9px}.main-content{padding-top:20px}}
 @media(max-width:520px){.topbar{padding:0 14px}.topbar-status{max-width:132px;line-height:1.35;border-radius:8px}.main-content{padding:16px 14px 36px}.foundation-notice{margin-bottom:20px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+
+.session-placeholder{min-width:0}
+.session-copy{min-width:0;flex:1}
+.session-copy strong,.session-copy small{overflow-wrap:anywhere}
+.sign-out-button{align-self:center;flex:none;padding:6px 7px;border:1px solid #e0e8ec;border-radius:6px;background:#fff;color:#627780;font-size:10px;font-weight:700}
+.sign-out-button:hover{border-color:#c4d8dc;background:#f5f8f9;color:#17343d}
+.sign-out-button:focus-visible{outline:3px solid #69b9b0;outline-offset:2px}
