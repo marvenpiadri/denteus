@@ -111,3 +111,10 @@ export function toClinicDateTimeInput(iso: string, timeZone: string): string {
   const parts = partsAt(new Date(iso), timeZone);
   return `${parts.year}-${String(parts.month).padStart(2, '0')}-${String(parts.day).padStart(2, '0')}T${String(parts.hour).padStart(2, '0')}:${String(parts.minute).padStart(2, '0')}`;
 }
+
+export function formatCalendarDate(value: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return value;
+  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12));
+  return new Intl.DateTimeFormat('fr-MA', { dateStyle: 'full', timeZone: 'UTC' }).format(date);
+}
