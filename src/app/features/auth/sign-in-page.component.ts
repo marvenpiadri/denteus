@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { SessionService } from '../../core/auth/session.service';
 
 @Component({
   selector: 'app-sign-in-page',
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sign-in-page.component.html',
   styleUrl: './sign-in-page.component.css',
@@ -20,6 +20,10 @@ export class SignInPageComponent {
   submitting = false;
   errorMessage = '';
   showPassword = false;
+
+  get sessionsUnavailable(): boolean {
+    return this.sessions.status() === 'unavailable';
+  }
 
   async submit(): Promise<void> {
     if (this.submitting) return;
