@@ -18,6 +18,7 @@ test('tenant constraints isolate clinics and odontogram data persists across con
   const clinicA2 = `clinic-a2-${suffix}`;
   const clinicB = `clinic-b-${suffix}`;
   const patientId = `patient-${suffix}`;
+  const appointmentId = `appointment-${suffix}`;
 
   const writer = await pool.connect();
   let committed = false;
@@ -80,6 +81,43 @@ test('tenant constraints isolate clinics and odontogram data persists across con
       'INSERT INTO odontogram_records (id, organization_id, clinic_id, patient_id, status_payload) VALUES ($1, $2, $3, $4, $5::jsonb)',
       [`odonto-${suffix}`, orgA, clinicA, patientId, JSON.stringify({ '11': 'healthy' })],
     );
+    await writer.query(
+      `INSERT INTO appointments (
+        id, organization_id, clinic_id, patient_id, starts_at, ends_at, reason, created_by_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [
+        appointmentId,
+        orgA,
+        clinicA,
+        patientId,
+        '2026-10-17T09:00:00.000Z',
+        '2026-10-17T09:30:00.000Z',
+        'Integration test',
+        userId,
+      ],
+    );
+
+    await writer.query('SAVEPOINT expected_appointment_scope_failure');
+    await assert.rejects(
+      writer.query(
+        `INSERT INTO appointments (
+          id, organization_id, clinic_id, patient_id, starts_at, ends_at
+        ) VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          `bad-appointment-${suffix}`,
+          orgA,
+          clinicA2,
+          patientId,
+          '2026-10-17T10:00:00.000Z',
+          '2026-10-17T10:30:00.000Z',
+        ],
+      ),
+      (error: unknown) => (error as { code?: string }).code === '23503',
+      'an appointment cannot attach a patient to a clinic without a patient-clinic link',
+    );
+    await writer.query('ROLLBACK TO SAVEPOINT expected_appointment_scope_failure');
+    await writer.query('RELEASE SAVEPOINT expected_appointment_scope_failure');
+
     await writer.query('COMMIT');
     committed = true;
 
@@ -92,6 +130,13 @@ test('tenant constraints isolate clinics and odontogram data persists across con
         [orgA, clinicA, patientId],
       );
       assert.deepEqual(readBack.rows[0]?.status_payload, { '11': 'healthy' });
+
+      const appointmentReadBack = await reader.query(
+        'SELECT status, reason FROM appointments WHERE organization_id = $1 AND clinic_id = $2 AND id = $3',
+        [orgA, clinicA, appointmentId],
+      );
+      assert.equal(appointmentReadBack.rows[0]?.status, 'SCHEDULED');
+      assert.equal(appointmentReadBack.rows[0]?.reason, 'Integration test');
     } finally {
       reader.release();
     }
