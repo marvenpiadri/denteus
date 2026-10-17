@@ -28,4 +28,44 @@ export const recallRoutes: FastifyPluginAsync = async (app) => {
       return { data: result.rows, count: result.rows.length };
     },
   );
+
+  app.post<{ Params: { organizationId: string; clinicId: string }; Body: { patientId: string; recallType: string; dueOn: string; intervalMonths?: number; note?: string } }>(
+    '/organizations/:organizationId/clinics/:clinicId/recalls',
+    { schema: { body: { type: 'object', additionalProperties: false, required: ['patientId', 'recallType', 'dueOn'], properties: {
+      patientId: { type: 'string', minLength: 1, maxLength: 100 },
+      recallType: { type: 'string', minLength: 1, maxLength: 100 },
+      dueOn: { type: 'string', format: 'date' },
+      intervalMonths: { type: 'integer', minimum: 1, maximum: 120 },
+      note: { type: 'string', maxLength: 2000 },
+    } } } },
+    async (request, reply) => {
+      const access = await requireClinicAccess(request, reply, request.params.organizationId, request.params.clinicId);
+      if (!access) return;
+      if (!canManageAppointments(access.effectiveRole)) return reply.code(403).send({ error: { code: 'FORBIDDEN', message: 'Accès refusé.' } });
+      const patient = await pool.query(
+        'SELECT 1 FROM patient_clinics WHERE organization_id=$1 AND clinic_id=$2 AND patient_id=$3',
+        [request.params.organizationId, request.params.clinicId, request.body.patientId],
+      );
+      if (!patient.rowCount) return reply.code(404).send({ error: { code: 'PATIENT_NOT_FOUND', message: 'Patient introuvable dans cette clinique.' } });
+      const id = randomUUID();
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        await client.query(
+          `INSERT INTO patient_recalls (id, organization_id, clinic_id, patient_id, recall_type, due_on, interval_months, note, created_by_id)
+           VALUES ($1,$2,$3,$4,$5,$6::date,$7,$8,$9)`,
+          [id, request.params.organizationId, request.params.clinicId, request.body.patientId, request.body.recallType.trim(), request.body.dueOn, request.body.intervalMonths ?? 6, request.body.note?.trim() || null, access.userId],
+        );
+        await client.query(
+          `INSERT INTO patient_recall_events (id, organization_id, clinic_id, recall_id, user_id, event_type, to_status)
+           VALUES ($1,$2,$3,$4,$5,'CREATED','DUE')`,
+          [randomUUID(), request.params.organizationId, request.params.clinicId, id, access.userId],
+        );
+        await client.query('COMMIT');
+        return reply.code(201).send({ data: { id, status: 'DUE' } });
+      } catch (error) { await client.query('ROLLBACK'); throw error; }
+      finally { client.release(); }
+    },
+  );
+
 };
