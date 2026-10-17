@@ -1,6 +1,9 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { PLATFORM_ID } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { SessionService } from '../auth/session.service';
+import { TenantContextService } from '../tenant/tenant-context.service';
 
 @Component({
   selector: 'app-clinical-shell',
@@ -17,7 +20,7 @@ export class ClinicalShellComponent {
   readonly signingOut = signal(false);
   readonly signOutError = signal('');
 
-  get userInitial(): string {
+  ngOnInit(): void {\n    if (isPlatformBrowser(this.platformId)) void this.tenantContext.load();\n  }\n\n  selectClinic(clinicId: string): void {\n    this.tenantContext.setActiveClinic(clinicId || null);\n  }\n\n  get userInitial(): string {
     const name = this.sessions.user()?.name || this.sessions.user()?.email || 'D';
     return name.trim().charAt(0).toUpperCase() || 'D';
   }
