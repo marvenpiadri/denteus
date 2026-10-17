@@ -1,5 +1,7 @@
 import { Routes } from '@angular/router';
+import { requireSessionGuard } from './core/auth/session.guard';
 import { ClinicalShellComponent } from './core/layouts/clinical-shell.component';
+import { SignInPageComponent } from './features/auth/sign-in-page.component';
 import { WorkspacePageComponent } from './features/workspace/workspace-page.component';
 
 export const routes: Routes = [
@@ -9,8 +11,14 @@ export const routes: Routes = [
     redirectTo: 'crm/today',
   },
   {
+    path: 'sign-in',
+    component: SignInPageComponent,
+    title: 'Connexion | Dentaleus',
+  },
+  {
     path: 'crm',
     component: ClinicalShellComponent,
+    canActivateChild: [requireSessionGuard],
     children: [
       {
         path: '',
@@ -20,6 +28,7 @@ export const routes: Routes = [
       {
         path: 'today',
         component: WorkspacePageComponent,
+        title: 'Aujourd’hui | Dentaleus',
         data: {
           title: 'Aujourd’hui',
           description: 'Le point de départ de la journée clinique : priorités, arrivées et tâches à suivre.',
@@ -29,6 +38,7 @@ export const routes: Routes = [
       {
         path: 'agenda',
         component: WorkspacePageComponent,
+        title: 'Agenda | Dentaleus',
         data: {
           title: 'Agenda',
           description: 'Organisez les rendez-vous, les salles et les fauteuils autour du rythme réel du cabinet.',
@@ -38,6 +48,7 @@ export const routes: Routes = [
       {
         path: 'patients',
         component: WorkspacePageComponent,
+        title: 'Patients | Dentaleus',
         data: {
           title: 'Patients',
           description: 'Retrouvez le dossier du patient autorisé dans le contexte de la clinique active.',
@@ -47,6 +58,7 @@ export const routes: Routes = [
       {
         path: 'clinical',
         component: WorkspacePageComponent,
+        title: 'Soins et odontogramme | Dentaleus',
         data: {
           title: 'Soins et odontogramme',
           description: 'Le dossier clinique doit réunir un historique fiable, un plan de traitement et un odontogramme traçable.',
@@ -56,6 +68,7 @@ export const routes: Routes = [
       {
         path: 'team',
         component: WorkspacePageComponent,
+        title: 'Équipe et accès | Dentaleus',
         data: {
           title: 'Équipe et accès',
           description: 'Gérez les membres et leurs autorisations au niveau de l’organisation et de chaque clinique.',
@@ -65,6 +78,7 @@ export const routes: Routes = [
       {
         path: 'reports',
         component: WorkspacePageComponent,
+        title: 'Rapports | Dentaleus',
         data: {
           title: 'Rapports',
           description: 'Des indicateurs explicables, calculés à partir de données persistées et d’une période clairement définie.',
@@ -74,6 +88,7 @@ export const routes: Routes = [
       {
         path: 'settings',
         component: WorkspacePageComponent,
+        title: 'Paramètres | Dentaleus',
         data: {
           title: 'Paramètres du cabinet',
           description: 'Configurez les informations, horaires et préférences de la clinique active.',
@@ -85,6 +100,7 @@ export const routes: Routes = [
   {
     path: '**',
     component: WorkspacePageComponent,
+    title: 'Page introuvable | Dentaleus',
     data: {
       title: 'Page introuvable',
       description: 'Cette adresse ne correspond à aucun espace Dentaleus.',
