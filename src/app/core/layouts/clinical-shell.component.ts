@@ -22,7 +22,11 @@ export class ClinicalShellComponent implements OnInit {
   readonly signOutError = signal('');
 
   ngOnInit(): void {
-    if (isPlatformBrowser(this.platformId)) void this.tenantContext.load();
+    if (isPlatformBrowser(this.platformId)) {
+      // Clear any previously rendered tenant data before resolving this session's access.
+      this.tenantContext.organizations.set([]);
+      void this.tenantContext.load(true);
+    }
   }
 
   selectClinic(clinicId: string): void {
