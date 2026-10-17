@@ -61,6 +61,14 @@ export class AppointmentApiService {
     ));
   }
 
+  async listForPatient(organizationId: string, clinicId: string, patientId: string): Promise<AppointmentRecord[]> {
+    const response = await firstValueFrom(this.http.get<AppointmentListResponse>(
+      `/api/v1/organizations/${encodeURIComponent(organizationId)}/clinics/${encodeURIComponent(clinicId)}/patients/${encodeURIComponent(patientId)}/appointments`,
+      { withCredentials: true },
+    ));
+    return response.data;
+  }
+
   async create(organizationId: string, clinicId: string, input: CreateAppointmentInput): Promise<AppointmentRecord> {
     const response = await firstValueFrom(this.http.post<AppointmentResponse>(
       this.collectionUrl(organizationId, clinicId),
