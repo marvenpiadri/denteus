@@ -352,8 +352,9 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
           `,
           [request.params.organizationId, request.params.clinicId, request.params.appointmentId],
         );
-        const status = current.rows[0]?.status;
-        if (!status) {
+        const currentAppointment = current.rows[0];
+        const status = currentAppointment?.status;
+        if (!currentAppointment || !status) {
           await client.query('ROLLBACK');
           transactionOpen = false;
           return reply.code(404).send({
@@ -380,7 +381,7 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
               AND ends_at > $3::timestamptz
             LIMIT 1
           `,
-          [request.params.organizationId, request.params.clinicId, request.body.startsAt, request.body.endsAt, current.rows[0].patientId, request.params.appointmentId],
+          [request.params.organizationId, request.params.clinicId, request.body.startsAt, request.body.endsAt, currentAppointment.patientId, request.params.appointmentId],
         );
         if (overlap.rowCount) {
           await client.query('ROLLBACK');
