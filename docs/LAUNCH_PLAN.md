@@ -1,8 +1,8 @@
-# Denteus launch plan — October 2026
+# Dentaleus launch plan — October 2026
 
 ## Goal
 
-Prepare Denteus for its first real clinic before expanding sales. The first clinic is the pilot customer; the code and data model must be reusable for other clinics from day one.
+Prepare Dentaleus for its first real clinic before expanding sales. The first clinic is the pilot customer; the code and data model must be reusable for other clinics from day one.
 
 Target: a realistic, tested first-customer release by October 31, 2026. This is a target, not a guarantee: production launch depends on security, persistence, and clinical workflow acceptance tests passing.
 
@@ -11,11 +11,19 @@ Target: a realistic, tested first-customer release by October 31, 2026. This is 
 - The clinic's public website is free.
 - CRM access is subscription-based. Initial price hypothesis: USD 12–20 per month; do not hard-code pricing in the UI or entitlements.
 - A website template is called a **Page** in the product. Internally, templates are versioned so changing a template does not silently break existing clinic websites.
-- Every clinic can receive a generated hostname such as `amina-absc2235.denteus.com`. The random suffix and full normalized hostname must be generated/validated on the server and protected by a database unique constraint.
+- Every clinic can receive a generated hostname such as `amina-absc2235.dentaleus.com`. The random suffix and full normalized hostname must be generated/validated on the server and protected by a database unique constraint.
 - Public website pages must never expose patient records, appointment details, clinical notes, or other private CRM data.
 - Preserve the interactive 3D dental education features from `marvenpiadri/dentist-page`; remove the old client identity and load clinic identity/content from website configuration.
 - Support an organization with multiple clinics, staff membership and permission scopes from the start.
 - Keep hosting/provider-specific domain operations behind an adapter. Do not assume Vercel is the hosting provider.
+
+## Domain and hostname rules
+
+- The canonical platform origin is `https://dentaleus.com`; do not create or advertise a `www` hostname.
+- Clinic websites use generated subdomains such as `amina-absc2235.dentaleus.com`.
+- Normalize hostnames to lowercase and strip a trailing dot before lookup. Reject malformed labels and reserved platform labels such as `app`, `api`, and `mail`.
+- Store hostnames as database records associated with immutable website IDs; never derive tenant identity from a request-supplied organization ID.
+- DNS and hosting configuration must route the apex platform hostname and clinic subdomains to the application without coupling application logic to a hosting vendor.
 
 ## Current findings
 
