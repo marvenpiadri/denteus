@@ -150,6 +150,22 @@ export class RecallsPageComponent {
     } finally { this.contactSaving.set(false); }
   }
 
+  async changeRecallStatus(recall: PatientRecall, status: RecallStatus): Promise<void> {
+    const clinic = this.tenant.activeClinic();
+    if (!clinic || this.saving()) return;
+    if ((status === 'DECLINED' || status === 'INACTIVE') && !globalThis.confirm('Confirmer ce changement de statut du rappel ?')) return;
+    this.saving.set(true);
+    this.error.set('');
+    this.success.set('');
+    try {
+      await this.recallsApi.changeStatus(clinic.organizationId, clinic.id, recall.id, status);
+      this.success.set('Le statut du rappel a été mis à jour.');
+      await this.loadRecalls(clinic.organizationId, clinic.id, this.filterStatus(), this.query());
+    } catch {
+      this.error.set('Le statut du rappel n’a pas été modifié. Réessayez.');
+    } finally { this.saving.set(false); }
+  }
+
   statusLabel(status: RecallStatus): string {
     const labels: Record<RecallStatus, string> = { DUE: 'À contacter', CONTACTED: 'Contact tenté', SCHEDULED: 'Rendez-vous planifié', COMPLETED: 'Effectué', DECLINED: 'Refusé', INACTIVE: 'Inactif' };
     return labels[status];
