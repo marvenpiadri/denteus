@@ -7,7 +7,7 @@
   </header>
 
   @if (!tenant.activeClinic() && !tenant.loading()) {
-    <div class="empty-state"><span class="empty-icon" aria-hidden="true">⌂</span><h2>Aucune clinique sélectionnée</h2><p>Créez une clinique ou vérifiez que votre compte dispose d’un accès.</p><a href="/onboarding/clinic">Configurer une clinique</a></div>
+    <div class="empty-state"><span class="empty-icon" aria-hidden="true">⌂</span><h2>Aucune clinique sélectionnée</h2><p>Créez une clinique ou vérifiez que votre compte dispose d’un accès.</p><a routerLink="/onboarding/clinic">Configurer une clinique</a></div>
   } @else {
     <section class="patient-tools" aria-label="Recherche de patients">
       <form class="search-form" (ngSubmit)="searchPatients()">
