@@ -4,6 +4,7 @@ import type { ClinicOperatory, ClinicProvider } from './scheduling-resource-api.
 
 export type CalendarResourceMode = 'day' | 'provider' | 'operatory';
 export interface CalendarResourceColumn { key: string; id: string | null; label: string; kind: 'all' | 'unassigned' | 'provider' | 'operatory'; }
+export interface PositionedCalendarAppointment { appointment: AppointmentRecord; topPx: number; heightPx: number; leftPct: number; widthPct: number; }
 export interface CalendarSlotSelection {
   startsAt: string;
   providerId?: string;
@@ -48,17 +49,74 @@ export class AgendaCalendarComponent {
     ];
   }
 
-  appointmentsAt(hour: number, column: CalendarResourceColumn): AppointmentRecord[] {
-    return this.appointments.filter((appointment) => {
-      if (this.localHour(appointment.startsAt) !== hour) return false;
+  positionedAppointments(column: CalendarResourceColumn): PositionedCalendarAppointment[] {
+    const visibleStart = 7 * 60;
+    const visibleEnd = 20 * 60;
+    const matching = this.appointments.map((appointment) => ({
+      appointment,
+      start: this.localMinutes(appointment.startsAt),
+      end: this.localMinutes(appointment.endsAt),
+    })).filter((item) => {
+      if (item.end <= visibleStart || item.start >= visibleEnd) return false;
       if (column.kind === 'all') return true;
       if (column.kind === 'unassigned') return this.viewMode() === 'provider'
-        ? !appointment.providerId
-        : !appointment.operatoryId;
+        ? !item.appointment.providerId
+        : !item.appointment.operatoryId;
       return column.kind === 'provider'
-        ? appointment.providerId === column.id
-        : appointment.operatoryId === column.id;
-    });
+        ? item.appointment.providerId === column.id
+        : item.appointment.operatoryId === column.id;
+    }).sort((a, b) => a.start - b.start || a.end - b.end);
+
+    const result: PositionedCalendarAppointment[] = [];
+    let cursor = 0;
+    while (cursor < matching.length) {
+      const cluster = [matching[cursor]];
+      let clusterEnd = matching[cursor].end;
+      let next = cursor + 1;
+      while (next < matching.length && matching[next].start < clusterEnd) {
+        cluster.push(matching[next]);
+        clusterEnd = Math.max(clusterEnd, matching[next].end);
+        next++;
+      }
+      const laneEnds: number[] = [];
+      const placed: Array<{ item: typeof matching[number]; lane: number }> = [];
+      for (const item of cluster) {
+        let lane = laneEnds.findIndex((laneEnd) => laneEnd <= item.start);
+        if (lane < 0) {
+          lane = laneEnds.length;
+          laneEnds.push(item.end);
+        } else {
+          laneEnds[lane] = item.end;
+        }
+        placed.push({ item, lane });
+      }
+      const laneCount = Math.max(1, laneEnds.length);
+      for (const { item, lane } of placed) {
+        const clippedStart = Math.max(item.start, visibleStart);
+        const clippedEnd = Math.min(item.end, visibleEnd);
+        result.push({
+          appointment: item.appointment,
+          topPx: clippedStart - visibleStart,
+          heightPx: Math.max(28, clippedEnd - clippedStart),
+          leftPct: (lane / laneCount) * 100,
+          widthPct: Math.max(12, (100 / laneCount) - 1.5),
+        });
+      }
+      cursor = next;
+    }
+    return result;
+  }
+
+  private localMinutes(value: string): number {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: this.timeZone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(new Date(value));
+    const hour = Number(parts.find((part) => part.type === 'hour')?.value ?? 0);
+    const minute = Number(parts.find((part) => part.type === 'minute')?.value ?? 0);
+    return hour * 60 + minute;
   }
 
   localHour(value: string): number {
