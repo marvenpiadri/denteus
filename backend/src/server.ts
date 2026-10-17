@@ -4,6 +4,7 @@ import fastifyCors from '@fastify/cors';
 import { fromNodeHeaders } from 'better-auth/node';
 import { auth } from './auth/auth.js';
 import { checkDatabaseConnection, pool } from './db/pool.js';
+import { organizationRoutes } from './routes/organizations.js';
 
 const clientOrigins = (process.env['CLIENT_ORIGINS'] ?? 'http://localhost:3000')
   .split(',')
@@ -116,6 +117,8 @@ app.get('/api/v1/session', async (request, reply) => {
     },
   };
 });
+
+await app.register(organizationRoutes, { prefix: '/api/v1' });
 
 app.setNotFoundHandler(async (_request, reply) => {
   return reply.code(404).send({
