@@ -12,7 +12,9 @@
     "serve:ssr:app": "node dist/app/server/server.mjs",
     "backend:dev": "npm --prefix backend run dev",
     "backend:build": "npm --prefix backend run build",
-    "backend:start": "npm --prefix backend run start"
+    "backend:start": "npm --prefix backend run start",
+    "backend:typecheck": "npm --prefix backend run typecheck",
+    "backend:migrate": "npm --prefix backend run db:migrate"
   },
   "private": true,
   "dependencies": {
