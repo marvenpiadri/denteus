@@ -8,7 +8,7 @@ interface PatientParams { organizationId: string; clinicId: string; patientId: s
 interface TreatmentParams extends PatientParams { treatmentId: string; }
 type TreatmentStatus = 'PLANNED' | 'ACCEPTED' | 'COMPLETED' | 'DECLINED';
 type TreatmentCategory = 'EXAM' | 'HYGIENE' | 'RESTORATIVE' | 'ENDODONTICS' | 'EXTRACTION' | 'PROSTHODONTICS' | 'ORTHODONTICS' | 'PERIODONTICS' | 'IMPLANT' | 'OTHER';
-type ToothSurface = 'WHOLE' | 'OCCLUSAL' | 'MESIAL' | 'DISTAL' | 'BUCCAL' | 'LINGUAL' | 'PALATAL' | 'CERVICAL';
+type ToothSurface = 'WHOLE' | 'OCCLUSAL' | 'INCISAL' | 'MESIAL | 'DISTAL' | 'BUCCAL' | 'LINGUAL' | 'PALATAL' | 'CERVICAL';
 interface ToothSite { toothNo: number; surface: ToothSurface; }
 interface CreateTreatmentBody {
   title: string;
