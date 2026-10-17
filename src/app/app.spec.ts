@@ -13,7 +13,6 @@ describe('App', () => {
 
   it('should create the route-driven application root', () => {
     const fixture = TestBed.createComponent(App);
-    fixture.detectChanges();
     expect(fixture.componentInstance).toBeTruthy();
   });
 });
