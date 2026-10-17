@@ -45,6 +45,8 @@ These sources describe established product patterns, mainly from the US market. 
 - [ ] Versioned chart findings, periodontal charting, attachments/imaging metadata and chart history.
 - [ ] Structured treatment plans/procedures, consent/acceptance/refusal and planned appointments.
 - [x] Initial recall/continuing-care queue with due dates, status filters, contact attempt history and audit events. Automated messaging, recall rules derived from completed procedures, patient preferences and delivery receipts remain incomplete.
+- [x] Patient treatment history with FDI tooth/surface links, attributed completion records, and status-transition events.
+- [ ] Complete interactive clinical odontogram, dated findings, clinical notes and linked treatment-plan workflows.
 - [ ] Patient appointment history, waiting room, confirmation queue, unscheduled follow-up and ASAP/wait list.
 - [ ] Separate financial ledger, estimates, invoices, payments and reconciliation.
 - [ ] Staff invitation/provisioning, role matrix and clinic-level permissions.
