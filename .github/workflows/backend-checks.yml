@@ -1,0 +1,60 @@
+name: Backend checks
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-checks.yml'
+  push:
+    branches:
+      - main
+      - feat/postgres-tenant-foundation
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-checks.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: dentaleus_test
+          POSTGRES_USER: dentaleus
+          POSTGRES_PASSWORD: dentaleus_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U dentaleus -d dentaleus_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://dentaleus:dentaleus_test@localhost:5432/dentaleus_test
+      BETTER_AUTH_URL: http://localhost:4100
+      BETTER_AUTH_SECRET: ci-test-secret-that-is-at-least-thirty-two-characters
+      CLIENT_ORIGINS: http://localhost:4200
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Type-check
+        run: npm run typecheck
+      - name: Build
+        run: npm run build
+      - name: Apply PostgreSQL migrations
+        run: npm run db:migrate
+      - name: Test policies and tenant schema
+        run: npm test
