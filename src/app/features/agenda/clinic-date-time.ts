@@ -99,3 +99,10 @@ export function formatClinicDate(iso: string, timeZone: string): string {
     year: 'numeric',
   }).format(new Date(iso));
 }
+
+export function addCalendarDays(value: string, days: number): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) throw new Error('Saisissez une date valide.');
+  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]) + days));
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+}
