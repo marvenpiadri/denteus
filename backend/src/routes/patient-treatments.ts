@@ -22,6 +22,7 @@ interface ChangeTreatmentStatusBody { status: TreatmentStatus; }
 
 const categories: TreatmentCategory[] = ['EXAM','HYGIENE','RESTORATIVE','ENDODONTICS','EXTRACTION','PROSTHODONTICS','ORTHODONTICS','PERIODONTICS','IMPLANT','OTHER'];
 const statuses: TreatmentStatus[] = ['PLANNED','ACCEPTED','COMPLETED','DECLINED'];
+const surfaces: ToothSurface[] = ['WHOLE','OCCLUSAL','MESIAL','DISTAL','BUCCAL','LINGUAL','PALATAL','CERVICAL'];
 const createSchema = {
   type: 'object', additionalProperties: false, required: ['title', 'category'],
   properties: {
