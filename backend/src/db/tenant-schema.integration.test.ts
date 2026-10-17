@@ -50,17 +50,21 @@ test('tenant constraints isolate clinics, patients, and odontograms', async () =
       [orgA, patientId, clinicA],
     );
 
+    await client.query('SAVEPOINT expected_membership_failure');
     await assert.rejects(
-      pool.query(
+      client.query(
         'INSERT INTO clinic_memberships (id, organization_id, clinic_id, user_id, role) VALUES ($1, $2, $3, $4, $5)',
         [`bad-membership-${suffix}`, orgB, clinicB, userId, 'DENTIST'],
       ),
       (error: unknown) => (error as { code?: string }).code === '23503',
       'a user cannot join a clinic in an organization where they have no organization membership',
     );
+    await client.query('ROLLBACK TO SAVEPOINT expected_membership_failure');
+    await client.query('RELEASE SAVEPOINT expected_membership_failure');
 
+    await client.query('SAVEPOINT expected_odontogram_failure');
     await assert.rejects(
-      pool.query(
+      client.query(
         'INSERT INTO odontogram_records (id, organization_id, clinic_id, patient_id, status_payload) VALUES ($1, $2, $3, $4, $5::jsonb)',
         [`bad-odonto-${suffix}`, orgA, clinicB, patientId, JSON.stringify({ tooth: 'test' })],
       ),
