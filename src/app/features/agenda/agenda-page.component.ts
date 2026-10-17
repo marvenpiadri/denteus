@@ -69,6 +69,8 @@ export class AgendaPageComponent {
 
   private async loadAppointments(organizationId: string, clinicId: string, date: string, timeZone: string): Promise<void> {
     this.loading.set(true);
+    this.appointments.set([]);
+    this.pendingStatusChange.set(null);
     this.error.set('');
     try {
       const from = localDateTimeToIso(`${date}T00:00`, timeZone);
