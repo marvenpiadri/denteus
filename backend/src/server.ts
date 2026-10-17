@@ -65,18 +65,22 @@ app.get('/health/ready', async (_request, reply) => {
 });
 
 app.route({
-  method: ['GET', 'POST'],
+  method: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   url: '/api/auth/*',
   async handler(request, reply) {
     try {
       const url = new URL(request.url, authBaseUrl);
       const headers = fromNodeHeaders(request.headers);
+      // The incoming content-length describes Fastify's raw request body, not
+      // the JSON string we create here. Let Fetch calculate the forwarded length.
+      headers.delete('content-length');
+      headers.delete('transfer-encoding');
+      const method = request.method.toUpperCase();
+      const hasBody = !['GET', 'HEAD'].includes(method) && request.body !== undefined;
       const authRequest = new Request(url.toString(), {
-        method: request.method,
+        method,
         headers,
-        ...(request.body !== undefined
-          ? { body: JSON.stringify(request.body) }
-          : {}),
+        ...(hasBody ? { body: JSON.stringify(request.body) } : {}),
       });
 
       const response = await auth.handler(authRequest);
