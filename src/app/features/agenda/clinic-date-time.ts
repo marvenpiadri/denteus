@@ -106,3 +106,8 @@ export function addCalendarDays(value: string, days: number): string {
   const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]) + days));
   return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
 }
+
+export function toClinicDateTimeInput(iso: string, timeZone: string): string {
+  const parts = partsAt(new Date(iso), timeZone);
+  return `${parts.year}-${String(parts.month).padStart(2, '0')}-${String(parts.day).padStart(2, '0')}T${String(parts.hour).padStart(2, '0')}:${String(parts.minute).padStart(2, '0')}`;
+}
