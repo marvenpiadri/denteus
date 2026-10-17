@@ -4,7 +4,15 @@
 **Branch:** `refactor/clinical-product-foundation`  
 **Product boundary:** authenticated CRM and public clinic Pages are separate experiences. The optional 3D dental atlas belongs only in a public clinic Page template; it is never a CRM feature.
 
-## Current scheduling and treatment-history increment (2026-10-18)\n\n- Added clinic-scoped providers, operatories and explicit provider working hours, with agenda UI to configure them and day-calendar columns by provider or chair.\n- Appointment create/reschedule validates patient overlaps plus provider working hours and provider/operatory overlaps server-side when resources are assigned. Unassigned appointments remain possible through the API for future queue workflows; the current UI asks for both resources once the clinic has configured resources.\n- Added patient treatment records with FDI tooth and surface links, planned/accepted/completed/declined states, performer attribution for completed care, and append-only status events. Patient detail now includes a tooth selector and treatment timeline. This is an initial treatment-history workflow, not a complete clinical odontogram or complete medical record.\n- Added a prototype review documenting the concrete strengths and production gaps in `dentist-calendar-example`. The Claude shared chat could not be rendered in the review environment; no unsupported comparison is claimed.\n- Tests were added for treatment policy and PostgreSQL integration coverage was extended, but the build and tests remain unverified in this environment.\n\n## Why this reset exists
+## Current scheduling and treatment-history increment (2026-10-18)
+
+- Added clinic-scoped providers, operatories and explicit provider working hours, with agenda UI to configure them and day-calendar columns by provider or chair.
+- Appointment create/reschedule validates patient overlaps plus provider working hours and provider/operatory overlaps server-side when resources are assigned. Unassigned appointments remain possible through the API for future queue workflows; the current UI asks for both resources once the clinic has configured resources.
+- Added patient treatment records with FDI tooth and surface links, planned/accepted/completed/declined states, performer attribution for completed care, and append-only status events. Patient detail now includes a tooth selector and treatment timeline. This is an initial treatment-history workflow, not a complete clinical odontogram or complete medical record.
+- Added a prototype review documenting the concrete strengths and production gaps in `dentist-calendar-example`. The Claude shared chat could not be rendered in the review environment; no unsupported comparison is claimed.
+- Tests were added for treatment policy and PostgreSQL integration coverage was extended, but the build and tests remain unverified in this environment.
+
+## Why this reset exists
 
 The current Angular app behaves like a clickable prototype: navigation is primarily tab state, the router has no routes, the tenant service seeds fictional organizations and clinics, and several modules are designed around demo state. These are not a safe foundation for a clinical system. We will not preserve the mockup's routing or its assumptions merely to avoid rewriting them.
 
