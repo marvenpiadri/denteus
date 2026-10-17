@@ -77,7 +77,7 @@ export const recallRoutes: FastifyPluginAsync = async (app) => {
     '/organizations/:organizationId/clinics/:clinicId/recalls/:recallId/contacts',
     { schema: { body: { type: 'object', additionalProperties: false, required: ['contactMethod', 'outcome'], properties: {
       contactMethod: { type: 'string', enum: ['PHONE', 'SMS', 'EMAIL', 'WHATSAPP', 'IN_PERSON', 'UNKNOWN'] },
-      outcome: { type: 'string', minLength: 1, maxLength: 100 },
+      outcome: { type: 'string', enum: ['NO_ANSWER', 'REACHED', 'CALL_BACK', 'BOOKED', 'DECLINED', 'INVALID_CONTACT'] },
       note: { type: 'string', maxLength: 2000 },
     } } } },
     async (request, reply) => {
@@ -96,7 +96,11 @@ export const recallRoutes: FastifyPluginAsync = async (app) => {
           await client.query('ROLLBACK');
           return reply.code(404).send({ error: { code: 'RECALL_NOT_FOUND', message: 'Rappel introuvable.' } });
         }
-        const to = request.body.outcome === 'BOOKED' ? 'SCHEDULED' : request.body.outcome === 'DECLINED' ? 'DECLINED' : from === 'DUE' ? 'CONTACTED' : from;
+        if (!['DUE', 'CONTACTED'].includes(from)) {
+          await client.query('ROLLBACK');
+          return reply.code(409).send({ error: { code: 'RECALL_NOT_CONTACTABLE', message: 'Ce rappel n’est plus dans une file de contact active.' } });
+        }
+        const to = request.body.outcome === 'BOOKED' ? 'SCHEDULED' : request.body.outcome === 'DECLINED' ? 'DECLINED' : 'CONTACTED';
         await client.query(
           `INSERT INTO patient_recall_events (id, organization_id, clinic_id, recall_id, user_id, event_type, from_status, to_status, contact_method, outcome, note)
            VALUES ($1,$2,$3,$4,$5,'CONTACT_ATTEMPT',$6,$7,$8,$9,$10)`,
