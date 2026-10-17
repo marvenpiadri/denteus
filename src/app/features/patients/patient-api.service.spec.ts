@@ -54,4 +54,65 @@ describe('PatientApiService', () => {
     });
     await expect(result).resolves.toMatchObject({ id: 'patient-1', patientNumber: 'DEN-2026-000001' });
   });
+
+  it('loads a single patient through the selected clinic path', async () => {
+    const result = service.get('org-1', 'clinic-1', 'patient-1');
+    const request = http.expectOne('/api/v1/organizations/org-1/clinics/clinic-1/patients/patient-1');
+    expect(request.request.method).toBe('GET');
+    request.flush({ data: {
+      id: 'patient-1',
+      organizationId: 'org-1',
+      patientNumber: 'DEN-2026-000001',
+      firstName: 'Samira',
+      lastName: 'Test',
+      birthDate: null,
+      gender: null,
+      nationalId: null,
+      phone: null,
+      email: null,
+      address: null,
+      city: null,
+      notes: null,
+      createdAt: '2026-10-17T10:00:00.000000Z',
+      updatedAt: '2026-10-17T10:00:00.123456Z',
+    }});
+    await expect(result).resolves.toMatchObject({ id: 'patient-1', updatedAt: '2026-10-17T10:00:00.123456Z' });
+  });
+
+  it('updates a patient using the last-read timestamp to detect concurrent edits', async () => {
+    const input = {
+      firstName: 'Samira',
+      lastName: 'Test',
+      birthDate: null,
+      gender: null,
+      phone: null,
+      email: null,
+      address: null,
+      city: null,
+      notes: null,
+      expectedUpdatedAt: '2026-10-17T10:00:00.123456Z',
+    };
+    const result = service.update('org-1', 'clinic-1', 'patient-1', input);
+    const request = http.expectOne('/api/v1/organizations/org-1/clinics/clinic-1/patients/patient-1');
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body.expectedUpdatedAt).toBe(input.expectedUpdatedAt);
+    request.flush({ data: {
+      id: 'patient-1',
+      organizationId: 'org-1',
+      patientNumber: 'DEN-2026-000001',
+      firstName: 'Samira',
+      lastName: 'Test',
+      birthDate: null,
+      gender: null,
+      nationalId: null,
+      phone: null,
+      email: null,
+      address: null,
+      city: null,
+      notes: null,
+      createdAt: '2026-10-17T10:00:00.000000Z',
+      updatedAt: '2026-10-17T10:00:02.654321Z',
+    }});
+    await expect(result).resolves.toMatchObject({ updatedAt: '2026-10-17T10:00:02.654321Z' });
+  });
 });
