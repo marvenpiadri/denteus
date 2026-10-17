@@ -42,12 +42,12 @@ These sources describe established product patterns, mainly from the US market. 
 - [ ] Append-only signed clinical notes, correction/amendment trail and encounter association.
 - [ ] Versioned chart findings, periodontal charting, attachments/imaging metadata and chart history.
 - [ ] Structured treatment plans/procedures, consent/acceptance/refusal and planned appointments.
-- [ ] Recall/continuing-care work queue and communication/contact history.
+- [x] Initial recall/continuing-care queue with due dates, status filters, contact attempt history and audit events. Automated messaging, recall rules derived from completed procedures, patient preferences and delivery receipts remain incomplete.
 - [ ] Patient appointment history, waiting room, confirmation queue, unscheduled follow-up and ASAP/wait list.
 - [ ] Separate financial ledger, estimates, invoices, payments and reconciliation.
 - [ ] Staff invitation/provisioning, role matrix and clinic-level permissions.
 - [ ] Reports derived from real data; exports and patient-record access workflow.
-- [ ] HTTP integration tests for authentication, tenant isolation, permission boundaries, concurrent scheduling and audit history.
+- [ ] HTTP integration tests for authentication, tenant isolation, permission boundaries, concurrent scheduling and audit history. PostgreSQL integration coverage now includes recall/event persistence and cross-clinic FK rejection, but has not been executed in this environment.
 - [ ] Public clinic Page template with an explicit public-data allowlist; 3D atlas only in that public template.
 
 ## Acceptance gates
