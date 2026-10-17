@@ -25,7 +25,7 @@
                 [attr.aria-label]="'Modifier le créneau de ' + patientName(appointment) + ', ' + time(appointment.startsAt) + ' à ' + time(appointment.endsAt)">
                 <span class="event-time">{{ time(appointment.startsAt) }}–{{ time(appointment.endsAt) }}</span>
                 <strong>{{ patientName(appointment) || 'Patient' }}</strong>
-                <span class="event-detail">{{ appointment.reason || 'Motif non précisé' }} · {{ statusLabel(appointment.status) }}</span>
+                <span class="event-detail">{{ appointment.reason || 'Motif non précisé' }} · {{ statusLabel(appointment.status) }}@if (appointment.providerName) { · {{ appointment.providerName }} }@if (appointment.operatoryName) { · {{ appointment.operatoryName }} }</span>
               </button>
             }
             <button type="button" class="empty-slot" (click)="selectSlot(hour)" [disabled]="loading" [attr.aria-label]="'Ajouter un rendez-vous à ' + hour.toString().padStart(2, '0') + ':00'">
