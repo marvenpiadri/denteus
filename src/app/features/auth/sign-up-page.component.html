@@ -1,0 +1,20 @@
+<main class="auth-page">
+  <section class="auth-card" aria-labelledby="signup-title">
+    <a class="brand" routerLink="/sign-in"><span class="brand-mark" aria-hidden="true">D</span><span>dentaleus</span></a>
+    <p class="eyebrow">NOUVEAU CABINET</p>
+    <h1 id="signup-title">Créez votre compte</h1>
+    <p class="intro">Commencez par votre compte professionnel. Vous pourrez ensuite configurer votre organisation et votre clinique.</p>
+    @if (error()) { <div class="form-error" role="alert">{{ error() }}</div> }
+    <form (ngSubmit)="submit()" #signupForm="ngForm">
+      <label for="name">Nom complet</label>
+      <input id="name" name="name" [(ngModel)]="name" autocomplete="name" required minlength="2" maxlength="120">
+      <label for="email">Adresse e-mail</label>
+      <input id="email" name="email" type="email" [(ngModel)]="email" autocomplete="email" required maxlength="254">
+      <label for="password">Mot de passe</label>
+      <input id="password" name="password" type="password" [(ngModel)]="password" autocomplete="new-password" required minlength="12" maxlength="128">
+      <p class="hint">12 caractères minimum. Utilisez un mot de passe unique.</p>
+      <button type="submit" [disabled]="signupForm.invalid || submitting()">{{ submitting() ? 'Création du compte…' : 'Créer mon compte' }}</button>
+    </form>
+    <p class="switch-auth">Vous avez déjà un compte ? <a routerLink="/sign-in">Se connecter</a></p>
+  </section>
+</main>
