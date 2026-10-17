@@ -37,6 +37,7 @@ export class PatientDetailPageComponent {
   address = '';
   city = '';
   notes = '';
+  private requestSequence = 0;
 
   constructor() {
     effect(() => {
