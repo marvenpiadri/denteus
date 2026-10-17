@@ -13,7 +13,7 @@ Target: a realistic, tested first-customer release by October 31, 2026. This is 
 - A website template is called a **Page** in the product. Internally, templates are versioned so changing a template does not silently break existing clinic websites.
 - Every clinic can receive a generated hostname such as `amina-absc2235.dentaleus.com`. The random suffix and full normalized hostname must be generated/validated on the server and protected by a database unique constraint.
 - Public website pages must never expose patient records, appointment details, clinical notes, or other private CRM data.
-- Preserve the interactive 3D dental education features from `marvenpiadri/dentist-page`; remove the old client identity and load clinic identity/content from website configuration.
+- The 3D dental atlas is optional content inside a public clinic website Page template only. It is not part of the Dentaleus CRM app, navigation, or clinical workflow. Preserve the existing atlas only in that website-template project and load clinic identity/content from website configuration.
 - Support an organization with multiple clinics, staff membership and permission scopes from the start.
 - Keep hosting/provider-specific domain operations behind an adapter. Do not assume Vercel is the hosting provider.
 
@@ -41,7 +41,7 @@ Target: a realistic, tested first-customer release by October 31, 2026. This is 
 ### Phase 0 — Audit and product boundary
 
 - Keep the CRM as the authenticated private application.
-- Treat the 3D dental site as a reusable, server-rendered public website experience.
+- Treat the 3D atlas as an optional feature of the public website Page template only; it must not be embedded in or bundled as a CRM feature.
 - Define organization, clinic, user membership, Page template, website and domain as separate concepts.
 - Freeze the first-customer scope; defer nonessential CRM expansion.
 
@@ -74,8 +74,8 @@ Acceptance: the pilot clinic can use core workflows without demo-only state.
 ### Phase 3 — Page templates and clinic websites
 
 - Build a versioned Page template registry and per-website content/theme/SEO configuration.
-- Adapt the existing 3D dental website into a tenant-configurable template.
-- Preserve interactive 3D dental content by default.
+- Adapt the public website project into a tenant-configurable Page template.
+- Offer the 3D atlas only as an optional block/section on that public Page; never show it inside the CRM.
 - Generate public-safe clinic, practitioner, service and contact pages.
 - Generate canonical URLs, metadata, sitemap and robots directives per published website.
 
