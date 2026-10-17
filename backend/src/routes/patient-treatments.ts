@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { FastifyPluginAsync, FastifyReply } from 'fastify';
 import { canReadOdontogram, canWriteOdontogram, denyInsufficientRole, requireClinicAccess } from '../auth/authorization.js';
 import { pool } from '../db/pool.js';
-import { canTransitionTreatmentStatus, isValidFdiTooth, isValidToothSurface } from '../domain/patient-treatment-policy.js';
+import { canTransitionTreatmentStatus, isValidFdiTooth, isValidToothSurfaceForTooth } from '../domain/patient-treatment-policy.js';
 
 interface PatientParams { organizationId: string; clinicId: string; patientId: string; }
 interface TreatmentParams extends PatientParams { treatmentId: string; }
@@ -22,7 +22,7 @@ interface ChangeTreatmentStatusBody { status: TreatmentStatus; }
 
 const categories: TreatmentCategory[] = ['EXAM','HYGIENE','RESTORATIVE','ENDODONTICS','EXTRACTION','PROSTHODONTICS','ORTHODONTICS','PERIODONTICS','IMPLANT','OTHER'];
 const statuses: TreatmentStatus[] = ['PLANNED','ACCEPTED','COMPLETED','DECLINED'];
-const surfaces: ToothSurface[] = ['WHOLE','OCCLUSAL','MESIAL','DISTAL','BUCCAL','LINGUAL','PALATAL','CERVICAL'];
+const surfaces: ToothSurface[] = ['WHOLE','OCCLUSAL','INCISAL','MESIAL','DISTAL','BUCCAL','LINGUAL','PALATAL','CERVICAL'];
 const createSchema = {
   type: 'object', additionalProperties: false, required: ['title', 'category'],
   properties: {
@@ -134,7 +134,7 @@ export const patientTreatmentRoutes: FastifyPluginAsync = async (app) => {
       if (!categories.includes(request.body.category) || !statuses.includes(status)) {
         return reply.code(400).send({ error: { code: 'INVALID_TREATMENT', message: 'Catégorie ou statut de soin invalide.' } });
       }
-      if (toothSites.some((site) => !isValidFdiTooth(site.toothNo) || !isValidToothSurface(site.surface))) {
+      if (toothSites.some((site) => !isValidFdiTooth(site.toothNo) || !isValidToothSurfaceForTooth(site.toothNo, site.surface))) {
         return reply.code(400).send({ error: { code: 'INVALID_TOOTH_SITE', message: 'Numéro de dent ou surface FDI invalide.' } });
       }
       const uniqueSites = new Set(toothSites.map((site) => `${site.toothNo}:${site.surface}`));
