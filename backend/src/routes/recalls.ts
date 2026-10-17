@@ -68,4 +68,48 @@ export const recallRoutes: FastifyPluginAsync = async (app) => {
     },
   );
 
+
+  app.post<{ Params: { organizationId: string; clinicId: string; recallId: string }; Body: { contactMethod: string; outcome: string; note?: string } }>(
+    '/organizations/:organizationId/clinics/:clinicId/recalls/:recallId/contacts',
+    { schema: { body: { type: 'object', additionalProperties: false, required: ['contactMethod', 'outcome'], properties: {
+      contactMethod: { type: 'string', enum: ['PHONE', 'SMS', 'EMAIL', 'WHATSAPP', 'IN_PERSON', 'UNKNOWN'] },
+      outcome: { type: 'string', minLength: 1, maxLength: 100 },
+      note: { type: 'string', maxLength: 2000 },
+    } } } },
+    async (request, reply) => {
+      const access = await requireClinicAccess(request, reply, request.params.organizationId, request.params.clinicId);
+      if (!access) return;
+      if (!canManageAppointments(access.effectiveRole)) return reply.code(403).send({ error: { code: 'FORBIDDEN', message: 'Accès refusé.' } });
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const current = await client.query<{ status: string }>(
+          'SELECT status FROM patient_recalls WHERE organization_id=$1 AND clinic_id=$2 AND id=$3 FOR UPDATE',
+          [request.params.organizationId, request.params.clinicId, request.params.recallId],
+        );
+        const from = current.rows[0]?.status;
+        if (!from) {
+          await client.query('ROLLBACK');
+          return reply.code(404).send({ error: { code: 'RECALL_NOT_FOUND', message: 'Rappel introuvable.' } });
+        }
+        const to = from === 'DUE' ? 'CONTACTED' : from;
+        await client.query(
+          `INSERT INTO patient_recall_events (id, organization_id, clinic_id, recall_id, user_id, event_type, from_status, to_status, contact_method, outcome, note)
+           VALUES ($1,$2,$3,$4,$5,'CONTACT_ATTEMPT',$6,$7,$8,$9,$10)`,
+          [randomUUID(), request.params.organizationId, request.params.clinicId, request.params.recallId, access.userId, from, to, request.body.contactMethod, request.body.outcome.trim(), request.body.note?.trim() || null],
+        );
+        await client.query(
+          `UPDATE patient_recalls SET status=$4, last_contacted_at=clock_timestamp(), updated_at=clock_timestamp()
+           WHERE organization_id=$1 AND clinic_id=$2 AND id=$3`,
+          [request.params.organizationId, request.params.clinicId, request.params.recallId, to],
+        );
+        await client.query('COMMIT');
+        return { data: { id: request.params.recallId, status: to } };
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally { client.release(); }
+    },
+  );
+
 };
