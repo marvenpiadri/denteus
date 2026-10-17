@@ -14,6 +14,7 @@ CREATE TABLE patient_recalls (
   created_by_id text REFERENCES app_users(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (organization_id, clinic_id, id),
   FOREIGN KEY (organization_id, clinic_id)
     REFERENCES clinics(organization_id, id) ON DELETE CASCADE,
   FOREIGN KEY (organization_id, patient_id, clinic_id)
@@ -40,8 +41,8 @@ CREATE TABLE patient_recall_events (
   created_at timestamptz NOT NULL DEFAULT now(),
   FOREIGN KEY (organization_id, clinic_id)
     REFERENCES clinics(organization_id, id) ON DELETE CASCADE,
-  FOREIGN KEY (recall_id)
-    REFERENCES patient_recalls(id) ON DELETE CASCADE
+  FOREIGN KEY (organization_id, clinic_id, recall_id)
+    REFERENCES patient_recalls(organization_id, clinic_id, id) ON DELETE CASCADE
 );
 CREATE INDEX patient_recall_events_history_idx
   ON patient_recall_events(organization_id, clinic_id, recall_id, created_at DESC);
