@@ -34,7 +34,7 @@ const DB_PATIENTS: DbPatient[] = [
 apiRouter.get('/health', (req: Request, res: Response) => {
   res.json({
     status: 'ok',
-    service: 'Denteus Dental Practice Management API',
+    service: 'Dentaleus Dental Practice Management API',
     version: '1.0.0',
     locale: 'fr',
     timestamp: new Date().toISOString(),
@@ -114,7 +114,7 @@ apiRouter.post('/patients', (req: Request, res: Response) => {
 // Patient odontogram / clinical chart API.
 //
 // The payload is produced by angular-advanced-odontogram itself.
-// Denteus deliberately stores the library's status + plan JSON instead of
+// Dentaleus deliberately stores the library's status + plan JSON instead of
 // inventing a second dental-chart serialization format.
 //
 // NOTE: this store is currently in-memory. The module boundary is designed so
