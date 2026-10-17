@@ -96,17 +96,23 @@ CREATE INDEX clinics_city_idx ON clinics(city);
 
 CREATE TABLE clinic_memberships (
   id text PRIMARY KEY,
-  clinic_id text NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
-  user_id text NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+  organization_id text NOT NULL,
+  clinic_id text NOT NULL,
+  user_id text NOT NULL,
   role text NOT NULL CHECK (role IN (
     'ORGANIZATION_OWNER', 'ORGANIZATION_ADMIN', 'CLINIC_ADMIN',
     'DENTIST', 'ORTHODONTIST', 'HYGIENIST', 'ASSISTANT',
     'RECEPTIONIST', 'ACCOUNTANT'
   )),
   created_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (clinic_id, user_id)
+  UNIQUE (clinic_id, user_id),
+  FOREIGN KEY (organization_id, clinic_id)
+    REFERENCES clinics(organization_id, id) ON DELETE CASCADE,
+  FOREIGN KEY (organization_id, user_id)
+    REFERENCES organization_memberships(organization_id, user_id) ON DELETE CASCADE
 );
 CREATE INDEX clinic_memberships_user_idx ON clinic_memberships(user_id);
+CREATE INDEX clinic_memberships_org_clinic_idx ON clinic_memberships(organization_id, clinic_id);
 
 CREATE TABLE patients (
   id text PRIMARY KEY,
