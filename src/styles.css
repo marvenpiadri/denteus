@@ -338,3 +338,32 @@ a {
 :where(input, select, textarea):focus-visible { outline: 3px solid color-mix(in srgb, var(--border-focus) 55%, transparent); outline-offset: 1px; }
 :where(button, a):focus-visible { outline: 3px solid color-mix(in srgb, var(--border-focus) 62%, transparent); outline-offset: 3px; }
 ::placeholder { color: var(--text-tertiary); opacity: .78; }
+
+
+/* Shared controls: feature pages own layout, while the theme owns control behavior. */
+:where(.primary-button, .secondary-button) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 9px 13px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+.primary-button {
+  border-color: var(--color-action);
+  background: var(--color-action);
+  color: var(--text-on-action);
+}
+.primary-button:hover:not(:disabled) { border-color: var(--color-action-hover); background: var(--color-action-hover); }
+.secondary-button { border-color: var(--border-control); background: var(--surface-raised); color: var(--text-secondary); }
+.secondary-button:hover:not(:disabled) { border-color: var(--color-brand-border); background: var(--surface-hover); color: var(--text-primary); }
+:where(.primary-button, .secondary-button):disabled { opacity: .55; cursor: not-allowed; }
