@@ -53,6 +53,7 @@ export class ClinicReportsPageComponent {
       const key = clinic.organizationId + ':' + clinic.id;
       if (key === this.context) return;
       this.context = key;
+      this.report.set(null);
       void this.load();
     });
   }
@@ -63,7 +64,7 @@ export class ClinicReportsPageComponent {
 
   async load(): Promise<void> {
     const clinic = this.tenant.activeClinic();
-    if (!clinic || this.loading()) return;
+    if (!clinic) return;
     if (!this.from || !this.to || this.from > this.to) {
       this.error.set('La date de début doit précéder ou correspondre à la date de fin.');
       return;
