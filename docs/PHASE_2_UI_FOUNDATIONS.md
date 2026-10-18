@@ -1,6 +1,6 @@
 # Phase 2 — UI foundations and design consistency
 
-**Status:** implementation in progress; owner build/browser verification is intentionally separate.  
+**Status:** Phase 2 implementation is complete on `main`; owner build/browser verification remains pending by request.  
 **Direction:** a product-grade clinical workspace, not a dashboard concept. Replace the old visual execution rather than preserve it. Retain only proven behavior and domain conventions. Keep Dentaleus recognizable through a restrained clinical teal accent, but redesign layout, hierarchy, density, typography, navigation, component states, and responsive behavior.
 
 ## Implementation progress
@@ -21,8 +21,7 @@
 - [x] Updated sign-in/sign-up, clinic onboarding, patient forms/details, agenda, recalls, and workspace styles to use shared surface, text, border, focus, and action tokens.
 - [x] Applied the saved/system theme before rendering all routes, including sign-in, sign-up, and onboarding.
 - [x] Made the mobile navigation drawer inert while closed, dynamically labeled, and closable with Escape.
-- [ ] Owner visual review at desktop/tablet/mobile widths and build/test execution.
-- [ ] Owner to run build/tests and browser review; no verification result is claimed in this document.
+- [ ] Owner visual review at desktop/tablet/mobile widths and build/test execution. No verification result is claimed in this document.
 
 ## Tooling note
 
@@ -41,16 +40,16 @@ Graphify was requested but no Graphify workspace is configured for this agent, s
 
 1. Establish global tokens for surfaces, text, borders, spacing, radii, elevation, focus, status, and typography, with coherent light/dark values.
 2. Redesign the authenticated application shell: navigation hierarchy, clinic context, workspace header, account controls, mobile drawer, and content canvas.
-3. Normalize shared primitives used by existing features: buttons, inputs, labels, field errors, notices, status badges, panels, page headers, empty/loading/error states, and table/list rows.
+3. Normalize shared primitives used by existing features: buttons, inputs, labels, field errors, notices, status badges, panels, page headers, empty/loading/error states, and table/list rows. Existing flows use inline forms rather than dialogs, so no unused dialog abstraction was added.
 4. Apply token-driven styling to patient list/detail, agenda, recalls, sign-in/sign-up, and clinic onboarding. Preserve existing templates and interactions while removing duplicated, hard-coded styling.
 5. Make incomplete workspace routes honest and useful: explain the missing capability, avoid concept copy, and provide safe navigation to implemented workflows.
 6. Add consistent light/dark handling and responsive breakpoints. Prefer system theme only as an initial default; preserve an explicit user choice.
-7. Record any feature-level UX changes and remaining gaps before closing Phase 2.
+7. Record feature-level UX changes and remaining gaps. **Implementation closeout is complete; only owner-run build/test and visual verification remain.**
 
 ## Exit criteria
 
 - The shell and existing functional routes share a coherent design system.
-- Light/dark themes cover shell, forms, dialogs, lists, calendar, errors, and empty states without unreadable hard-coded colors.
+- Light/dark themes cover shell, forms, lists, calendar, errors, and empty states through semantic tokens without feature-level hard-coded status palettes.
 - Desktop, tablet, and narrow mobile layouts have deliberate navigation and content behavior.
 - Focus, form labels/errors, disabled/loading states, and reduced motion are covered.
 - No Tailwind is introduced; no fake data or unconnected controls are added.
