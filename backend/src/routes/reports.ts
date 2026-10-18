@@ -43,42 +43,47 @@ export const reportRoutes: FastifyPluginAsync = async (app) => {
       const [appointments, patients, recalls, trend] = await Promise.all([
         pool.query(
           `SELECT status, count(*)::integer AS count
-           FROM appointments
-           WHERE organization_id = $1 AND clinic_id = $2
-             AND starts_at >= $3::date
-             AND starts_at < ($4::date + interval '1 day')
+           FROM appointments a
+           JOIN clinics c ON c.organization_id = a.organization_id AND c.id = a.clinic_id
+           WHERE a.organization_id = $1 AND a.clinic_id = $2
+             AND (a.starts_at AT TIME ZONE c.timezone) >= $3::date::timestamp
+             AND (a.starts_at AT TIME ZONE c.timezone) < ($4::date + interval '1 day')::timestamp
            GROUP BY status`,
           [organizationId, clinicId, from, to],
         ),
         pool.query(
           `SELECT count(*)::integer AS total,
-                  count(*) FILTER (WHERE created_at >= $3::date
-                    AND created_at < ($4::date + interval '1 day'))::integer AS added
+                  count(*) FILTER (WHERE (p.created_at AT TIME ZONE c.timezone) >= $3::date::timestamp
+                    AND (p.created_at AT TIME ZONE c.timezone) < ($4::date + interval '1 day')::timestamp)::integer AS added
            FROM patient_clinics pc
            JOIN patients p ON p.organization_id = pc.organization_id AND p.id = pc.patient_id
+           JOIN clinics c ON c.organization_id = pc.organization_id AND c.id = pc.clinic_id
            WHERE pc.organization_id = $1 AND pc.clinic_id = $2`,
           [organizationId, clinicId, from, to],
         ),
         pool.query(
-          `SELECT count(*) FILTER (WHERE status = 'DUE' AND due_on <= $4::date)::integer AS overdue,
-                  count(*) FILTER (WHERE status = 'DUE' AND due_on >= $3::date AND due_on <= $4::date)::integer AS due_in_period,
-                  count(*) FILTER (WHERE status = 'COMPLETED' AND updated_at >= $3::date
-                    AND updated_at < ($4::date + interval '1 day'))::integer AS completed
-           FROM patient_recalls
-           WHERE organization_id = $1 AND clinic_id = $2`,
+          `SELECT count(*) FILTER (WHERE r.status = 'DUE' AND r.due_on <= $4::date)::integer AS overdue,
+                  count(*) FILTER (WHERE r.status = 'DUE' AND r.due_on >= $3::date AND r.due_on <= $4::date)::integer AS due_in_period,
+                  count(*) FILTER (WHERE r.status = 'COMPLETED' AND (r.updated_at AT TIME ZONE c.timezone) >= $3::date::timestamp
+                    AND (r.updated_at AT TIME ZONE c.timezone) < ($4::date + interval '1 day')::timestamp)::integer AS completed
+           FROM patient_recalls r
+           JOIN clinics c ON c.organization_id = r.organization_id AND c.id = r.clinic_id
+           WHERE r.organization_id = $1 AND r.clinic_id = $2`,
           [organizationId, clinicId, from, to],
         ),
         pool.query(
-          `SELECT to_char(starts_at::date, 'YYYY-MM-DD') AS day,
+          `SELECT to_char((a.starts_at AT TIME ZONE c.timezone)::date, 'YYYY-MM-DD') AS day,
                   count(*)::integer AS total,
-                  count(*) FILTER (WHERE status = 'COMPLETED')::integer AS completed,
-                  count(*) FILTER (WHERE status = 'CANCELLED')::integer AS cancelled,
-                  count(*) FILTER (WHERE status = 'NO_SHOW')::integer AS no_show
-           FROM appointments
-           WHERE organization_id = $1 AND clinic_id = $2
-             AND starts_at >= $3::date
-             AND starts_at < ($4::date + interval '1 day')
-           GROUP BY starts_at::date ORDER BY starts_at::date`,
+                  count(*) FILTER (WHERE a.status = 'COMPLETED')::integer AS completed,
+                  count(*) FILTER (WHERE a.status = 'CANCELLED')::integer AS cancelled,
+                  count(*) FILTER (WHERE a.status = 'NO_SHOW')::integer AS no_show
+           FROM appointments a
+           JOIN clinics c ON c.organization_id = a.organization_id AND c.id = a.clinic_id
+           WHERE a.organization_id = $1 AND a.clinic_id = $2
+             AND (a.starts_at AT TIME ZONE c.timezone) >= $3::date::timestamp
+             AND (a.starts_at AT TIME ZONE c.timezone) < ($4::date + interval '1 day')::timestamp
+           GROUP BY (a.starts_at AT TIME ZONE c.timezone)::date
+           ORDER BY (a.starts_at AT TIME ZONE c.timezone)::date`,
           [organizationId, clinicId, from, to],
         ),
       ]);
