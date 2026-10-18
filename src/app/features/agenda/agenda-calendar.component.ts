@@ -39,7 +39,7 @@ export class AgendaCalendarComponent {
   @Output() appointmentSelected = new EventEmitter<AppointmentRecord>();
   @Output() appointmentDropped = new EventEmitter<CalendarAppointmentDrop>();
   @Output() viewChanged = new EventEmitter<CalendarDisplayView>();
-  @Output() dateSelected = new EventEmitter<string>();
+  @Output() calendarDayPicked = new EventEmitter<string>();
   readonly displayView = signal<CalendarDisplayView>('day');
 
   readonly viewMode = signal<CalendarResourceMode>('day');
@@ -306,7 +306,7 @@ export class AgendaCalendarComponent {
     return new Intl.DateTimeFormat('fr-MA', { ...options, timeZone: this.timeZone }).format(new Date(date + 'T12:00:00'));
   }
 
-  chooseDate(date: string): void { this.dateSelected.emit(date); }
+  chooseDate(date: string): void { this.calendarDayPicked.emit(date); }
 
   private dateString(date: Date): string {
     return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
