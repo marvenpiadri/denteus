@@ -42,6 +42,108 @@
   .appointment-item { transition: none; }
 }
 
+/* Calendar occupies the available workspace width and receives a real, bounded viewport height. */
+:host { display: block; width: 100%; min-width: 0; min-height: 0; }
+.agenda-page { width: 100%; min-width: 0; }
+app-agenda-calendar { display: block; width: 100%; min-width: 0; min-height: 0; }
+.agenda-page > app-agenda-calendar { align-self: stretch; }
+.heading-actions { gap: 10px; }
+.heading-actions .primary-button,
+.heading-actions .secondary-button {
+  min-height: 42px;
+  padding: 10px 15px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.2;
+}
+.agenda-toolbar { gap: 16px; padding: 12px 16px; }
+.date-navigation { gap: 8px; }
+.date-navigation .icon-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+  font-size: 17px;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+.date-navigation .icon-button:hover:not(:disabled) {
+  border-color: var(--color-brand-border);
+  background: var(--surface-hover);
+  color: var(--color-brand);
+}
+.date-navigation input {
+  min-height: 40px;
+  border-radius: 10px;
+  background: var(--surface-raised);
+}
+.timezone-label { min-height: 34px; display: inline-flex; align-items: center; }
+@media (min-width: 1000px) {
+  .agenda-page { gap: 18px; }
+  app-agenda-calendar { min-height: min(820px, calc(100vh - 240px)); }
+}
+@media (max-width: 600px) {
+  .heading-actions { gap: 8px; }
+  .heading-actions .primary-button, .heading-actions .secondary-button { min-height: 42px; }
+  .agenda-toolbar { padding: 12px; }
+}
+
+
+.waiting-room {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  min-width: 0;
+}
+.waiting-room-column {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--border-subtle, var(--color-border));
+  border-radius: 14px;
+  background: var(--surface-raised, var(--color-surface));
+}
+.waiting-room-column > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.waiting-room-column h2 { margin: 0; color: var(--text-primary, var(--color-text)); font-size: 13px; font-weight: 800; }
+.waiting-room-column > header > span {
+  display: inline-flex;
+  min-width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  border-radius: 8px;
+  background: var(--color-brand-soft);
+  color: var(--color-brand-strong);
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.waiting-room-patient {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 8px;
+  border-top: 1px solid var(--border-subtle, var(--color-border));
+  color: var(--text-primary, var(--color-text));
+  text-decoration: none;
+}
+.waiting-room-patient:hover { border-radius: 8px; background: var(--surface-hover, var(--color-brand-soft)); }
+.waiting-status-dot, .treatment-status-dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--color-brand); }
+.treatment-status-dot { background: #60a5b5; }
+.waiting-room-copy { display: grid; gap: 4px; min-width: 0; flex: 1; }
+.waiting-room-copy strong { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.waiting-room-copy small { overflow: hidden; color: var(--text-tertiary, var(--color-text-subtle)); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.waiting-room-arrow { color: var(--text-tertiary, var(--color-text-subtle)); font-size: 15px; }
+.waiting-room-empty { margin: 0; padding: 14px 8px; border-top: 1px solid var(--border-subtle, var(--color-border)); color: var(--text-tertiary, var(--color-text-subtle)); font-size: 12px; }
+@media (max-width: 760px) { .waiting-room { grid-template-columns: minmax(0, 1fr); } }
+
 .waiting-room{display:grid;gap:14px;padding:18px;background:var(--surface-raised);border:1px solid var(--border-subtle);border-radius:var(--radius-card)}
 .waiting-room-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
 .waiting-room-heading h2{margin:0;font-size:19px;letter-spacing:-.35px}

@@ -2,21 +2,27 @@
   @if (showHeading) {
   <header class="calendar-heading">
     <div>
+      <h2 id="calendar-heading">{{ displayView() === 'day' ? 'Planning de la journée' : displayView() === 'week' ? 'Planning de la semaine' : displayView() === 'month' ? 'Planning du mois' : 'Vue annuelle' }}</h2>
+      <p>Les rendez-vous sont positionnés selon leur heure de début et leur durée. Les conflits de patient, praticien et fauteuil sont vérifiés par le serveur. Faites glisser un rendez-vous pour déplacer son horaire ou changer de ressource.</p>
       <h2 id="calendar-heading">{{ heading }}</h2>
       <p>{{ description }}</p>
     </div>
     <div class="calendar-controls">
       <div class="view-switch" role="group" aria-label="Vue du planning">
-        <button type="button" [class.is-selected]="viewMode() === 'day'" (click)="setView('day')">Journée</button>
-        <button type="button" [class.is-selected]="viewMode() === 'provider'" [disabled]="!providers.length" (click)="setView('provider')">Praticiens</button>
-        <button type="button" [class.is-selected]="viewMode() === 'operatory'" [disabled]="!operatories.length" (click)="setView('operatory')">Fauteuils</button>
+        <button type="button" [class.is-selected]="displayView() === 'day'" (click)="setView('day')">Jour</button>
+        <button type="button" [class.is-selected]="displayView() === 'week'" (click)="setView('week')">Semaine</button>
+        <button type="button" [class.is-selected]="displayView() === 'month'" (click)="setView('month')">Mois</button>
+        <button type="button" [class.is-selected]="displayView() === 'year'" (click)="setView('year')">Année</button>
+        <button type="button" [class.is-selected]="viewMode() === 'provider'" [disabled]="displayView() !== 'day' || !providers.length" (click)="setView('provider')">Praticiens</button>
+        <button type="button" [class.is-selected]="viewMode() === 'operatory'" [disabled]="displayView() !== 'day' || !operatories.length" (click)="setView('operatory')">Fauteuils</button>
       </div>
-      <span class="calendar-range">07:00–20:00</span>
+      <span class="calendar-range">{{ displayView() === 'day' ? '07:00–20:00' : dateLabel(date, displayView() === 'year' ? { year: 'numeric' } : displayView() === 'month' ? { month: 'long', year: 'numeric' } : { day: 'numeric', month: 'short' }) }}</span>
     </div>
   </header>
   }
 
   <div class="calendar-scroll" [attr.aria-busy]="loading">
+    @if (displayView() === 'day') {
     <div class="time-grid" [class.resource-grid]="viewMode() !== 'day'">
       <div class="time-grid-header" [style.gridTemplateColumns]="'74px repeat(' + resourceCount + ', minmax(180px, 1fr))'">
         <span>Heure</span>
@@ -66,6 +72,38 @@
         }
       </div>
     </div>
+    } @else if (displayView() === 'week') {
+      <div class="calendar-week-overview">
+        @for (day of weekDates(); track day) {
+          <button type="button" class="overview-day" [class.is-selected]="day === date" (click)="chooseDate(day)">
+            <strong>{{ dateLabel(day) }}</strong><span>{{ appointmentsOn(day).length }} rendez-vous</span>
+            @for (appointment of appointmentsOn(day).slice(0, 4); track appointment.id) { <small>{{ time(appointment.startsAt) }} · {{ patientName(appointment) }}</small> }
+          </button>
+        }
+      </div>
+    } @else if (displayView() === 'month') {
+      <div class="calendar-month-overview">
+        <div class="month-weekdays"><span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span></div>
+        @for (item of monthDates(); track item.date) {
+          <button type="button" class="month-day" [class.outside-month]="!item.inMonth" [class.is-selected]="item.date === date" (click)="chooseDate(item.date)">
+            <strong>{{ dateLabel(item.date, { day: 'numeric' }) }}</strong>
+            @if (appointmentsOn(item.date).length) { <small>{{ appointmentsOn(item.date).length }} RDV</small> }
+          </button>
+        }
+      </div>
+    } @else {
+      <div class="calendar-year-overview">
+        @for (month of yearMonths(); track month.month) {
+          <section class="year-month"><h3>{{ month.label }}</h3>
+            <div class="year-mini-grid">
+              @for (day of monthDatesFor(month.month); track day) {
+                <button type="button" [class.has-events]="appointmentsOn(day).length > 0" [class.is-selected]="day === date" (click)="chooseDate(day)">{{ dateLabel(day, { day: 'numeric' }) }}</button>
+              }
+            </div>
+          </section>
+        }
+      </div>
+    }
   </div>
   <footer class="calendar-legend">
     <span><i class="legend-dot scheduled"></i>Planifié / confirmé</span>

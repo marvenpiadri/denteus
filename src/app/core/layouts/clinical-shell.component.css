@@ -146,3 +146,189 @@
 @media (prefers-reduced-motion: reduce) {
   .sidebar { transition: none; }
 }
+
+
+/* Compact, icon-led navigation rail based on Doomath's expandable sidebar pattern. */
+.sidebar-collapse-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  min-height: 38px;
+  padding: 0 11px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: left;
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+.sidebar-collapse-toggle svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.sidebar-collapse-toggle:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+}
+.clinical-app.sidebar-collapsed {
+  grid-template-columns: 76px minmax(0, 1fr);
+}
+.sidebar {
+  transition: width .2s ease, padding .2s ease, background-color .2s ease;
+}
+.sidebar-collapse-toggle span {
+  overflow: hidden;
+  white-space: nowrap;
+}
+.clinical-app.sidebar-collapsed .sidebar {
+  padding: 18px 8px 12px;
+}
+.clinical-app.sidebar-collapsed .brand {
+  justify-content: center;
+  padding: 0 0 22px;
+}
+.clinical-app.sidebar-collapsed .brand-copy,
+.clinical-app.sidebar-collapsed .sidebar-section-label,
+.clinical-app.sidebar-collapsed .clinic-context-copy,
+.clinical-app.sidebar-collapsed .navigation-group-label,
+.clinical-app.sidebar-collapsed .primary-navigation a span,
+.clinical-app.sidebar-collapsed .settings-link span,
+.clinical-app.sidebar-collapsed .session-copy,
+.clinical-app.sidebar-collapsed .sidebar-collapse-toggle span {
+  display: none;
+}
+.clinical-app.sidebar-collapsed .clinic-context {
+  justify-content: center;
+  padding: 9px 0;
+  margin-bottom: 12px;
+  border-color: transparent;
+  background: transparent;
+}
+.clinical-app.sidebar-collapsed .primary-navigation {
+  gap: 10px;
+  overflow-x: hidden;
+}
+.clinical-app.sidebar-collapsed .navigation-group {
+  gap: 5px;
+}
+.clinical-app.sidebar-collapsed .primary-navigation a,
+.clinical-app.sidebar-collapsed .settings-link {
+  position: relative;
+  justify-content: center;
+  width: 44px;
+  min-height: 44px;
+  margin-inline: auto;
+  padding: 0;
+  border-radius: 11px;
+}
+.clinical-app.sidebar-collapsed .primary-navigation a svg,
+.clinical-app.sidebar-collapsed .settings-link svg {
+  width: 20px;
+  height: 20px;
+}
+.clinical-app.sidebar-collapsed .primary-navigation a.nav-link--active,
+.clinical-app.sidebar-collapsed .settings-link.nav-link--active {
+  background: var(--color-brand-soft);
+  border-color: var(--color-brand-border);
+  color: var(--color-brand-strong);
+}
+.clinical-app.sidebar-collapsed .primary-navigation a.nav-link--active::before,
+.clinical-app.sidebar-collapsed .settings-link.nav-link--active::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: 25%;
+  bottom: 25%;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--color-brand);
+}
+.clinical-app.sidebar-collapsed .sidebar-bottom {
+  gap: 8px;
+}
+.clinical-app.sidebar-collapsed .sidebar-collapse-toggle {
+  justify-content: center;
+  width: 44px;
+  min-height: 42px;
+  padding: 0;
+  margin: 0 auto;
+  border-color: var(--border-subtle);
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+}
+.clinical-app.sidebar-collapsed .sidebar-collapse-toggle svg {
+  transform: rotate(180deg);
+}
+.clinical-app.sidebar-collapsed .account-card {
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 8px;
+}
+.clinical-app.sidebar-collapsed .session-avatar {
+  width: 38px;
+  height: 38px;
+}
+.clinical-app.sidebar-collapsed .sign-out-button {
+  width: 38px;
+  height: 38px;
+}
+@media (max-width: 860px) {
+  .clinical-app.sidebar-collapsed { grid-template-columns: minmax(0, 1fr); }
+  .sidebar-collapse-toggle { display: none; }
+  .clinical-app.sidebar-collapsed .sidebar {
+    padding: 22px 14px 14px;
+  }
+  .clinical-app.sidebar-collapsed .brand {
+    justify-content: flex-start;
+    padding: 0 8px 25px;
+  }
+  .clinical-app.sidebar-collapsed .brand-copy,
+  .clinical-app.sidebar-collapsed .sidebar-section-label,
+  .clinical-app.sidebar-collapsed .clinic-context-copy,
+  .clinical-app.sidebar-collapsed .navigation-group-label,
+  .clinical-app.sidebar-collapsed .primary-navigation a span,
+  .clinical-app.sidebar-collapsed .settings-link span,
+  .clinical-app.sidebar-collapsed .session-copy {
+    display: revert;
+  }
+  .clinical-app.sidebar-collapsed .clinic-context {
+    justify-content: flex-start;
+    padding: 12px 10px;
+    margin-bottom: 20px;
+    border-color: var(--border-subtle);
+    background: var(--surface-muted);
+  }
+  .clinical-app.sidebar-collapsed .primary-navigation a,
+  .clinical-app.sidebar-collapsed .settings-link {
+    justify-content: flex-start;
+    width: auto;
+    min-height: 42px;
+    margin: 0;
+    padding: 0 11px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar, .sidebar-collapse-toggle { transition: none; }
+}
+
+@media (max-width: 860px) {
+  .clinical-app.sidebar-collapsed .brand-copy,
+  .clinical-app.sidebar-collapsed .clinic-context-copy,
+  .clinical-app.sidebar-collapsed .session-copy { display: grid; }
+  .clinical-app.sidebar-collapsed .sidebar-section-label,
+  .clinical-app.sidebar-collapsed .navigation-group-label { display: block; }
+  .clinical-app.sidebar-collapsed .primary-navigation a span,
+  .clinical-app.sidebar-collapsed .settings-link span { display: inline; }
+}

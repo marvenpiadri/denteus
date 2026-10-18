@@ -1,4 +1,4 @@
-<div class="clinical-app">
+<div class="clinical-app" [class.sidebar-collapsed]="sidebarCollapsed()">
   <a class="skip-link" href="#main-content">Passer au contenu principal</a>
 
   @if (mobileNavigationOpen()) {
@@ -67,6 +67,10 @@
     </nav>
 
     <div class="sidebar-bottom">
+      <button class="sidebar-collapse-toggle" type="button" (click)="toggleSidebar()" [attr.aria-expanded]="!sidebarCollapsed()" [attr.aria-label]="sidebarCollapsed() ? 'Développer la navigation' : 'Réduire la navigation'" [title]="sidebarCollapsed() ? 'Développer la navigation' : 'Réduire la navigation'">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 5-7 7 7 7M19.5 5l-7 7 7 7"/></svg>
+        <span>Réduire la navigation</span>
+      </button>
       <a class="settings-link" routerLink="/crm/settings" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1a1.7 1.7 0 0 1-2.4 2.4l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a1.7 1.7 0 0 1-3.4 0v-.2a1.7 1.7 0 0 0-2.9-1.2l-.1.1a1.7 1.7 0 0 1-2.4-2.4l.1-.1a1.7 1.7 0 0 0-1.2-2.9H4a1.7 1.7 0 0 1 0-3.4h.2a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a1.7 1.7 0 0 1 2.4-2.4l.1.1a1.7 1.7 0 0 0 2.9-1.2V2a1.7 1.7 0 0 1 3.4 0v.2a1.7 1.7 0 0 0 2.9 1.2l.1-.1a1.7 1.7 0 0 1 2.4 2.4l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a1.7 1.7 0 0 1 0 3.4h-.2a1.7 1.7 0 0 0-1.2 2.9Z"/></svg><span>Paramètres du cabinet</span>
       </a>

@@ -29,9 +29,16 @@ export class AgendaPageComponent {
   private readonly platformId = inject(PLATFORM_ID);
 
   readonly selectedDate = signal('');
+  readonly calendarView = signal<'day' | 'week' | 'month' | 'year'>('day');
+  readonly dayAppointments = computed(() => {
+    const zone = this.tenant.activeClinic()?.timezone || 'Africa/Casablanca';
+    return this.appointments().filter((appointment) => toClinicDateTimeInput(appointment.startsAt, zone).slice(0, 10) === this.selectedDate());
+  });
   readonly appointments = signal<AppointmentRecord[]>([]);
   readonly waitingRoomAppointments = computed(() => this.appointments().filter((appointment) => appointment.status === 'ARRIVED'));
   readonly patients = signal<PatientRecord[]>([]);
+  readonly waitingRoomAppointments = computed(() => this.dayAppointments().filter((appointment) => appointment.status === 'ARRIVED'));
+  readonly inTreatmentAppointments = computed(() => this.dayAppointments().filter((appointment) => appointment.status === 'IN_PROGRESS'));
   readonly providers = signal<ClinicProvider[]>([]);
   readonly operatories = signal<ClinicOperatory[]>([]);
   readonly loadingResources = signal(false);
@@ -197,11 +204,12 @@ export class AgendaPageComponent {
       const clinic = this.tenant.activeClinic();
       if (!isPlatformBrowser(this.platformId) || !clinic) return;
       const date = this.selectedDate();
+      const view = this.calendarView();
       if (!date) {
         this.selectedDate.set(todayInTimeZone(clinic.timezone || 'Africa/Casablanca'));
         return;
       }
-      void this.loadAppointments(clinic.organizationId, clinic.id, date, clinic.timezone || 'Africa/Casablanca');
+      void this.loadAppointments(clinic.organizationId, clinic.id, date, clinic.timezone || 'Africa/Casablanca', view);
     });
 
     effect(() => {
@@ -219,15 +227,16 @@ export class AgendaPageComponent {
     });
   }
 
-  private async loadAppointments(organizationId: string, clinicId: string, date: string, timeZone: string): Promise<void> {
+  private async loadAppointments(organizationId: string, clinicId: string, date: string, timeZone: string, view: 'day' | 'week' | 'month' | 'year' = this.calendarView()): Promise<void> {
     const requestSequence = ++this.appointmentLoadSequence;
     this.loading.set(true);
     this.appointments.set([]);
     this.pendingStatusChange.set(null);
     this.error.set('');
     try {
-      const from = localDateTimeToIso(`${date}T00:00`, timeZone);
-      const to = localDateTimeToIso(`${addCalendarDays(date, 1)}T00:00`, timeZone);
+      const range = this.appointmentRange(date, view);
+      const from = localDateTimeToIso(`${range.from}T00:00`, timeZone);
+      const to = localDateTimeToIso(`${range.to}T00:00`, timeZone);
       const response = await this.appointmentsApi.list(organizationId, clinicId, from, to);
       if (requestSequence !== this.appointmentLoadSequence || this.tenant.activeClinic()?.id !== clinicId || this.selectedDate() !== date) return;
       this.appointments.set(response.data);
@@ -620,8 +629,57 @@ export class AgendaPageComponent {
     }
   }
 
-  moveDate(days: number): void {
+  moveDate(direction: number): void {
     const current = this.selectedDate();
-    if (current) this.selectedDate.set(addCalendarDays(current, days));
+    if (!current) return;
+    const view = this.calendarView();
+    if (view === 'week') this.selectedDate.set(addCalendarDays(current, direction * 7));
+    else if (view === 'month') this.selectedDate.set(this.shiftMonth(current, direction));
+    else if (view === 'year') this.selectedDate.set(this.shiftYear(current, direction));
+    else this.selectedDate.set(addCalendarDays(current, direction));
+  }
+
+  changeCalendarView(view: 'day' | 'week' | 'month' | 'year'): void {
+    this.calendarView.set(view);
+  }
+
+  onCalendarDateSelected(date: string): void {
+    this.selectedDate.set(date);
+  }
+
+  private appointmentRange(date: string, view: 'day' | 'week' | 'month' | 'year'): { from: string; to: string } {
+    if (view === 'week') {
+      const offset = (new Date(date + 'T12:00:00').getDay() + 6) % 7;
+      const from = addCalendarDays(date, -offset);
+      return { from, to: addCalendarDays(from, 7) };
+    }
+    if (view === 'month') {
+      const firstOfMonth = date.slice(0, 7) + '-01';
+      const weekdayOffset = (new Date(firstOfMonth + 'T12:00:00').getDay() + 6) % 7;
+      const from = addCalendarDays(firstOfMonth, -weekdayOffset);
+      return { from, to: addCalendarDays(from, 42) };
+    }
+    if (view === 'year') {
+      const year = Number(date.slice(0, 4));
+      return { from: year + '-01-01', to: (year + 1) + '-01-01' };
+    }
+    return { from: date, to: addCalendarDays(date, 1) };
+  }
+
+  private shiftMonth(date: string, months: number): string {
+    const source = new Date(date + 'T12:00:00');
+    const day = source.getDate();
+    source.setDate(1);
+    source.setMonth(source.getMonth() + months);
+    source.setDate(Math.min(day, new Date(source.getFullYear(), source.getMonth() + 1, 0).getDate()));
+    return source.getFullYear() + '-' + String(source.getMonth() + 1).padStart(2, '0') + '-' + String(source.getDate()).padStart(2, '0');
+  }
+
+  private shiftYear(date: string, years: number): string {
+    const source = new Date(date + 'T12:00:00');
+    const month = source.getMonth();
+    source.setFullYear(source.getFullYear() + years);
+    if (source.getMonth() !== month) source.setDate(0);
+    return source.getFullYear() + '-' + String(source.getMonth() + 1).padStart(2, '0') + '-' + String(source.getDate()).padStart(2, '0');
   }
 }

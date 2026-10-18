@@ -18,6 +18,7 @@ export class ClinicalShellComponent implements OnInit {
   private readonly platformId = inject(PLATFORM_ID);
 
   readonly mobileNavigationOpen = signal(false);
+  readonly sidebarCollapsed = signal(false);
   readonly isMobileViewport = signal(false);
   readonly theme = signal<'light' | 'dark'>('light');
   readonly signingOut = signal(false);
@@ -63,6 +64,10 @@ export class ClinicalShellComponent implements OnInit {
   @HostListener('document:keydown.escape')
   onEscapeKey(): void {
     if (this.mobileNavigationOpen()) this.closeMobileNavigation();
+  }
+
+  toggleSidebar(): void {
+    this.sidebarCollapsed.update((collapsed) => !collapsed);
   }
 
   closeMobileNavigation(): void {
