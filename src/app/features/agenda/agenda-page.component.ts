@@ -8,6 +8,9 @@ import { PatientApiService } from '../patients/patient-api.service';
 import type { PatientRecord } from '../patients/patient-api.service';
 import { AppointmentApiService } from './appointment-api.service';
 import { AgendaCalendarComponent } from './agenda-calendar.component';
+import { SchedulerCalendarComponent } from './calendar-engine/scheduler-calendar.component';
+import type { CalendarCategory, CalendarEvent, CalendarGateway, CalendarViewType, EventDraft, LaneConfig } from './calendar-engine/models/calendar.models';
+import type { IconName } from './calendar-engine/components/cal-icon/cal-icon.component';
 import type { CalendarAppointmentDrop, CalendarSlotSelection } from './agenda-calendar.component';
 import { SchedulingResourceApiService } from './scheduling-resource-api.service';
 import type { ClinicOperatory, ClinicProvider, ProviderRole, ProviderWorkingHour } from './scheduling-resource-api.service';
@@ -16,7 +19,7 @@ import { addCalendarDays, formatCalendarDate as formatCalendarDateValue, formatC
 
 @Component({
   selector: 'app-agenda-page',
-  imports: [FormsModule, RouterLink, AgendaCalendarComponent],
+  imports: [FormsModule, RouterLink, AgendaCalendarComponent, SchedulerCalendarComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './agenda-page.component.html',
   styleUrl: './agenda-page.component.css',
@@ -29,12 +32,65 @@ export class AgendaPageComponent {
   private readonly platformId = inject(PLATFORM_ID);
 
   readonly selectedDate = signal('');
-  readonly calendarView = signal<'day' | 'week' | 'month' | 'year'>('day');
+  readonly calendarView = signal<CalendarViewType>('week');
+  readonly calendarResourceView = signal<'all' | 'provider' | 'operatory'>('all');
   readonly dayAppointments = computed(() => {
     const zone = this.tenant.activeClinic()?.timezone || 'Africa/Casablanca';
     return this.appointments().filter((appointment) => toClinicDateTimeInput(appointment.startsAt, zone).slice(0, 10) === this.selectedDate());
   });
   readonly appointments = signal<AppointmentRecord[]>([]);
+  readonly calendarCategories = computed<CalendarCategory[]>(() => [
+    { id: 'SCHEDULED', name: 'Planifié', color: '#64748b', visible: true },
+    { id: 'CONFIRMED', name: 'Confirmé', color: '#2563eb', visible: true },
+    { id: 'ARRIVED', name: 'Arrivé', color: '#d97706', visible: true },
+    { id: 'IN_PROGRESS', name: 'En soin', color: '#0f9f8f', visible: true },
+    { id: 'COMPLETED', name: 'Terminé', color: '#16a34a', visible: true },
+    { id: 'CANCELLED', name: 'Annulé', color: '#94a3b8', visible: true },
+    { id: 'NO_SHOW', name: 'Absent', color: '#dc2626', visible: true },
+  ]);
+  readonly calendarEvents = computed<CalendarEvent[]>(() => {
+    const zone = this.tenant.activeClinic()?.timezone || 'Africa/Casablanca';
+    return this.appointments().map((appointment) => {
+      const meta = this.calendarStatusMeta(appointment.status);
+      return {
+        id: appointment.id,
+        title: `${appointment.patientFirstName} ${appointment.patientLastName}`.trim(),
+        start: this.calendarDateFromInput(toClinicDateTimeInput(appointment.startsAt, zone)),
+        end: this.calendarDateFromInput(toClinicDateTimeInput(appointment.endsAt, zone)),
+        allDay: false,
+        calendarId: appointment.status,
+        location: appointment.operatoryName || undefined,
+        notes: appointment.reason || undefined,
+        subtitle: [appointment.reason, appointment.providerName].filter(Boolean).join(' · ') || this.statusLabel(appointment.status),
+        resources: { provider: appointment.providerId || 'unassigned', operatory: appointment.operatoryId || 'unassigned' },
+        badge: { icon: meta.icon, label: meta.label },
+        tone: meta.tone,
+        locked: !this.canReschedule(appointment.status),
+        lockedReason: this.canReschedule(appointment.status) ? undefined : 'Ce rendez-vous ne peut plus être déplacé.',
+      };
+    });
+  });
+  readonly calendarLanes = computed<LaneConfig | null>(() => {
+    const mode = this.calendarResourceView();
+    if (mode === 'all') return null;
+    if (mode === 'provider') return {
+      dimension: 'provider',
+      lanes: [
+        { id: 'unassigned', label: 'Non affectés', sublabel: 'Sans praticien' },
+        ...this.providers().map((provider) => ({ id: provider.id, label: provider.displayName })),
+      ],
+    };
+    return {
+      dimension: 'operatory',
+      lanes: [
+        { id: 'unassigned', label: 'Non affectés', sublabel: 'Sans fauteuil' },
+        ...this.operatories().map((operatory) => ({ id: operatory.id, label: operatory.name })),
+      ],
+    };
+  });
+  readonly calendarGateway: CalendarGateway = {
+    update: async (event, previous) => this.persistCalendarMove(event, previous),
+  };
   readonly patients = signal<PatientRecord[]>([]);
   readonly waitingRoomAppointments = computed(() => this.dayAppointments().filter((appointment) => appointment.status === 'ARRIVED'));
   readonly inTreatmentAppointments = computed(() => this.dayAppointments().filter((appointment) => appointment.status === 'IN_PROGRESS'));
@@ -453,6 +509,89 @@ export class AgendaPageComponent {
               : 'Le rendez-vous n’a pas été enregistré. Vérifiez les horaires puis réessayez.');
     } finally {
       if (mutationSequence === this.appointmentMutationSequence) this.saving.set(false);
+    }
+  }
+
+
+  calendarStatusMeta(status: AppointmentStatus): { icon: IconName; label: string; tone: NonNullable<CalendarEvent['tone']> } {
+    const metadata: Record<AppointmentStatus, { icon: IconName; label: string; tone: NonNullable<CalendarEvent['tone']> }> = {
+      SCHEDULED: { icon: 'calendar', label: 'Planifié', tone: 'normal' },
+      CONFIRMED: { icon: 'circle-check', label: 'Confirmé', tone: 'normal' },
+      ARRIVED: { icon: 'clock', label: 'Arrivé', tone: 'attention' },
+      IN_PROGRESS: { icon: 'play', label: 'En soin', tone: 'active' },
+      COMPLETED: { icon: 'circle-check', label: 'Terminé', tone: 'done' },
+      CANCELLED: { icon: 'ban', label: 'Annulé', tone: 'muted' },
+      NO_SHOW: { icon: 'user-x', label: 'Absent', tone: 'muted' },
+    };
+    return metadata[status];
+  }
+
+  onCalendarDateChanged(date: string): void {
+    if (date && date !== this.selectedDate()) this.selectedDate.set(date);
+  }
+
+  onCalendarViewChanged(view: CalendarViewType): void {
+    if (view !== this.calendarView()) this.calendarView.set(view);
+  }
+
+  onCalendarCreateRequested(draft: EventDraft): void {
+    const startsAt = this.calendarDateTimeInput(draft.start);
+    this.selectedDate.set(startsAt.slice(0, 10));
+    const selection: CalendarSlotSelection = {
+      startsAt,
+      ...(draft.resources?.['provider'] && draft.resources['provider'] !== 'unassigned' ? { providerId: draft.resources['provider'] } : {}),
+      ...(draft.resources?.['operatory'] && draft.resources['operatory'] !== 'unassigned' ? { operatoryId: draft.resources['operatory'] } : {}),
+    };
+    this.openCreateAtTime(selection);
+  }
+
+  onCalendarEventSelected(event: CalendarEvent): void {
+    const appointment = this.appointments().find((item) => item.id === event.id);
+    if (appointment) this.openReschedule(appointment);
+  }
+
+  private calendarDateFromInput(value: string): Date {
+    const [date, time = '00:00'] = value.split('T');
+    const [year, month, day] = date.split('-').map(Number);
+    const [hour, minute] = time.split(':').map(Number);
+    return new Date(year, month - 1, day, hour, minute);
+  }
+
+  private calendarDateTimeInput(value: Date): string {
+    return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}T${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}`;
+  }
+
+  private async persistCalendarMove(event: CalendarEvent, _previous: CalendarEvent): Promise<{ ok: true } | { ok: false; code: 'conflict' | 'invalid' | 'forbidden' | 'not-found' | 'error'; message: string }> {
+    const clinic = this.tenant.activeClinic();
+    const appointment = this.appointments().find((item) => item.id === event.id);
+    if (!clinic || !appointment) return { ok: false, code: 'not-found', message: 'Ce rendez-vous n’est plus disponible dans cette clinique.' };
+    if (!this.canReschedule(appointment.status)) return { ok: false, code: 'forbidden', message: 'Le statut de ce rendez-vous ne permet plus de le déplacer.' };
+    const zone = clinic.timezone || 'Africa/Casablanca';
+    try {
+      await this.appointmentsApi.reschedule(
+        clinic.organizationId,
+        clinic.id,
+        appointment.id,
+        localDateTimeToIso(this.calendarDateTimeInput(event.start), zone),
+        localDateTimeToIso(this.calendarDateTimeInput(event.end), zone),
+        event.resources?.['provider'] === 'unassigned' ? null : event.resources?.['provider'] ?? appointment.providerId,
+        event.resources?.['operatory'] === 'unassigned' ? null : event.resources?.['operatory'] ?? appointment.operatoryId,
+      );
+      if (this.tenant.activeClinic()?.id === clinic.id) {
+        await this.loadAppointments(clinic.organizationId, clinic.id, this.selectedDate(), zone, this.calendarView());
+      }
+      return { ok: true };
+    } catch (error) {
+      const httpError = error instanceof HttpErrorResponse ? error : null;
+      return {
+        ok: false,
+        code: httpError?.status === 409 ? 'conflict' : httpError?.status === 403 ? 'forbidden' : httpError?.status === 400 ? 'invalid' : 'error',
+        message: httpError?.status === 409
+          ? httpError.error?.error?.message || 'Ce créneau est déjà occupé. Le rendez-vous a été replacé à son horaire initial.'
+          : httpError?.status === 403
+            ? 'Votre rôle ne permet pas de déplacer ce rendez-vous.'
+            : 'Le déplacement n’a pas été enregistré. Le calendrier restaure les horaires précédents.',
+      };
     }
   }
 
