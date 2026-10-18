@@ -19,7 +19,7 @@ input:disabled{background:var(--surface-muted);color:var(--text-tertiary)}
 .password-control input{padding-right:88px}
 .password-toggle{position:absolute;right:7px;top:50%;transform:translateY(-50%);padding:7px;border:0;border-radius:5px;background:transparent;color:var(--color-brand-strong);font-size:11px;font-weight:750}
 .password-toggle:hover:not(:disabled){background:var(--color-brand-soft)}
-.submit-button{display:flex;align-items:center;justify-content:center;gap:10px;min-height:47px;margin-top:4px;padding:12px 16px;border:1px solid var(--color-brand);border-radius:8px;background:var(--color-brand);color:var(--text-on-brand);font-size:13px;font-weight:750;transition:background .15s}
+.submit-button{display:flex;align-items:center;justify-content:center;gap:10px;min-height:47px;margin-top:4px;padding:12px 16px;border:1px solid var(--color-action);border-radius:8px;background:var(--color-action);color:var(--text-on-action);font-size:13px;font-weight:750;transition:background .15s}
 .submit-button:hover:not(:disabled){background:var(--color-action-hover)}
 .submit-button:disabled{border-color:var(--border-control);background:var(--surface-muted);cursor:wait}
 .form-error-summary{margin:0 0 18px;padding:12px 14px;border:1px solid var(--color-danger-border);border-left:4px solid var(--color-danger);border-radius:8px;background:var(--color-danger-soft);color:var(--color-danger-strong)}
