@@ -16,8 +16,9 @@ export function isClinicalMediaCategoryCompatible(category: ClinicalMediaType, m
 }
 
 export function safeClinicalFilename(value: string): string {
-  return value.replace(/[\\/\\r\\n\\0]/g, '_')
-    .replace(/[^\\p{L}\\p{N}._ ()-]/gu, '_')
+  return value.replaceAll('/', '_').replaceAll(String.fromCharCode(92), '_')
+    .replace(/[\r\n\0]/g, '_')
+    .replace(/[^\p{L}\p{N}._ ()-]/gu, '_')
     .slice(0, 255) || 'clinical-file';
 }
 
