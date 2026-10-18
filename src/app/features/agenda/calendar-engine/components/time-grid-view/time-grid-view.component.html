@@ -37,7 +37,7 @@
 
     @if (store.showAllDay()) {
       <div class="row allday-row">
-        <div class="gutter"><span class="allday-label">All day</span></div>
+        <div class="gutter"><span class="allday-label">Toute la journée</span></div>
         <div class="allday-cols" #allday [style.height.px]="allDayHeight()">
           @for (col of columns(); track col.key) {
             <div class="allday-cell" (click)="createAllDay(col.day)"></div>
