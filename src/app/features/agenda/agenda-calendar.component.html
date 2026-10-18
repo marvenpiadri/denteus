@@ -18,6 +18,7 @@
   </header>
 
   <div class="calendar-scroll" [attr.aria-busy]="loading">
+    @if (displayView() === 'day') {
     <div class="time-grid" [class.resource-grid]="viewMode() !== 'day'">
       <div class="time-grid-header" [style.gridTemplateColumns]="'74px repeat(' + resourceCount + ', minmax(180px, 1fr))'">
         <span>Heure</span>
@@ -67,6 +68,37 @@
         }
       </div>
     </div>
+    } @else if (displayView() === 'week') {
+      <div class="calendar-week-overview">
+        @for (day of weekDates(); track day) {
+          <button type="button" class="overview-day" [class.is-selected]="day === date" (click)="chooseDate(day)">
+            <strong>{{ dateLabel(day) }}</strong><span>{{ appointmentsOn(day).length }} rendez-vous</span>
+            @for (appointment of appointmentsOn(day).slice(0, 4); track appointment.id) { <small>{{ time(appointment.startsAt) }} · {{ patientName(appointment) }}</small> }
+          </button>
+        }
+      </div>
+    } @else if (displayView() === 'month') {
+      <div class="calendar-month-overview">
+        @for (item of monthDates(); track item.date) {
+          <button type="button" class="month-day" [class.outside-month]="!item.inMonth" [class.is-selected]="item.date === date" (click)="chooseDate(item.date)">
+            <strong>{{ dateLabel(item.date, { day: 'numeric' }) }}</strong>
+            @if (appointmentsOn(item.date).length) { <small>{{ appointmentsOn(item.date).length }} RDV</small> }
+          </button>
+        }
+      </div>
+    } @else {
+      <div class="calendar-year-overview">
+        @for (month of yearMonths(); track month.month) {
+          <section class="year-month"><h3>{{ month.label }}</h3>
+            <div class="year-mini-grid">
+              @for (day of monthDatesFor(month.month).slice(0, 35); track day) {
+                <button type="button" [class.has-events]="appointmentsOn(day).length > 0" [class.is-selected]="day === date" (click)="chooseDate(day)">{{ dateLabel(day, { day: 'numeric' }) }}</button>
+              }
+            </div>
+          </section>
+        }
+      </div>
+    }
   </div>
   <footer class="calendar-legend">
     <span><i class="legend-dot scheduled"></i>Planifié / confirmé</span>
