@@ -5,6 +5,7 @@ import type { AppointmentRecord } from './appointment-api.service';
 import type { ClinicOperatory, ClinicProvider } from './scheduling-resource-api.service';
 
 export type CalendarResourceMode = 'day' | 'provider' | 'operatory';
+export type CalendarDisplayView = 'day' | 'week' | 'month' | 'year';
 export interface CalendarResourceColumn { key: string; id: string | null; label: string; kind: 'all' | 'unassigned' | 'provider' | 'operatory'; }
 export interface PositionedCalendarAppointment { appointment: AppointmentRecord; topPx: number; heightPx: number; leftPct: number; widthPct: number; }
 export interface CalendarAppointmentDrop {
@@ -37,6 +38,9 @@ export class AgendaCalendarComponent {
   @Output() slotSelected = new EventEmitter<CalendarSlotSelection>();
   @Output() appointmentSelected = new EventEmitter<AppointmentRecord>();
   @Output() appointmentDropped = new EventEmitter<CalendarAppointmentDrop>();
+  @Output() viewChanged = new EventEmitter<CalendarDisplayView>();
+  @Output() dateSelected = new EventEmitter<string>();
+  readonly displayView = signal<CalendarDisplayView>('day');
 
   readonly viewMode = signal<CalendarResourceMode>('day');
   readonly hours = Array.from({ length: 13 }, (_, index) => index + 7);
@@ -235,9 +239,76 @@ export class AgendaCalendarComponent {
     this.slotSelected.emit(selection);
   }
 
-  setView(mode: CalendarResourceMode): void {
+  setView(mode: CalendarResourceMode | CalendarDisplayView): void {
     if (mode === 'provider' && !this.providers.length) return;
     if (mode === 'operatory' && !this.operatories.length) return;
+    if (mode === 'day' || mode === 'week' || mode === 'month' || mode === 'year') {
+      this.displayView.set(mode);
+      this.viewMode.set('day');
+      this.viewChanged.emit(mode);
+      return;
+    }
     this.viewMode.set(mode);
+  }
+
+  dateForOffset(days: number): string {
+    const base = new Date(this.date + 'T12:00:00');
+    base.setDate(base.getDate() + days);
+    return this.dateString(base);
+  }
+
+  weekDates(): string[] {
+    const date = new Date(this.date + 'T12:00:00');
+    date.setDate(date.getDate() - ((date.getDay() + 6) % 7));
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = new Date(date);
+      day.setDate(date.getDate() + i);
+      return this.dateString(day);
+    });
+  }
+
+  monthDates(): Array<{ date: string; inMonth: boolean }> {
+    const selected = new Date(this.date + 'T12:00:00');
+    const first = new Date(selected.getFullYear(), selected.getMonth(), 1, 12);
+    first.setDate(first.getDate() - ((first.getDay() + 6) % 7));
+    return Array.from({ length: 42 }, (_, i) => {
+      const day = new Date(first);
+      day.setDate(first.getDate() + i);
+      return { date: this.dateString(day), inMonth: day.getMonth() === selected.getMonth() };
+    });
+  }
+
+  yearMonths(): Array<{ label: string; month: number }> {
+    const year = Number(this.date.slice(0, 4));
+    return Array.from({ length: 12 }, (_, month) => ({
+      label: new Intl.DateTimeFormat('fr-MA', { month: 'long' }).format(new Date(year, month, 1)),
+      month,
+    }));
+  }
+
+  monthDatesFor(month: number): string[] {
+    const year = Number(this.date.slice(0, 4));
+    const first = new Date(year, month, 1, 12);
+    first.setDate(first.getDate() - ((first.getDay() + 6) % 7));
+    return Array.from({ length: 42 }, (_, i) => {
+      const day = new Date(first);
+      day.setDate(first.getDate() + i);
+      return this.dateString(day);
+    });
+  }
+
+  appointmentsOn(date: string): AppointmentRecord[] {
+    return this.appointments.filter((appointment) => this.localDate(appointment.startsAt) === date)
+      .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+  }
+
+  dateLabel(date: string, options: Intl.DateTimeFormatOptions = { weekday: 'short', day: 'numeric' }): string {
+    return new Intl.DateTimeFormat('fr-MA', { ...options, timeZone: this.timeZone }).format(new Date(date + 'T12:00:00'));
+  }
+
+  chooseDate(date: string): void { this.dateSelected.emit(date); }
+
+  private dateString(date: Date): string {
+    return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
   }
 }
