@@ -110,6 +110,29 @@
     (appointmentDropped)="dropAppointment($event)"
   />
 
+  <section class="waiting-room" aria-label="Salle d’attente et soins en cours">
+    <div class="waiting-room-column">
+      <header><h2>Salle d’attente</h2><span>{{ waitingRoomAppointments().length }}</span></header>
+      @if (waitingRoomAppointments().length) {
+        @for (appointment of waitingRoomAppointments(); track appointment.id) {
+          <a class="waiting-room-patient" [routerLink]="['/crm/patients', appointment.patientId]">
+            <span class="waiting-status-dot"></span><span class="waiting-room-copy"><strong>{{ appointment.patientFirstName }} {{ appointment.patientLastName }}</strong><small>{{ formatTime(appointment.startsAt) }} · {{ appointment.reason || 'Motif non précisé' }}</small></span><span class="waiting-room-arrow">↗</span>
+          </a>
+        }
+      } @else { <p class="waiting-room-empty">Aucun patient en attente pour cette journée.</p> }
+    </div>
+    <div class="waiting-room-column in-treatment">
+      <header><h2>Soins en cours</h2><span>{{ inTreatmentAppointments().length }}</span></header>
+      @if (inTreatmentAppointments().length) {
+        @for (appointment of inTreatmentAppointments(); track appointment.id) {
+          <a class="waiting-room-patient" [routerLink]="['/crm/patients', appointment.patientId]">
+            <span class="treatment-status-dot"></span><span class="waiting-room-copy"><strong>{{ appointment.patientFirstName }} {{ appointment.patientLastName }}</strong><small>{{ formatTime(appointment.startsAt) }} · {{ appointment.reason || 'Motif non précisé' }}</small></span><span class="waiting-room-arrow">↗</span>
+          </a>
+        }
+      } @else { <p class="waiting-room-empty">Aucun soin en cours.</p> }
+    </div>
+  </section>
+
   <section class="appointment-list" aria-label="Rendez-vous de la journée">
     <div class="list-heading"><div><h2>{{ selectedDate() ? formatCalendarDate(selectedDate()) : 'Chargement de la journée' }}</h2><p>{{ dayAppointments().length }} rendez-vous affiché{{ dayAppointments().length > 1 ? 's' : '' }}</p></div><button type="button" class="secondary-button" (click)="refreshAppointments()" [disabled]="loading() || saving() || changingStatusId() !== null">Actualiser</button></div>
 
