@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { CdkDrag, CdkDropList } from '@angular/cdk/drag-drop';
+import type { CdkDragDrop } from '@angular/cdk/drag-drop';
 import type { AppointmentRecord } from './appointment-api.service';
 import type { ClinicOperatory, ClinicProvider } from './scheduling-resource-api.service';
 
@@ -58,7 +59,7 @@ export class AgendaCalendarComponent {
     return this.positionedAppointments(column).map((item) => item.appointment);
   }
 
-  onAppointmentDrop(event: import('@angular/cdk/drag-drop').CdkDragDrop<AppointmentRecord[]>, column: CalendarResourceColumn): void {
+  onAppointmentDrop(event: CdkDragDrop<AppointmentRecord[]>, column: CalendarResourceColumn): void {
     const appointment = event.item.data as AppointmentRecord;
     if (!appointment || ['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(appointment.status) || this.loading) return;
     const lane = event.container.element.nativeElement;
