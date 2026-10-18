@@ -2,9 +2,7 @@
   @if (showHeading) {
   <header class="calendar-heading">
     <div>
-      <h2 id="calendar-heading">{{ displayView() === 'day' ? 'Planning de la journée' : displayView() === 'week' ? 'Planning de la semaine' : displayView() === 'month' ? 'Planning du mois' : 'Vue annuelle' }}</h2>
-      <p>Les rendez-vous sont positionnés selon leur heure de début et leur durée. Les conflits de patient, praticien et fauteuil sont vérifiés par le serveur. Faites glisser un rendez-vous pour déplacer son horaire ou changer de ressource.</p>
-      <h2 id="calendar-heading">{{ heading }}</h2>
+      <h2 id="calendar-heading">{{ displayView() === 'day' ? heading : displayView() === 'week' ? 'Planning de la semaine' : displayView() === 'month' ? 'Planning du mois' : 'Vue annuelle' }}</h2>
       <p>{{ description }}</p>
     </div>
     <div class="calendar-controls">
