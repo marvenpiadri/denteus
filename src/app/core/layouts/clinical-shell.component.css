@@ -130,3 +130,22 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+
+/* Navigation polish: strengthen wayfinding without adding a second navigation system. */
+.primary-navigation a, .settings-link {
+  min-height: 44px;
+  border-radius: 10px;
+}
+.primary-navigation a.nav-link--active, .settings-link.nav-link--active {
+  box-shadow: inset 3px 0 0 var(--color-brand);
+}
+.brand { padding-bottom: 28px; }
+.topbar-title { line-height: 1.3; }
+@media (max-width: 860px) {
+  .sidebar { padding-top: max(18px, env(safe-area-inset-top)); }
+  .navigation-backdrop { touch-action: manipulation; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar { transition: none; }
+}
