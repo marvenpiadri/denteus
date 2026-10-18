@@ -111,15 +111,15 @@
   />
 
   <section class="appointment-list" aria-label="Rendez-vous de la journée">
-    <div class="list-heading"><div><h2>{{ selectedDate() ? formatCalendarDate(selectedDate()) : 'Chargement de la journée' }}</h2><p>{{ appointments().length }} rendez-vous affiché{{ appointments().length > 1 ? 's' : '' }}</p></div><button type="button" class="secondary-button" (click)="refreshAppointments()" [disabled]="loading() || saving() || changingStatusId() !== null">Actualiser</button></div>
+    <div class="list-heading"><div><h2>{{ selectedDate() ? formatCalendarDate(selectedDate()) : 'Chargement de la journée' }}</h2><p>{{ dayAppointments().length }} rendez-vous affiché{{ dayAppointments().length > 1 ? 's' : '' }}</p></div><button type="button" class="secondary-button" (click)="refreshAppointments()" [disabled]="loading() || saving() || changingStatusId() !== null">Actualiser</button></div>
 
-    @if (loading() && !appointments().length) {
+    @if (loading() && !dayAppointments().length) {
       <div class="list-state" role="status"><span class="loading-indicator" aria-hidden="true"></span>Chargement de l’agenda…</div>
-    } @else if (!loading() && !appointments().length && !error()) {
+    } @else if (!loading() && !dayAppointments().length && !error()) {
       <div class="empty-state"><span class="empty-icon" aria-hidden="true">▦</span><h3>Aucun rendez-vous prévu</h3><p>Cette journée est libre. Créez un rendez-vous pour commencer à organiser la file du cabinet. Configurez les praticiens et fauteuils si vous souhaitez affecter les ressources.</p><button type="button" class="secondary-button" (click)="openCreateForm()" [disabled]="saving() || changingStatusId() !== null">Planifier un rendez-vous</button></div>
     } @else {
       <div class="appointment-items">
-        @for (appointment of appointments(); track appointment.id) {
+        @for (appointment of dayAppointments(); track appointment.id) {
           <article class="appointment-item">
             <div class="appointment-time"><strong>{{ formatTime(appointment.startsAt) }}</strong><span>{{ formatTime(appointment.endsAt) }}</span></div>
             <div class="appointment-main"><div class="patient-line"><a [routerLink]="['/crm/patients', appointment.patientId]">{{ appointment.patientFirstName }} {{ appointment.patientLastName }}</a><span class="patient-number">{{ appointment.patientNumber }}</span></div><p>{{ appointment.reason || 'Motif non précisé' }}</p><div class="appointment-meta"><span class="status-label" [attr.data-status]="appointment.status">{{ statusLabel(appointment.status) }}</span><span>{{ formatDate(appointment.startsAt) }}</span>@if (appointment.providerName) { <span class="resource-meta">{{ appointment.providerName }}</span> } @if (appointment.operatoryName) { <span class="resource-meta">{{ appointment.operatoryName }}</span> }</div></div>
