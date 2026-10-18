@@ -235,3 +235,56 @@ a {
 .cdk-drag-preview.calendar-appointment { z-index: 1000; box-shadow: 0 14px 34px rgb(14 39 49 / 22%); opacity: .98; }
 .cdk-drop-list-receiving { outline: 2px dashed var(--color-brand); outline-offset: -3px; background-color: color-mix(in srgb, var(--color-brand) 7%, transparent); }
 @media (max-width: 600px) { .theme-toggle { min-width: 36px; padding: 0 9px; } .theme-toggle-label { display: none; } }
+
+
+/* Phase 2: product-wide design tokens and shared interaction defaults. */
+:root {
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --surface-canvas: var(--color-page);
+  --surface-raised: var(--color-surface);
+  --surface-sidebar: var(--color-surface);
+  --surface-topbar: color-mix(in srgb, var(--color-surface) 94%, transparent);
+  --surface-muted: color-mix(in srgb, var(--color-page) 76%, var(--color-surface));
+  --surface-hover: color-mix(in srgb, var(--color-brand-soft) 48%, var(--color-surface));
+  --text-primary: var(--color-text);
+  --text-secondary: var(--color-text-secondary);
+  --text-tertiary: var(--color-text-subtle);
+  --border-subtle: var(--color-border);
+  --border-control: var(--color-border-strong);
+  --border-focus: var(--color-brand);
+  --color-brand-strong: var(--color-brand-hover);
+  --color-brand-border: color-mix(in srgb, var(--color-brand) 24%, var(--color-border));
+  --color-success: #17805d;
+  --color-success-soft: #e3f5eb;
+  --color-warning-strong: #805500;
+  --color-danger-strong: #8f2018;
+  --color-danger-border: #f2c5c1;
+  --radius-control: 9px;
+  --radius-card: 14px;
+  --radius-panel: 18px;
+  --shadow-card: 0 2px 5px rgb(20 46 55 / 3%), 0 12px 34px rgb(20 46 55 / 4%);
+  --shadow-popover: 0 16px 42px rgb(20 46 55 / 14%);
+}
+:root[data-theme='dark'] {
+  --surface-topbar: color-mix(in srgb, var(--color-surface) 94%, transparent);
+  --surface-muted: color-mix(in srgb, var(--color-page) 70%, var(--color-surface));
+  --surface-hover: color-mix(in srgb, var(--color-brand-soft) 65%, var(--color-surface));
+  --color-brand-strong: var(--color-brand);
+  --color-brand-border: color-mix(in srgb, var(--color-brand) 34%, var(--color-border));
+  --color-success: #71d6ae;
+  --color-success-soft: #193b31;
+  --color-warning-strong: #f0c36c;
+  --color-danger-strong: #ffc3bd;
+  --color-danger-border: #754341;
+  --shadow-card: 0 2px 5px rgb(0 0 0 / 12%), 0 12px 34px rgb(0 0 0 / 10%);
+  --shadow-popover: 0 16px 42px rgb(0 0 0 / 35%);
+}
+:where(button, input, select, textarea) { font: inherit; }
+:where(button, a, input, select, textarea) { -webkit-tap-highlight-color: transparent; }
+:where(button, input, select, textarea) { accent-color: var(--color-brand); }
+:where(button:disabled, input:disabled, select:disabled, textarea:disabled) { cursor: not-allowed; }
+:where(input, select, textarea) { color-scheme: light; }
+:root[data-theme='dark'] :where(input, select, textarea) { color-scheme: dark; }
+:where(input, select, textarea):focus-visible { outline: 3px solid color-mix(in srgb, var(--border-focus) 55%, transparent); outline-offset: 1px; }
+:where(button, a):focus-visible { outline: 3px solid color-mix(in srgb, var(--border-focus) 62%, transparent); outline-offset: 3px; }
+::placeholder { color: var(--text-tertiary); opacity: .78; }
