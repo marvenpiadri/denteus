@@ -90,6 +90,7 @@
         <span class="topbar-title">Espace de travail</span>
       </div>
       <div class="topbar-status"><span class="status-dot" aria-hidden="true"></span> Validation avant pilote</div>
+      <button class="theme-toggle" type="button" (click)="toggleTheme()" [attr.aria-label]="theme() === 'dark' ? 'Activer le thème clair' : 'Activer le thème sombre'" [attr.aria-pressed]="theme() === 'dark'"><span aria-hidden="true">{{ theme() === 'dark' ? '☀' : '☾' }}</span><span class="theme-toggle-label">{{ theme() === 'dark' ? 'Clair' : 'Sombre' }}</span></button>
     </header>
 
     <main id="main-content" class="main-content">
