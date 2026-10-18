@@ -131,7 +131,7 @@ export class SchedulerCalendarComponent implements OnInit {
     });
     effect(() => {
       const date = this.store.focusDate();
-      if (this.ready && isPlatformBrowser(this.platformId)) this.dateChanged.emit(this.dateKey(date));
+      if (this.ready && this.focusDate() && isPlatformBrowser(this.platformId)) this.dateChanged.emit(this.dateKey(date));
     });
     effect(() => {
       const view = this.store.view();
@@ -163,7 +163,7 @@ export class SchedulerCalendarComponent implements OnInit {
     this.ready = true;
     this.themeChange.emit(store.theme());
     if (isPlatformBrowser(this.platformId)) {
-      this.dateChanged.emit(this.dateKey(store.focusDate()));
+      if (this.focusDate()) this.dateChanged.emit(this.dateKey(store.focusDate()));
       this.viewChanged.emit(store.view());
     }
   }
