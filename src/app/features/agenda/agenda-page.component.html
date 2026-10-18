@@ -105,6 +105,7 @@
     [loading]="loading()"
     (slotSelected)="openCreateAtTime($event)"
     (appointmentSelected)="openReschedule($event)"
+    (appointmentDropped)="dropAppointment($event)"
   />
 
   <section class="appointment-list" aria-label="Rendez-vous de la journée">
