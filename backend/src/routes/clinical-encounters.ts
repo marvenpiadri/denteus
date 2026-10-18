@@ -54,13 +54,6 @@ async function findPatient(organizationId: string, clinicId: string, patientId: 
   return Boolean(result.rowCount);
 }
 
-async function findEncounter(organizationId: string, clinicId: string, patientId: string, encounterId: string) {
-  return pool.query(
-    'SELECT id, status FROM clinical_encounters WHERE organization_id = $1 AND clinic_id = $2 AND patient_id = $3 AND id = $4',
-    [organizationId, clinicId, patientId, encounterId],
-  );
-}
-
 export const clinicalEncounterRoutes: FastifyPluginAsync = async (app) => {
   app.get<{ Params: { organizationId: string; clinicId: string } }>(
     '/organizations/:organizationId/clinics/:clinicId/clinical-providers',
@@ -333,25 +326,39 @@ export const clinicalEncounterRoutes: FastifyPluginAsync = async (app) => {
       if (!reason || !amendedContent) {
         return reply.code(400).send({ error: { code: 'INVALID_AMENDMENT', message: 'A reason and corrected content are required.' } });
       }
-      const encounter = await findEncounter(organizationId, clinicId, patientId, encounterId);
-      if (!encounter.rowCount) return reply.code(404).send({ error: { code: 'ENCOUNTER_NOT_FOUND', message: 'Clinical encounter not found.' } });
-      const note = await pool.query(
-        'SELECT signed_at FROM clinical_notes WHERE organization_id=$1 AND clinic_id=$2 AND patient_id=$3 AND encounter_id=$4 AND id=$5',
-        [organizationId, clinicId, patientId, encounterId, noteId],
-      );
-      if (!note.rowCount) return reply.code(404).send({ error: { code: 'NOTE_NOT_FOUND', message: 'Clinical note not found.' } });
-      if (!note.rows[0].signed_at) return reply.code(409).send({ error: { code: 'NOTE_NOT_SIGNED', message: 'Only signed notes can be amended.' } });
-      const result = await pool.query(
-        `INSERT INTO clinical_note_amendments (id, organization_id, clinic_id, patient_id, encounter_id, note_id, reason, amended_content, amended_by_id)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-         RETURNING id, reason, amended_content AS "amendedContent", amended_by_id AS "amendedById", created_at AS "createdAt"`,
-        [randomUUID(), organizationId, clinicId, patientId, encounterId, noteId, reason, amendedContent, access.userId],
-      );
-      await pool.query(
-        "INSERT INTO audit_events (id, organization_id, user_id, action, resource_type, resource_id, metadata) VALUES ($1,$2,$3,'CLINICAL_NOTE_AMENDED','CLINICAL_NOTE',$4,$5::jsonb)",
-        [randomUUID(), organizationId, access.userId, noteId, JSON.stringify({ clinicId, patientId, encounterId, amendmentId: result.rows[0].id, reason })],
-      );
-      return reply.code(201).send({ data: result.rows[0] });
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const note = await client.query(
+          'SELECT signed_at FROM clinical_notes WHERE organization_id=$1 AND clinic_id=$2 AND patient_id=$3 AND encounter_id=$4 AND id=$5 FOR UPDATE',
+          [organizationId, clinicId, patientId, encounterId, noteId],
+        );
+        if (!note.rowCount) {
+          await client.query('ROLLBACK');
+          return reply.code(404).send({ error: { code: 'NOTE_NOT_FOUND', message: 'Clinical note not found.' } });
+        }
+        if (!note.rows[0].signed_at) {
+          await client.query('ROLLBACK');
+          return reply.code(409).send({ error: { code: 'NOTE_NOT_SIGNED', message: 'Only signed notes can be amended.' } });
+        }
+        const result = await client.query(
+          `INSERT INTO clinical_note_amendments (id, organization_id, clinic_id, patient_id, encounter_id, note_id, reason, amended_content, amended_by_id)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+           RETURNING id, reason, amended_content AS "amendedContent", amended_by_id AS "amendedById", created_at AS "createdAt"`,
+          [randomUUID(), organizationId, clinicId, patientId, encounterId, noteId, reason, amendedContent, access.userId],
+        );
+        await client.query(
+          "INSERT INTO audit_events (id, organization_id, user_id, action, resource_type, resource_id, metadata) VALUES ($1,$2,$3,'CLINICAL_NOTE_AMENDED','CLINICAL_NOTE',$4,$5::jsonb)",
+          [randomUUID(), organizationId, access.userId, noteId, JSON.stringify({ clinicId, patientId, encounterId, amendmentId: result.rows[0].id, reason })],
+        );
+        await client.query('COMMIT');
+        return reply.code(201).send({ data: result.rows[0] });
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
     },
   );
 };

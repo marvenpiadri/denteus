@@ -4,13 +4,13 @@ import { ChangeDetectionStrategy, Component, effect, inject, input, signal } fro
 import { FormsModule } from '@angular/forms';
 import { TenantContextService } from '../../core/tenant/tenant-context.service';
 import { ClinicalRecordsApiService } from './clinical-records-api.service';
-import type { ClinicalNote, ClinicProvider, Encounter, EncounterType, NoteType } from './clinical-records-api.service';
+import type { ClinicalNote, ClinicProvider, Encounter, EncounterSummary, EncounterType, NoteType } from './clinical-records-api.service';
 
 @Component({selector:'app-clinical-records',imports:[FormsModule,DecimalPipe],changeDetection:ChangeDetectionStrategy.OnPush,templateUrl:'./clinical-records.component.html',styleUrl:'./clinical-records.component.css'})
 export class ClinicalRecordsComponent {
  readonly patientId=input.required<string>();
  private readonly tenant=inject(TenantContextService); private readonly api=inject(ClinicalRecordsApiService);
- readonly visits=signal<Encounter[]>([]); readonly selected=signal<Encounter|null>(null); readonly providers=signal<ClinicProvider[]>([]);
+ readonly visits=signal<EncounterSummary[]>([]); readonly selected=signal<Encounter|null>(null); readonly providers=signal<ClinicProvider[]>([]);
  readonly loading=signal(false); readonly detailLoading=signal(false); readonly saving=signal(false);
  readonly error=signal(''); readonly success=signal(''); readonly showVisitForm=signal(false); readonly showNoteForm=signal(false);
  readonly amendmentId=signal<string|null>(null); readonly amendment=signal({reason:'',content:''});
