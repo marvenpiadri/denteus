@@ -113,7 +113,7 @@ a {
   --color-warning-soft: #382f1d;
   --shadow-panel: 0 12px 38px rgb(0 0 0 / 18%);
 }
-:root[data-theme='dark'] html,
+:root[data-theme='dark'] { background: var(--color-page); }
 :root[data-theme='dark'] body { background: var(--color-page); color: var(--color-text); }
 :root[data-theme='dark'] .clinical-app { background: var(--color-page); color: var(--color-text); }
 :root[data-theme='dark'] .sidebar,
