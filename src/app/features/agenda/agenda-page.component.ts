@@ -153,11 +153,12 @@ export class AgendaPageComponent {
       const clinic = this.tenant.activeClinic();
       if (!isPlatformBrowser(this.platformId) || !clinic) return;
       const date = this.selectedDate();
+      const view = this.calendarView();
       if (!date) {
         this.selectedDate.set(todayInTimeZone(clinic.timezone || 'Africa/Casablanca'));
         return;
       }
-      void this.loadAppointments(clinic.organizationId, clinic.id, date, clinic.timezone || 'Africa/Casablanca');
+      void this.loadAppointments(clinic.organizationId, clinic.id, date, clinic.timezone || 'Africa/Casablanca', view);
     });
 
     effect(() => {
@@ -175,7 +176,7 @@ export class AgendaPageComponent {
     });
   }
 
-  private async loadAppointments(organizationId: string, clinicId: string, date: string, timeZone: string): Promise<void> {
+  private async loadAppointments(organizationId: string, clinicId: string, date: string, timeZone: string, view: 'day' | 'week' | 'month' | 'year' = this.calendarView()): Promise<void> {
     const requestSequence = ++this.appointmentLoadSequence;
     this.loading.set(true);
     this.appointments.set([]);
