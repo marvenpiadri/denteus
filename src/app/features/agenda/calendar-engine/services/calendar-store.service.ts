@@ -75,10 +75,18 @@ export class CalendarStore {
       case 'week': {
         const start = this.weekStart();
         const end = addDays(start, 6);
-        const sameMonth = start.getMonth() === end.getMonth();
-        const startLabel = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(start);
-        const endLabel = new Intl.DateTimeFormat(locale, { day: 'numeric', month: sameMonth ? undefined : 'short' }).format(end);
-        return `${startLabel} – ${endLabel} ${end.getFullYear()}`;
+        const sameYear = start.getFullYear() === end.getFullYear();
+        const startLabel = new Intl.DateTimeFormat(locale, {
+          day: 'numeric',
+          month: 'short',
+          ...(!sameYear ? { year: 'numeric' } : {}),
+        }).format(start);
+        const endLabel = new Intl.DateTimeFormat(locale, {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        }).format(end);
+        return `${startLabel} – ${endLabel}`;
       }
       default:
         return `${monthLabel(d, locale)} ${d.getFullYear()}`;
