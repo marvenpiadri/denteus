@@ -300,14 +300,14 @@ export class AgendaCalendarComponent implements OnChanges {
     }));
   }
 
-  monthDatesFor(month: number): string[] {
+  monthDatesFor(month: number): Array<{ date: string; inMonth: boolean }> {
     const year = Number(this.date.slice(0, 4));
     const first = new Date(year, month, 1, 12);
     first.setDate(first.getDate() - ((first.getDay() + 6) % 7));
     return Array.from({ length: 42 }, (_, i) => {
       const day = new Date(first);
       day.setDate(first.getDate() + i);
-      return this.dateString(day);
+      return { date: this.dateString(day), inMonth: day.getMonth() === month };
     });
   }
 
