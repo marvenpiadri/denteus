@@ -83,6 +83,12 @@ export class RecallsPageComponent {
     });
   }
 
+  retryRecalls(): void {
+    const clinic = this.tenant.activeClinic();
+    if (!clinic || this.loading()) return;
+    void this.loadRecalls(clinic.organizationId, clinic.id, this.filterStatus(), this.query());
+  }
+
   async loadRecalls(org: string, clinicId: string, status: string, query: string): Promise<void> {
     const sequence = ++this.requestSequence;
     this.loading.set(true);

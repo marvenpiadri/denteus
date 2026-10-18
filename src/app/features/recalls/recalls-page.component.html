@@ -5,7 +5,7 @@
   </header>
 
   @if (success()) { <div class="success-message" role="status">{{ success() }}</div> }
-  @if (error()) { <div class="error-message" role="alert">{{ error() }} <button type="button" (click)="tenant.load(true)">Réessayer</button></div> }
+  @if (error()) { <div class="error-message" role="alert">{{ error() }} <button type="button" (click)="retryRecalls()" [disabled]="loading()">Réessayer</button></div> }
 
   <section class="recall-filters" aria-label="Filtres des rappels">
     <div><label for="recall-search">Rechercher un patient</label><input id="recall-search" type="search" [ngModel]="query()" (ngModelChange)="query.set($event)" placeholder="Nom ou numéro patient"></div>
