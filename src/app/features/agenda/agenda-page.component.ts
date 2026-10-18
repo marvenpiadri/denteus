@@ -344,7 +344,7 @@ export class AgendaPageComponent {
   }
 
   openCreateForm(): void {
-    if (this.saving()) return;
+    if (this.saving() || this.changingStatusId()) return;
     const date = this.selectedDate();
     if (!date) return;
     this.formError.set('');
@@ -441,7 +441,7 @@ export class AgendaPageComponent {
   }
 
   openReschedule(appointment: AppointmentRecord): void {
-    if (this.saving()) return;
+    if (this.saving() || this.changingStatusId()) return;
     const timezone = this.tenant.activeClinic()?.timezone || 'Africa/Casablanca';
     this.reschedulingId.set(appointment.id);
     this.rescheduleError.set('');
@@ -518,6 +518,7 @@ export class AgendaPageComponent {
   }
 
   requestStatusChange(appointment: AppointmentRecord, status: Exclude<AppointmentStatus, 'SCHEDULED'>): void {
+    if (this.saving() || this.changingStatusId()) return;
     if (status === 'CANCELLED' || status === 'NO_SHOW') {
       this.pendingStatusChange.set({ appointmentId: appointment.id, status });
       return;
@@ -549,7 +550,7 @@ export class AgendaPageComponent {
 
   async changeStatus(appointment: AppointmentRecord, status: Exclude<AppointmentStatus, 'SCHEDULED'>): Promise<void> {
     const clinic = this.tenant.activeClinic();
-    if (!clinic || this.changingStatusId()) return;
+    if (!clinic || this.saving() || this.changingStatusId()) return;
     const mutationSequence = ++this.statusMutationSequence;
     this.changingStatusId.set(appointment.id);
     this.error.set('');
