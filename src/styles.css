@@ -206,11 +206,7 @@ a {
 :root[data-theme='dark'] .reschedule-form select { background: #101b21; border-color: #3b505a; color: #e4edf0; }
 :root[data-theme='dark'] .hours-row,
 :root[data-theme='dark'] .resource-row { border-color: #30424b; }
-:root[data-theme='dark'] .patient-number,
-:root[data-theme='dark'] .status-label { background: #24353d; border-color: #3a4c55; color: #b9cbd1; }
-:root[data-theme='dark'] .status-label[data-status='CONFIRMED'] { background: #1c3c32; border-color: #2d6651; color: #9cdec0; }
-:root[data-theme='dark'] .status-label[data-status='ARRIVED'],
-:root[data-theme='dark'] .status-label[data-status='IN_PROGRESS'] { background: #1b3d43; border-color: #32616b; color: #a1dbe3; }
+:root[data-theme='dark'] .patient-number { background: #24353d; border-color: #3a4c55; color: #b9cbd1; }
 :root[data-theme='dark'] .status-label[data-status='CANCELLED'],
 :root[data-theme='dark'] .status-label[data-status='NO_SHOW'] { background: #3b2829; border-color: #6b4142; color: #f0b4ae; }
 :root[data-theme='dark'] .success-message { background: #1a3930; border-color: #2f6853; color: #a9e0c6; }
