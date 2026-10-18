@@ -6,17 +6,24 @@ import { canManageAppointments } from '../domain/appointment-policy.js';
 import { canTransitionRecallStatus, statusAfterRecallContact } from '../domain/recall-policy.js';
 import type { RecallStatus } from '../domain/recall-policy.js';
 
+const recallQuerySchema = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    status: { type: 'string', enum: ['DUE', 'CONTACTED', 'SCHEDULED', 'COMPLETED', 'DECLINED', 'INACTIVE'] },
+    q: { type: 'string', maxLength: 120 },
+  },
+} as const;
+
 export const recallRoutes: FastifyPluginAsync = async (app) => {
   app.get<{ Params: { organizationId: string; clinicId: string }; Querystring: { status?: string; q?: string } }>(
     '/organizations/:organizationId/clinics/:clinicId/recalls',
+    { schema: { querystring: recallQuerySchema } },
     async (request, reply) => {
       const access = await requireClinicAccess(request, reply, request.params.organizationId, request.params.clinicId);
       if (!access) return;
       if (!canManageAppointments(access.effectiveRole)) return reply.code(403).send({ error: { code: 'FORBIDDEN', message: 'Accès refusé.' } });
-      const allowedStatuses = ['DUE', 'CONTACTED', 'SCHEDULED', 'COMPLETED', 'DECLINED', 'INACTIVE'];
-      if (request.query.status && !allowedStatuses.includes(request.query.status)) {
-        return reply.code(400).send({ error: { code: 'INVALID_RECALL_STATUS', message: 'Filtre de rappel invalide.' } });
-      }
+      const query = request.query.q?.trim() || null;
       const result = await pool.query(
         `SELECT r.id, r.patient_id AS "patientId", p.patient_number AS "patientNumber",
           p.first_name AS "patientFirstName", p.last_name AS "patientLastName", p.phone AS "patientPhone",
@@ -31,7 +38,7 @@ export const recallRoutes: FastifyPluginAsync = async (app) => {
            AND ($3::text IS NULL OR r.status=$3)
            AND ($4::text IS NULL OR p.first_name ILIKE '%'||$4||'%' OR p.last_name ILIKE '%'||$4||'%' OR p.patient_number ILIKE '%'||$4||'%')
          ORDER BY r.due_on, p.last_name LIMIT 500`,
-        [request.params.organizationId, request.params.clinicId, request.query.status ?? null, request.query.q?.trim() || null],
+        [request.params.organizationId, request.params.clinicId, request.query.status ?? null, query],
       );
       return { data: result.rows, count: result.rows.length };
     },
