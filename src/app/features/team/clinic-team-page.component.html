@@ -1,0 +1,42 @@
+<section class="team-page" aria-labelledby="team-title">
+  <header class="page-heading"><div><p class="eyebrow">ORGANISATION DU CABINET</p><h1 id="team-title">Équipe et accès</h1><p>Attribuez les rôles de clinique aux comptes déjà membres de votre organisation. Les droits organisationnels restent gérés à leur niveau.</p></div></header>
+
+  @if (error()) { <p class="feedback error" role="alert">{{error()}} <button type="button" (click)="load()">Réessayer</button></p> }
+  @if (success()) { <p class="feedback success" role="status">{{success()}}</p> }
+
+  @if (canManage()) {
+    <section class="invite-card" aria-labelledby="add-member-title">
+      <div><h2 id="add-member-title">Donner accès à cette clinique</h2><p>Seuls les membres déjà présents dans l’organisation peuvent être affectés ici.</p></div>
+      @if (availableMembers.length) {
+        <form class="add-form" (ngSubmit)="addMember()">
+          <div class="field"><label for="team-member">Membre de l’organisation</label><select id="team-member" name="member" [(ngModel)]="addUserId" required><option value="">Choisir un membre</option>@for (member of availableMembers; track member.userId) { <option [value]="member.userId">{{member.name}} · {{member.email}}</option> }</select></div>
+          <div class="field"><label for="team-role">Rôle dans la clinique</label><select id="team-role" name="role" [(ngModel)]="newRole">@for (role of roleOptions; track role.value) { <option [value]="role.value">{{role.label}}</option> }</select></div>
+          <button type="submit" [disabled]="saving() || !addUserId">{{saving() ? 'Attribution…' : 'Attribuer l’accès'}}</button>
+        </form>
+      } @else { <p class="empty-note">Tous les membres de l’organisation ont déjà un accès à cette clinique, ou aucun autre membre n’est disponible.</p> }
+    </section>
+  }
+
+  <section class="members-card" aria-labelledby="members-title">
+    <div class="card-heading"><div><h2 id="members-title">Membres de l’organisation</h2><p>{{members().length}} compte(s) · {{members().filter(m => !!m.clinicRole).length}} avec accès à la clinique active</p></div><button type="button" class="refresh-button" (click)="load()" [disabled]="loading()">{{loading() ? 'Actualisation…' : 'Actualiser'}}</button></div>
+    @if (loading() && !members().length) { <p class="empty-note" role="status">Chargement de l’équipe…</p> }
+    @else if (!members().length) { <p class="empty-note">Aucun membre disponible pour cette organisation.</p> }
+    @else {
+      <div class="table-scroll"><table><thead><tr><th scope="col">Membre</th><th scope="col">Rôle dans l’organisation</th><th scope="col">Accès à cette clinique</th>@if(canManage()){<th scope="col">Actions</th>}</tr></thead><tbody>
+        @for (member of members(); track member.userId) {
+          <tr>
+            <td><div class="member-identity"><span class="avatar" aria-hidden="true">{{member.name.trim().charAt(0).toUpperCase() || 'M'}}</span><span><strong>{{member.name}}</strong><small>{{member.email}}</small></span></div></td>
+            <td><span class="role-pill">{{roleLabel(member.organizationRole)}}</span></td>
+            <td>
+              @if (member.clinicRole && canManage() && !['ORGANIZATION_OWNER','ORGANIZATION_ADMIN'].includes(member.organizationRole)) {
+                <div class="role-editor"><select [name]="'role-' + member.userId" [(ngModel)]="roleDrafts[member.userId]" [attr.aria-label]="'Rôle clinique de ' + member.name">@for(role of roleOptions;track role.value){<option [value]="role.value">{{role.label}}</option>}</select><button type="button" (click)="saveRole(member)" [disabled]="saving() || roleDrafts[member.userId] === member.clinicRole">Enregistrer</button></div>
+              } @else { <span class="clinic-role" [class.unassigned]="!member.clinicRole">{{roleLabel(member.clinicRole || (['ORGANIZATION_OWNER','ORGANIZATION_ADMIN'].includes(member.organizationRole) ? member.organizationRole : null))}}</span> }
+            </td>
+            @if(canManage()){<td>@if(member.clinicRole && !['ORGANIZATION_OWNER','ORGANIZATION_ADMIN'].includes(member.organizationRole)){<button class="remove-button" type="button" (click)="removeMember(member)" [disabled]="saving()">Retirer</button>} @else {<span class="muted">—</span>}</td>}
+          </tr>
+        }
+      </tbody></table></div>
+    }
+  </section>
+  <p class="scope-note">Retirer un accès ne supprime ni le compte du membre, ni son accès aux autres cliniques, ni son historique clinique. Les modifications d’accès sont journalisées.</p>
+</section>
