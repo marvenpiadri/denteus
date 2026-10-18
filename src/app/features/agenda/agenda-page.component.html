@@ -176,7 +176,7 @@
             <div class="appointment-time"><strong>{{ formatTime(appointment.startsAt) }}</strong><span>{{ formatTime(appointment.endsAt) }}</span></div>
             <div class="appointment-main"><div class="patient-line"><a [routerLink]="['/crm/patients', appointment.patientId]">{{ appointment.patientFirstName }} {{ appointment.patientLastName }}</a><span class="patient-number">{{ appointment.patientNumber }}</span></div><p>{{ appointment.reason || 'Motif non précisé' }}</p><div class="appointment-meta"><span class="status-label" [attr.data-status]="appointment.status">{{ statusLabel(appointment.status) }}</span><span>{{ formatDate(appointment.startsAt) }}</span>@if (appointment.providerName) { <span class="resource-meta">{{ appointment.providerName }}</span> } @if (appointment.operatoryName) { <span class="resource-meta">{{ appointment.operatoryName }}</span> }</div></div>
             <div class="appointment-actions">
-              @for (transition of availableTransitions(appointment.status); track transition) {
+              @for (transition of availableTransitions(appointment.status, appointment.startsAt); track transition) {
                 <button type="button" class="status-action" (click)="requestStatusChange(appointment, transition)" [disabled]="saving() || changingStatusId() !== null" [attr.aria-label]="statusLabel(transition) + ' : ' + appointment.patientFirstName + ' ' + appointment.patientLastName">{{ statusLabel(transition) }}</button>
               }
               @if (canReschedule(appointment.status)) { <button type="button" class="status-action status-action--secondary" (click)="openReschedule(appointment)" [disabled]="saving() || changingStatusId() !== null">Déplacer</button> }
