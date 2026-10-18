@@ -48,7 +48,7 @@ export const routes: Routes = [
         title: 'Aujourd’hui | Dentaleus',
         data: {
           title: 'Aujourd’hui',
-          description: 'Le point de départ de la journée clinique : priorités, arrivées et tâches à suivre.',
+          description: 'Accédez rapidement aux dossiers patients, aux rendez-vous et aux rappels de la clinique active.',
         },
       },
       {
