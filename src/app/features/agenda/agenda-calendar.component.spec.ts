@@ -50,7 +50,7 @@ describe('AgendaCalendarComponent', () => {
     const event = {
       item: { data: record },
       container: { element: { nativeElement: lane } },
-      dropPoint: { x: 200, y: 100 + 14 + 195 },
+      dropPoint: { x: 200, y: 100 + 14 + 240 },
     };
     let emitted: { appointment: AppointmentRecord; startsAt: string } | undefined;
     component.appointmentDropped.subscribe((change) => { emitted = change; });
@@ -58,7 +58,7 @@ describe('AgendaCalendarComponent', () => {
     component.onAppointmentDrop(event as never, component.defaultColumn());
 
     expect(emitted?.appointment.id).toBe('move-me');
-    expect(emitted?.startsAt).toBe('2026-10-18T10:15');
+    expect(emitted?.startsAt).toBe('2026-10-18T11:00');
   });
 
   it('does not show events from a different clinic-local date in this day view', () => {
