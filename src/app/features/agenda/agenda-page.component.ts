@@ -10,11 +10,16 @@ import { AppointmentApiService } from './appointment-api.service';
 import { SchedulerCalendarComponent } from './calendar-engine/scheduler-calendar.component';
 import type { CalendarCategory, CalendarEvent, CalendarGateway, CalendarViewType, EventDraft, LaneConfig } from './calendar-engine/models/calendar.models';
 import type { IconName } from './calendar-engine/components/cal-icon/cal-icon.component';
-import type { CalendarSlotSelection } from './agenda-calendar.component';
 import { SchedulingResourceApiService } from './scheduling-resource-api.service';
 import type { ClinicOperatory, ClinicProvider, ProviderRole, ProviderWorkingHour } from './scheduling-resource-api.service';
 import type { AppointmentRecord, AppointmentStatus } from './appointment-api.service';
 import { addCalendarDays, formatCalendarDate as formatCalendarDateValue, formatClinicDate, formatClinicTime, localDateTimeToIso, todayInTimeZone, toClinicDateTimeInput } from './clinic-date-time';
+
+interface CalendarSlotSelection {
+  startsAt: string;
+  providerId?: string;
+  operatoryId?: string;
+}
 
 @Component({
   selector: 'app-agenda-page',
