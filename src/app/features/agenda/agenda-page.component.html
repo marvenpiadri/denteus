@@ -3,7 +3,7 @@
     <div><p class="eyebrow">ORGANISATION DU CABINET</p><h1 id="agenda-title">Agenda</h1><p class="page-description">Les horaires sont affichés dans le fuseau de la clinique active.</p></div>
     <div class="heading-actions">
       <button class="secondary-button" type="button" (click)="showResourceSetup.set(!showResourceSetup())" [disabled]="!tenant.activeClinic()">{{ showResourceSetup() ? 'Fermer les ressources' : 'Praticiens & fauteuils' }}</button>
-      <button class="primary-button" type="button" (click)="openCreateForm()" [disabled]="!tenant.activeClinic()">+ Nouveau rendez-vous</button>
+      <button class="primary-button" type="button" (click)="openCreateForm()" [disabled]="!tenant.activeClinic() || saving()">+ Nouveau rendez-vous</button>
     </div>
   </header>
 
@@ -11,7 +11,7 @@
   @if (error()) { <div class="error-message" role="alert">{{ error() }} <button type="button" (click)="refreshAppointments()">Réessayer</button></div> }
 
   <section class="agenda-toolbar" aria-label="Choisir une journée">
-    <div class="date-navigation"><button type="button" class="icon-button" (click)="moveDate(-1)" aria-label="Jour précédent">←</button><label for="agenda-date">Journée</label><input id="agenda-date" type="date" [ngModel]="selectedDate()" (ngModelChange)="selectedDate.set($event)"><button type="button" class="icon-button" (click)="moveDate(1)" aria-label="Jour suivant">→</button></div>
+    <div class="date-navigation"><button type="button" class="icon-button" (click)="moveDate(-1)" [disabled]="saving()" aria-label="Jour précédent">←</button><label for="agenda-date">Journée</label><input id="agenda-date" type="date" [ngModel]="selectedDate()" (ngModelChange)="selectedDate.set($event)" [disabled]="saving()"><button type="button" class="icon-button" (click)="moveDate(1)" [disabled]="saving()" aria-label="Jour suivant">→</button></div>
     <span class="timezone-label">{{ tenant.activeClinic()?.timezone || 'Africa/Casablanca' }}</span>
   </section>
 
@@ -78,7 +78,7 @@
 
   @if (showCreateForm()) {
     <section class="appointment-form-card" aria-labelledby="new-appointment-title">
-      <div class="card-heading"><div><h2 id="new-appointment-title">Nouveau rendez-vous</h2><p>La durée doit être comprise entre 5 minutes et 8 heures. Le serveur vérifie les conflits de patient, praticien et fauteuil.</p></div><button type="button" class="close-button" (click)="showCreateForm.set(false)" aria-label="Fermer le formulaire">×</button></div>
+      <div class="card-heading"><div><h2 id="new-appointment-title">Nouveau rendez-vous</h2><p>La durée doit être comprise entre 5 minutes et 8 heures. Le serveur vérifie les conflits de patient, praticien et fauteuil.</p></div><button type="button" class="close-button" (click)="showCreateForm.set(false)" [disabled]="saving()" aria-label="Fermer le formulaire">×</button></div>
       @if (formError()) { <div class="error-message" role="alert">{{ formError() }}</div> }
       @if (patientsError()) { <div class="error-message" role="alert">{{ patientsError() }} <button type="button" (click)="retryPatientOptions()">Réessayer</button></div> }
       @if (resourceError()) { <div class="error-message" role="alert">{{ resourceError() }} <button type="button" (click)="retryResources()">Réessayer</button></div> }
@@ -109,12 +109,12 @@
   />
 
   <section class="appointment-list" aria-label="Rendez-vous de la journée">
-    <div class="list-heading"><div><h2>{{ selectedDate() ? formatCalendarDate(selectedDate()) : 'Chargement de la journée' }}</h2><p>{{ appointments().length }} rendez-vous affiché{{ appointments().length > 1 ? 's' : '' }}</p></div><button type="button" class="secondary-button" (click)="refreshAppointments()" [disabled]="loading()">Actualiser</button></div>
+    <div class="list-heading"><div><h2>{{ selectedDate() ? formatCalendarDate(selectedDate()) : 'Chargement de la journée' }}</h2><p>{{ appointments().length }} rendez-vous affiché{{ appointments().length > 1 ? 's' : '' }}</p></div><button type="button" class="secondary-button" (click)="refreshAppointments()" [disabled]="loading() || saving()">Actualiser</button></div>
 
     @if (loading() && !appointments().length) {
       <div class="list-state" role="status"><span class="loading-indicator" aria-hidden="true"></span>Chargement de l’agenda…</div>
     } @else if (!loading() && !appointments().length && !error()) {
-      <div class="empty-state"><span class="empty-icon" aria-hidden="true">▦</span><h3>Aucun rendez-vous prévu</h3><p>Cette journée est libre. Créez un rendez-vous pour commencer à organiser la file du cabinet. Configurez les praticiens et fauteuils si vous souhaitez affecter les ressources.</p><button type="button" class="secondary-button" (click)="openCreateForm()">Planifier un rendez-vous</button></div>
+      <div class="empty-state"><span class="empty-icon" aria-hidden="true">▦</span><h3>Aucun rendez-vous prévu</h3><p>Cette journée est libre. Créez un rendez-vous pour commencer à organiser la file du cabinet. Configurez les praticiens et fauteuils si vous souhaitez affecter les ressources.</p><button type="button" class="secondary-button" (click)="openCreateForm()" [disabled]="saving()">Planifier un rendez-vous</button></div>
     } @else {
       <div class="appointment-items">
         @for (appointment of appointments(); track appointment.id) {
@@ -125,7 +125,7 @@
               @for (transition of availableTransitions(appointment.status); track transition) {
                 <button type="button" class="status-action" (click)="requestStatusChange(appointment, transition)" [disabled]="changingStatusId() !== null" [attr.aria-label]="statusLabel(transition) + ' : ' + appointment.patientFirstName + ' ' + appointment.patientLastName">{{ statusLabel(transition) }}</button>
               }
-              @if (canReschedule(appointment.status)) { <button type="button" class="status-action status-action--secondary" (click)="openReschedule(appointment)">Déplacer</button> }
+              @if (canReschedule(appointment.status)) { <button type="button" class="status-action status-action--secondary" (click)="openReschedule(appointment)" [disabled]="saving()">Déplacer</button> }
             </div>
             @if (pendingStatusChange()?.appointmentId === appointment.id) {
               <div class="status-confirmation" role="group" aria-label="Confirmer le changement de statut">
