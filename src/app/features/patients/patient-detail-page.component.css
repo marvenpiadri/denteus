@@ -69,3 +69,16 @@
 @media (prefers-reduced-motion: reduce) {
   .detail-page * { scroll-behavior: auto; }
 }
+
+.detail-page .field-error {
+  margin: 8px 0 0;
+  color: var(--color-danger, var(--text-danger));
+  font-size: 13px;
+  line-height: 1.45;
+}
+.detail-page .field-error button {
+  min-height: 32px;
+  margin-left: 6px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
