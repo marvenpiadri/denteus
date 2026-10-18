@@ -171,6 +171,7 @@ export class PatientOdontogramComponent implements AfterViewInit {
         plan: getPlanChart() as unknown as Record<string, unknown> | null,
         planChanges: getPlanChanges() as unknown as Array<{ toothNo: number; axis: string; from?: unknown; to?: unknown }>,
         extra: { source: 'angular-advanced-odontogram', schemaVersion: '2.6.0' },
+        expectedUpdatedAt: this.lastSavedAt(),
       }, { withCredentials: true }));
       if (context !== this.activeContext) return;
       this.lastSavedAt.set(response.data?.updatedAt ?? new Date().toISOString());
@@ -179,7 +180,9 @@ export class PatientOdontogramComponent implements AfterViewInit {
       if (context !== this.activeContext) return;
       this.saveError.set(error instanceof HttpErrorResponse && error.status === 403
         ? 'Votre rôle ne permet pas d’enregistrer les modifications dentaires.'
-        : 'Les modifications ne sont pas enregistrées. Réessayez avant de quitter ce dossier.');
+        : error instanceof HttpErrorResponse && error.status === 409
+          ? 'Cet odontogramme a changé dans une autre session. Rechargez le dossier avant de poursuivre.'
+          : 'Les modifications ne sont pas enregistrées. Réessayez avant de quitter ce dossier.');
     } finally {
       this.saveInFlight = false;
       this.saving.set(false);
