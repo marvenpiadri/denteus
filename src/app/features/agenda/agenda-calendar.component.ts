@@ -258,7 +258,7 @@ export class AgendaCalendarComponent implements OnChanges {
     if (mode === 'day' || mode === 'week' || mode === 'month' || mode === 'year') {
       this.displayView.set(mode);
       this.viewMode.set('day');
-      this.viewChanged.emit(mode);
+      if (emit) this.viewChanged.emit(mode);
       return;
     }
     this.viewMode.set(mode);
