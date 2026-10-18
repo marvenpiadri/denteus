@@ -524,6 +524,64 @@ export const clinicalEncounterRoutes: FastifyPluginAsync = async (app) => {
     },
   );
 
+  app.post<{ Params: EncounterParams }>(
+    '/organizations/:organizationId/clinics/:clinicId/patients/:patientId/encounters/:encounterId/sign',
+    async (request, reply) => {
+      const { organizationId, clinicId, patientId, encounterId } = request.params;
+      const access = await requireClinicAccess(request, reply, organizationId, clinicId);
+      if (!access) return;
+      if (!canWriteOdontogram(access)) return denyInsufficientRole(reply);
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const encounter = await client.query(
+          'SELECT status FROM clinical_encounters WHERE organization_id=$1 AND clinic_id=$2 AND patient_id=$3 AND id=$4 FOR UPDATE',
+          [organizationId, clinicId, patientId, encounterId],
+        );
+        if (!encounter.rowCount) {
+          await client.query('ROLLBACK');
+          return reply.code(404).send({ error: { code: 'ENCOUNTER_NOT_FOUND', message: 'Clinical encounter not found.' } });
+        }
+        if (encounter.rows[0].status === 'SIGNED') {
+          await client.query('ROLLBACK');
+          return reply.code(409).send({ error: { code: 'ENCOUNTER_ALREADY_SIGNED', message: 'This encounter has already been signed.' } });
+        }
+        if (encounter.rows[0].status === 'CANCELLED') {
+          await client.query('ROLLBACK');
+          return reply.code(409).send({ error: { code: 'ENCOUNTER_CANCELLED', message: 'A cancelled encounter cannot be signed.' } });
+        }
+        const notes = await client.query(
+          'SELECT count(*)::int AS total, count(*) FILTER (WHERE signed_at IS NULL)::int AS unsigned FROM clinical_notes WHERE organization_id=$1 AND clinic_id=$2 AND patient_id=$3 AND encounter_id=$4',
+          [organizationId, clinicId, patientId, encounterId],
+        );
+        if (notes.rows[0].total === 0 || notes.rows[0].unsigned > 0) {
+          await client.query('ROLLBACK');
+          return reply.code(409).send({
+            error: { code: 'ENCOUNTER_NOT_READY_TO_SIGN', message: 'Add at least one clinical note and sign every note before closing this encounter.' },
+          });
+        }
+        const signed = await client.query(
+          `UPDATE clinical_encounters
+           SET status='SIGNED', signed_by_id=$5, signed_at=now(), ended_at=COALESCE(ended_at, now()),
+               updated_by_id=$5, updated_at=now(), version=version+1
+           WHERE organization_id=$1 AND clinic_id=$2 AND patient_id=$3 AND id=$4
+           RETURNING id, status, signed_by_id AS "signedById", signed_at AS "signedAt", ended_at AS "endedAt", version`,
+          [organizationId, clinicId, patientId, encounterId, access.userId],
+        );
+        await client.query(
+          `INSERT INTO audit_events (id, organization_id, user_id, action, resource_type, resource_id, metadata)
+           VALUES ($1,$2,$3,'CLINICAL_ENCOUNTER_SIGNED','CLINICAL_ENCOUNTER',$4,$5::jsonb)`,
+          [randomUUID(), organizationId, access.userId, encounterId, JSON.stringify({ clinicId, patientId, signedNoteCount: notes.rows[0].total })],
+        );
+        await client.query('COMMIT');
+        return { data: signed.rows[0] };
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally { client.release(); }
+    },
+  );
+
   app.post<{ Params: NoteParams }>(
     '/organizations/:organizationId/clinics/:clinicId/patients/:patientId/encounters/:encounterId/notes/:noteId/sign',
     async (request, reply) => {
