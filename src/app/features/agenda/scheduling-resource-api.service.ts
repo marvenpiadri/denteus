@@ -59,23 +59,11 @@ export class SchedulingResourceApiService {
   }
 
   async saveWorkingHours(organizationId: string, clinicId: string, providerId: string, hours: ProviderWorkingHour[]): Promise<void> {
-    const existing = (await this.list(organizationId, clinicId)).providers.find((provider) => provider.id === providerId)?.workingHours ?? [];
-    const desiredDays = new Set(hours.map((item) => item.dayOfWeek));
-    for (const existingHour of existing) {
-      if (!desiredDays.has(existingHour.dayOfWeek)) {
-        await firstValueFrom(this.http.delete(
-          `${this.url(organizationId, clinicId)}/providers/${encodeURIComponent(providerId)}/working-hours/${existingHour.dayOfWeek}`,
-          { withCredentials: true },
-        ));
-      }
-    }
-    for (const hour of hours) {
-      await firstValueFrom(this.http.put(
-        `${this.url(organizationId, clinicId)}/providers/${encodeURIComponent(providerId)}/working-hours`,
-        hour,
-        { withCredentials: true },
-      ));
-    }
+    await firstValueFrom(this.http.put(
+      `${this.url(organizationId, clinicId)}/providers/${encodeURIComponent(providerId)}/working-hours/bulk`,
+      { hours },
+      { withCredentials: true },
+    ));
   }
 
   private url(organizationId: string, clinicId: string): string {
