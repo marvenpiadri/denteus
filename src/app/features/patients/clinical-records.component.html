@@ -36,7 +36,7 @@
   </form>
  }
  @if (!v.media.length) {<div class="empty-inline">Aucun document lié à cette visite pour le moment.</div>}
- @for (m of v.media; track m.id) {<article class="data-row"><div><strong>{{m.originalFilename||label(m.mediaType)}}</strong><p>{{label(m.mediaType)}} · {{m.mimeType}} · {{(m.sizeBytes/1024)|number:'1.0-0'}} Ko · {{date(m.createdAt)}}</p>@if (m.description) {<p>{{m.description}}</p>}</div><button class="secondary-button" type="button" (click)="downloadMedia(m)">Télécharger</button></article>}
+ @for (m of v.media; track m.id) {<article class="data-row"><div><strong>{{m.originalFilename||label(m.mediaType)}}</strong><p>{{label(m.mediaType)}} · {{m.mimeType}} · {{(m.sizeBytes/1024)|number:'1.0-0'}} Ko · {{date(m.createdAt)}}</p>@if (m.description) {<p>{{m.description}}</p>}</div>@if (m.storageKey===null) {<button class="secondary-button" type="button" (click)="downloadMedia(m)">Télécharger</button>} @else {<small>Source de stockage historique non connectée à ce téléchargement privé.</small>}</article>}
  </section>
  <section class="section">
  <div class="section-heading"><div><h4>Constats et suivi</h4><p>Les constats sont datés et ne peuvent pas être écrasés.</p></div>@if (v.status!=='SIGNED'&&v.status!=='CANCELLED') {<button class="secondary-button" type="button" (click)="showFindingForm.set(!showFindingForm())">{{showFindingForm()?'Annuler':'+ Ajouter un constat'}}</button>}</div>
