@@ -62,5 +62,5 @@
     </div>
     </div>
   }
-  <footer class="tooth-legend"><span><i class="legend-selected"></i>Sélectionnée pour le soin</span><span><i class="legend-history"></i>Historique de soins</span><span>{{ selectedTeeth.length }} dent(s) sélectionnée(s)</span></footer>
+  <footer class="tooth-legend"><span><i class="legend-selected" aria-hidden="true"></i>Sélectionnée pour le soin</span><span><i class="legend-history" aria-hidden="true"></i>Historique de soins</span><span class="tooth-selection-count" role="status" aria-live="polite" aria-atomic="true">{{ selectedTeeth.length }} dent(s) sélectionnée(s)</span></footer>
 </section>
