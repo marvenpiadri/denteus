@@ -237,3 +237,15 @@
   .month-day { min-height: 56px; padding: 6px; }
   .calendar-year-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 10px; }
 }
+
+.view-switch { flex-wrap: wrap; }
+.view-switch button { min-width: 54px; padding-inline: 9px; }
+.calendar-month-overview { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.month-weekdays { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.month-weekdays span { padding: 4px 10px; color: var(--text-tertiary, var(--color-text-subtle)); font-size: 10px; font-weight: 800; text-align: left; text-transform: uppercase; }
+@media (max-width: 700px) {
+  .view-switch { flex-wrap: nowrap; }
+  .view-switch button { min-width: 0; padding-inline: 6px; font-size: 10px; }
+  .month-weekdays { gap: 4px; }
+  .month-weekdays span { padding: 4px 5px; font-size: 9px; }
+}
