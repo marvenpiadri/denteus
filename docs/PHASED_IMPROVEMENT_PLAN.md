@@ -13,7 +13,7 @@
 - The current working tree is not a finished clinical product. Routes for Today, Clinical, Team, Reports, and Settings use a generic workspace placeholder; the full clinical odontogram, signed notes, treatment plans, financial workflows, public clinic Pages, and persisted team/settings/report flows are still explicitly incomplete.
 - The agenda is a day-view implementation. Week/month navigation, appointment resize, breaks/leave/holidays, and multiple working intervals per provider remain outstanding.
 - The patient treatment history with FDI tooth/surface links is a first iteration, not a full clinical odontogram or complete medical record. Do not treat these records as a replacement for the odontogram's canonical clinical state.
-- Build and test outcomes have not been verified successfully in this environment. CI quota issues were previously reported; a failed or missing CI run must not be represented as a passing test.
+- Build and test outcomes have not yet been verified successfully. The backend and frontend GitHub Actions checks were queued after the syntax fix at the time of this audit; queued is not passing. CI quota issues were previously reported, so a failed or missing run must not be represented as a passing test.
 - `docs/ARCHITECTURE.md` describes a different/incomplete architecture (temporary in-memory odontogram, `src/server/backend`, Prisma target) than the current checked-in `backend/` Fastify/PostgreSQL implementation. Reconcile it before relying on it as the source of truth.
 - The frontend workflow uses `npm install` while the repository's committed lockfile is `bun.lock`; make package-manager and lockfile strategy consistent before production checks.
 - The backend treatment route had a malformed `ToothSurface` TypeScript union that prevents compilation. Corrected in commit `1dd983e` on this feature branch. Build/tests still need to run to discover further issues.
@@ -28,8 +28,8 @@
 - [ ] Run frontend build and tests.
 - [ ] Run backend typecheck, build, migration tests, and policy/integration tests against PostgreSQL.
 - [ ] Inspect authentication, authorization, tenant isolation, mutation audit logging, and cross-tenant foreign keys route by route.
-- [ ] Reconcile architecture and setup documentation with the actual repository.
-- [ ] Confirm no Tailwind dependency, configuration, import, or utility-class usage remains.
+- [x] Reconcile architecture documentation with the actual Fastify/PostgreSQL repository layout.
+- [x] Confirm no Tailwind dependency/configuration/import matches remain in the repository search (source scan still belongs in local verification).
 - [ ] Record verified results and unresolved blockers before moving to Phase 2.
 
 ### Phase 1 exit gate
