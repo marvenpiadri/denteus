@@ -170,11 +170,13 @@ export class AgendaPageComponent {
       const provider = await this.resourcesApi.createProvider(clinic.organizationId, clinic.id, {
         displayName: this.providerName.trim(), role: this.providerRole,
       });
+      if (this.tenant.activeClinic()?.id !== clinic.id) return;
       this.providerName = '';
       this.hoursProviderId = provider.id;
       await this.loadResources(clinic.organizationId, clinic.id);
       this.success.set('Praticien ajouté. Configurez ses horaires avant de lui attribuer des rendez-vous.');
     } catch {
+      if (this.tenant.activeClinic()?.id !== clinic.id) return;
       this.resourceError.set('Le praticien n’a pas pu être ajouté. Vérifiez le nom et réessayez.');
     } finally {
       this.resourceSaving.set(false);
@@ -195,11 +197,13 @@ export class AgendaPageComponent {
       await this.resourcesApi.createOperatory(clinic.organizationId, clinic.id, {
         name: this.operatoryName.trim(), chairNumber: parsedChair,
       });
+      if (this.tenant.activeClinic()?.id !== clinic.id) return;
       this.operatoryName = '';
       this.chairNumber = '';
       await this.loadResources(clinic.organizationId, clinic.id);
       this.success.set('Fauteuil ajouté au planning.');
     } catch {
+      if (this.tenant.activeClinic()?.id !== clinic.id) return;
       this.resourceError.set('Le fauteuil n’a pas pu être ajouté. Vérifiez le nom (il doit être unique dans cette clinique).');
     } finally {
       this.resourceSaving.set(false);
@@ -231,9 +235,12 @@ export class AgendaPageComponent {
     this.resourceError.set('');
     try {
       await this.resourcesApi.saveWorkingHours(clinic.organizationId, clinic.id, provider.id, hours);
+      if (this.tenant.activeClinic()?.id !== clinic.id) return;
       await this.loadResources(clinic.organizationId, clinic.id);
+      if (this.tenant.activeClinic()?.id !== clinic.id) return;
       this.success.set('Horaires du praticien enregistrés.');
     } catch {
+      if (this.tenant.activeClinic()?.id !== clinic.id) return;
       this.resourceError.set('Les horaires n’ont pas tous été enregistrés. Rechargez les ressources et vérifiez le planning.');
     } finally {
       this.resourceSaving.set(false);
