@@ -483,16 +483,15 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
                    JOIN clinics c ON c.organization_id = p.organization_id AND c.id = p.clinic_id
                    JOIN provider_working_hours h ON h.organization_id = p.organization_id
                      AND h.clinic_id = p.clinic_id AND h.provider_id = p.id
-                     AND h.day_of_week = EXTRACT(DOW FROM ($4::timestamptz AT TIME ZONE c.timezone))::int
-                   WHERE p.organization_id = $1 AND p.clinic_id = $2 AND p.id = $6 AND p.active
-                     AND ($4::timestamptz AT TIME ZONE c.timezone)::date = ($5::timestamptz AT TIME ZONE c.timezone)::date
-                     AND ($4::timestamptz AT TIME ZONE c.timezone)::time >= h.starts_at
-                     AND ($5::timestamptz AT TIME ZONE c.timezone)::time <= h.ends_at
+                     AND h.day_of_week = EXTRACT(DOW FROM ($3::timestamptz AT TIME ZONE c.timezone))::int
+                   WHERE p.organization_id = $1 AND p.clinic_id = $2 AND p.id = $5 AND p.active
+                     AND ($3::timestamptz AT TIME ZONE c.timezone)::date = ($4::timestamptz AT TIME ZONE c.timezone)::date
+                     AND ($3::timestamptz AT TIME ZONE c.timezone)::time >= h.starts_at
+                     AND ($4::timestamptz AT TIME ZONE c.timezone)::time <= h.ends_at
                  ) AS provider_available,
                  EXISTS (SELECT 1 FROM clinic_operatories o
-                   WHERE o.organization_id = $1 AND o.clinic_id = $2 AND o.id = $7 AND o.active) AS operatory_available`,
-              [request.params.organizationId, request.params.clinicId, request.params.appointmentId,
-                startsAt, endsAt, providerId, operatoryId],
+                   WHERE o.organization_id = $1 AND o.clinic_id = $2 AND o.id = $6 AND o.active) AS operatory_available`,
+              [request.params.organizationId, request.params.clinicId, startsAt, endsAt, providerId, operatoryId],
             );
             if (!availability.rows[0]?.provider_available || !availability.rows[0]?.operatory_available) {
               await client.query('ROLLBACK');
