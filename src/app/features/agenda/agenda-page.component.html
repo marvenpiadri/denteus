@@ -108,6 +108,26 @@
     (appointmentDropped)="dropAppointment($event)"
   />
 
+  <section class="waiting-room" aria-labelledby="waiting-room-title">
+    <div class="waiting-room-heading">
+      <div><p class="eyebrow">ACCUEIL DU CABINET</p><h2 id="waiting-room-title">Salle d’attente</h2><p>Les patients marqués « Arrivé » apparaissent ici. Les changements de statut sont enregistrés sur le serveur.</p></div>
+      <span class="waiting-room-count">{{ waitingRoomAppointments().length }}</span>
+    </div>
+    @if (waitingRoomAppointments().length) {
+      <div class="waiting-room-list">
+        @for (appointment of waitingRoomAppointments(); track appointment.id) {
+          <article class="waiting-room-item">
+            <div class="waiting-room-time"><strong>{{ formatTime(appointment.startsAt) }}</strong><span>{{ formatTime(appointment.endsAt) }}</span></div>
+            <div class="waiting-room-patient"><a [routerLink]="['/crm/patients', appointment.patientId]">{{ appointment.patientFirstName }} {{ appointment.patientLastName }}</a><small>{{ appointment.patientNumber }} · {{ appointment.reason || 'Motif non précisé' }}</small></div>
+            <button type="button" class="primary-button" (click)="requestStatusChange(appointment, 'IN_PROGRESS')" [disabled]="saving() || changingStatusId() !== null">Commencer le soin</button>
+          </article>
+        }
+      </div>
+    } @else {
+      <p class="waiting-room-empty">Aucun patient n’est actuellement marqué comme arrivé.</p>
+    }
+  </section>
+
   <section class="appointment-list" aria-label="Rendez-vous de la journée">
     <div class="list-heading"><div><h2>{{ selectedDate() ? formatCalendarDate(selectedDate()) : 'Chargement de la journée' }}</h2><p>{{ appointments().length }} rendez-vous affiché{{ appointments().length > 1 ? 's' : '' }}</p></div><button type="button" class="secondary-button" (click)="refreshAppointments()" [disabled]="loading() || saving() || changingStatusId() !== null">Actualiser</button></div>
 
