@@ -485,6 +485,10 @@ export class AgendaPageComponent {
     if (!clinic || this.saving()) return;
     this.formError.set('');
     this.success.set('');
+    if (Boolean(this.providerId) !== Boolean(this.operatoryId)) {
+      this.formError.set('Affectez à la fois un praticien et un fauteuil, ou laissez les deux champs vides.');
+      return;
+    }
     const mutationSequence = ++this.appointmentMutationSequence;
     this.saving.set(true);
     try {
@@ -692,6 +696,10 @@ export class AgendaPageComponent {
     const clinic = this.tenant.activeClinic();
     if (!clinic || this.saving()) return;
     this.rescheduleError.set('');
+    if (Boolean(this.rescheduleProviderId) !== Boolean(this.rescheduleOperatoryId)) {
+      this.rescheduleError.set('Affectez à la fois un praticien et un fauteuil, ou laissez les deux champs vides.');
+      return;
+    }
     const mutationSequence = ++this.appointmentMutationSequence;
     this.saving.set(true);
     try {
