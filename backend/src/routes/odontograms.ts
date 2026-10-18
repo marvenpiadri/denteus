@@ -209,6 +209,16 @@ export const odontogramRoutes: FastifyPluginAsync = async (app) => {
           ],
         );
 
+        const revisionResult = await client.query<{ version_no: number }> (
+          'SELECT COALESCE(MAX(version_no), 0) + 1 AS version_no FROM odontogram_revisions WHERE odontogram_id = $1',
+          [result.rows[0].id],
+        );
+        const revisionNo = Number(revisionResult.rows[0].version_no);
+
+        await client.query(
+          'INSERT INTO odontogram_revisions (id, organization_id, clinic_id, patient_id, odontogram_id, version_no, snapshot, recorded_by_id) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8)',
+          [randomUUID(), request.params.organizationId, request.params.clinicId, request.params.patientId, result.rows[0].id, revisionNo, JSON.stringify({ status: result.rows[0].status, plan: result.rows[0].plan, planChanges: result.rows[0].planChanges, extra: result.rows[0].extra }), access.userId],
+        );
         await client.query(
           `
             INSERT INTO audit_events (
@@ -224,6 +234,7 @@ export const odontogramRoutes: FastifyPluginAsync = async (app) => {
             JSON.stringify({
               clinicId: request.params.clinicId,
               patientId: request.params.patientId,
+              revisionNo,
             }),
           ],
         );
