@@ -51,3 +51,14 @@ export function canTransitionAppointmentStatus(
 ): boolean {
   return transitions[current].includes(next);
 }
+
+
+export function isValidScheduleRange(from: string, to: string, maxDays = 366): boolean {
+  const start = Date.parse(from);
+  const end = Date.parse(to);
+  const duration = end - start;
+  return Number.isFinite(start)
+    && Number.isFinite(end)
+    && duration > 0
+    && duration <= maxDays * 24 * 60 * 60_000;
+}
