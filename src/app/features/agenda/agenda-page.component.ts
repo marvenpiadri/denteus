@@ -7,11 +7,10 @@ import { TenantContextService } from '../../core/tenant/tenant-context.service';
 import { PatientApiService } from '../patients/patient-api.service';
 import type { PatientRecord } from '../patients/patient-api.service';
 import { AppointmentApiService } from './appointment-api.service';
-import { AgendaCalendarComponent } from './agenda-calendar.component';
 import { SchedulerCalendarComponent } from './calendar-engine/scheduler-calendar.component';
 import type { CalendarCategory, CalendarEvent, CalendarGateway, CalendarViewType, EventDraft, LaneConfig } from './calendar-engine/models/calendar.models';
 import type { IconName } from './calendar-engine/components/cal-icon/cal-icon.component';
-import type { CalendarAppointmentDrop, CalendarSlotSelection } from './agenda-calendar.component';
+import type { CalendarSlotSelection } from './agenda-calendar.component';
 import { SchedulingResourceApiService } from './scheduling-resource-api.service';
 import type { ClinicOperatory, ClinicProvider, ProviderRole, ProviderWorkingHour } from './scheduling-resource-api.service';
 import type { AppointmentRecord, AppointmentStatus } from './appointment-api.service';
@@ -19,7 +18,7 @@ import { addCalendarDays, formatCalendarDate as formatCalendarDateValue, formatC
 
 @Component({
   selector: 'app-agenda-page',
-  imports: [FormsModule, RouterLink, AgendaCalendarComponent, SchedulerCalendarComponent],
+  imports: [FormsModule, RouterLink, SchedulerCalendarComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './agenda-page.component.html',
   styleUrl: './agenda-page.component.css',
@@ -648,42 +647,6 @@ export class AgendaPageComponent {
     this.rescheduleOperatoryId = appointment.operatoryId ?? '';
   }
 
-  async dropAppointment(change: CalendarAppointmentDrop): Promise<void> {
-    const clinic = this.tenant.activeClinic();
-    const appointment = change.appointment;
-    if (!clinic || this.saving() || !this.canReschedule(appointment.status)) return;
-    const timezone = clinic.timezone || 'Africa/Casablanca';
-    const startsAt = localDateTimeToIso(change.startsAt, timezone);
-    const durationMs = new Date(appointment.endsAt).getTime() - new Date(appointment.startsAt).getTime();
-    if (!Number.isFinite(durationMs) || durationMs <= 0) return;
-    const endsAt = new Date(new Date(startsAt).getTime() + durationMs).toISOString();
-    const mutationSequence = ++this.appointmentMutationSequence;
-    this.saving.set(true);
-    this.error.set('');
-    this.success.set('');
-    try {
-      await this.appointmentsApi.reschedule(
-        clinic.organizationId,
-        clinic.id,
-        appointment.id,
-        startsAt,
-        endsAt,
-        change.providerId !== undefined ? change.providerId : appointment.providerId,
-        change.operatoryId !== undefined ? change.operatoryId : appointment.operatoryId,
-      );
-      if (this.tenant.activeClinic()?.id !== clinic.id) return;
-      this.success.set('Le rendez-vous a été déplacé.');
-      await this.loadAppointments(clinic.organizationId, clinic.id, this.selectedDate(), timezone);
-    } catch (error) {
-      if (this.tenant.activeClinic()?.id !== clinic.id) return;
-      await this.loadAppointments(clinic.organizationId, clinic.id, this.selectedDate(), timezone);
-      this.error.set(error instanceof HttpErrorResponse && error.status === 409
-        ? 'Ce déplacement crée un conflit de planning. Le rendez-vous a conservé son horaire initial.'
-        : 'Le déplacement n’a pas été enregistré. Le rendez-vous a conservé son horaire initial.');
-    } finally {
-      if (mutationSequence === this.appointmentMutationSequence) this.saving.set(false);
-    }
-  }
 
   async saveReschedule(appointment: AppointmentRecord): Promise<void> {
     const clinic = this.tenant.activeClinic();
