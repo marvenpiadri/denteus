@@ -17,6 +17,7 @@ import { addCalendarDays, formatCalendarDate as formatCalendarDateValue, formatC
 
 interface CalendarSlotSelection {
   startsAt: string;
+  endsAt?: string;
   providerId?: string;
   operatoryId?: string;
 }
@@ -454,6 +455,10 @@ export class AgendaPageComponent {
     this.startsAt = selection.startsAt;
     if (selection.providerId) this.providerId = selection.providerId;
     if (selection.operatoryId) this.operatoryId = selection.operatoryId;
+    if (selection.endsAt) {
+      this.endsAt = selection.endsAt;
+      return;
+    }
     const [datePart, timePart] = selection.startsAt.split('T');
     const [hour, minute] = timePart.split(':').map(Number);
     const end = new Date(Date.UTC(2000, 0, 1, hour, minute + 30));
@@ -549,6 +554,7 @@ export class AgendaPageComponent {
     this.selectedDate.set(startsAt.slice(0, 10));
     const selection: CalendarSlotSelection = {
       startsAt,
+      endsAt: this.calendarDateTimeInput(draft.end),
       ...(draft.resources?.['provider'] && draft.resources['provider'] !== 'unassigned' ? { providerId: draft.resources['provider'] } : {}),
       ...(draft.resources?.['operatory'] && draft.resources['operatory'] !== 'unassigned' ? { operatoryId: draft.resources['operatory'] } : {}),
     };
