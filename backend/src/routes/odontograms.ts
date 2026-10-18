@@ -8,6 +8,7 @@ import {
 } from '../auth/authorization.js';
 import { pool } from '../db/pool.js';
 import { isValidFdiTooth } from '../domain/patient-treatment-policy.js';
+import { hasOdontogramRevisionConflict } from '../domain/odontogram-policy.js';
 
 interface OdontogramParams {
   organizationId: string;
@@ -217,9 +218,7 @@ export const odontogramRoutes: FastifyPluginAsync = async (app) => {
         );
         const currentUpdatedAt = currentRecord.rows[0]?.updatedAt;
         const expectedUpdatedAt = request.body.expectedUpdatedAt ?? null;
-        const hasConflict = currentUpdatedAt
-          ? !expectedUpdatedAt || new Date(currentUpdatedAt).getTime() !== Date.parse(expectedUpdatedAt)
-          : expectedUpdatedAt !== null;
+        const hasConflict = hasOdontogramRevisionConflict(currentUpdatedAt, expectedUpdatedAt);
         if (hasConflict) {
           await client.query('ROLLBACK');
           transactionOpen = false;
