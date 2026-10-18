@@ -118,27 +118,6 @@
     (eventSelected)="onCalendarEventSelected($event)"
   />
 
-  <section class="waiting-room" aria-label="Salle d’attente et soins en cours">
-    <div class="waiting-room-column">
-      <header><h2>Salle d’attente</h2><span>{{ waitingRoomAppointments().length }}</span></header>
-      @if (waitingRoomAppointments().length) {
-        @for (appointment of waitingRoomAppointments(); track appointment.id) {
-          <a class="waiting-room-patient" [routerLink]="['/crm/patients', appointment.patientId]">
-            <span class="waiting-status-dot"></span><span class="waiting-room-copy"><strong>{{ appointment.patientFirstName }} {{ appointment.patientLastName }}</strong><small>{{ formatTime(appointment.startsAt) }} · {{ appointment.reason || 'Motif non précisé' }}</small></span><span class="waiting-room-arrow">↗</span>
-          </a>
-        }
-      } @else { <p class="waiting-room-empty">Aucun patient en attente pour cette journée.</p> }
-    </div>
-    <div class="waiting-room-column in-treatment">
-      <header><h2>Soins en cours</h2><span>{{ inTreatmentAppointments().length }}</span></header>
-      @if (inTreatmentAppointments().length) {
-        @for (appointment of inTreatmentAppointments(); track appointment.id) {
-          <a class="waiting-room-patient" [routerLink]="['/crm/patients', appointment.patientId]">
-            <span class="treatment-status-dot"></span><span class="waiting-room-copy"><strong>{{ appointment.patientFirstName }} {{ appointment.patientLastName }}</strong><small>{{ formatTime(appointment.startsAt) }} · {{ appointment.reason || 'Motif non précisé' }}</small></span><span class="waiting-room-arrow">↗</span>
-          </a>
-        }
-      } @else { <p class="waiting-room-empty">Aucun soin en cours.</p> }
-    </div>
   <section class="waiting-room" aria-labelledby="waiting-room-title">
     <div class="waiting-room-heading">
       <div><p class="eyebrow">ACCUEIL DU CABINET</p><h2 id="waiting-room-title">Salle d’attente</h2><p>Les patients marqués « Arrivé » apparaissent ici. Les changements de statut sont enregistrés sur le serveur.</p></div>
@@ -159,15 +138,34 @@
     }
   </section>
 
+  <section class="waiting-room" aria-labelledby="in-treatment-title">
+    <div class="waiting-room-heading">
+      <div><p class="eyebrow">SUIVI DES SOINS</p><h2 id="in-treatment-title">Soins en cours</h2><p>Les rendez-vous dont le statut est « En soin » dans la clinique active.</p></div>
+      <span class="waiting-room-count">{{ inTreatmentAppointments().length }}</span>
+    </div>
+    @if (inTreatmentAppointments().length) {
+      <div class="waiting-room-list">
+        @for (appointment of inTreatmentAppointments(); track appointment.id) {
+          <article class="waiting-room-item">
+            <div class="waiting-room-time"><strong>{{ formatTime(appointment.startsAt) }}</strong><span>{{ formatTime(appointment.endsAt) }}</span></div>
+            <div class="waiting-room-patient"><a [routerLink]="['/crm/patients', appointment.patientId]">{{ appointment.patientFirstName }} {{ appointment.patientLastName }}</a><small>{{ appointment.patientNumber }} · {{ appointment.reason || 'Motif non précisé' }}</small></div>
+            <span class="treatment-status-label">En soin</span>
+          </article>
+        }
+      </div>
+    } @else {
+      <p class="waiting-room-empty">Aucun soin en cours pour cette journée.</p>
+    }
+  </section>
+
   <section class="appointment-list" aria-label="Rendez-vous de la journée">
     <div class="list-heading"><div><h2>{{ selectedDate() ? formatCalendarDate(selectedDate()) : 'Chargement de la journée' }}</h2><p>{{ dayAppointments().length }} rendez-vous affiché{{ dayAppointments().length > 1 ? 's' : '' }}</p></div><button type="button" class="secondary-button" (click)="refreshAppointments()" [disabled]="loading() || saving() || changingStatusId() !== null">Actualiser</button></div>
 
-    @if (loading() && !dayAppointments().length) {
+    @if (loading() && !appointments().length) {
       <div class="list-state" role="status"><span class="loading-indicator" aria-hidden="true"></span>Chargement de l’agenda…</div>
-    } @else if (!loading() && !dayAppointments().length && !error()) {
     } @else if (error() && !appointments().length) {
-      <div class="list-state" role="status">Les rendez-vous de cette journée ne sont pas disponibles. Utilisez « Réessayer » dans le message d’erreur ci-dessus pour recharger l’agenda.</div>
-    } @else if (!loading() && !appointments().length) {
+      <div class="list-state" role="status">Les rendez-vous de cette période ne sont pas disponibles. Utilisez « Réessayer » dans le message d’erreur ci-dessus pour recharger l’agenda.</div>
+    } @else if (!dayAppointments().length) {
       <div class="empty-state"><span class="empty-icon" aria-hidden="true">▦</span><h3>Aucun rendez-vous prévu</h3><p>Cette journée est libre. Créez un rendez-vous pour commencer à organiser la file du cabinet. Configurez les praticiens et fauteuils si vous souhaitez affecter les ressources.</p><button type="button" class="secondary-button" (click)="openCreateForm()" [disabled]="saving() || changingStatusId() !== null">Planifier un rendez-vous</button></div>
     } @else {
       <div class="appointment-items">
