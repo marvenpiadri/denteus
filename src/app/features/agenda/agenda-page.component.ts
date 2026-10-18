@@ -568,6 +568,9 @@ export class AgendaPageComponent {
       this.success.set('Ce rendez-vous ne peut plus être déplacé.');
       return;
     }
+    const zone = this.tenant.activeClinic()?.timezone || 'Africa/Casablanca';
+    const appointmentDate = toClinicDateTimeInput(appointment.startsAt, zone).slice(0, 10);
+    if (appointmentDate !== this.selectedDate()) this.selectedDate.set(appointmentDate);
     this.openReschedule(appointment);
   }
 
