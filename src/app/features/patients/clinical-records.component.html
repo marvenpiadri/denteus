@@ -29,7 +29,7 @@
  <div class="section-heading"><div><h4>Imagerie et documents</h4><p>Les fichiers restent privés et nécessitent une session autorisée pour être téléchargés. Limite : 8 Mio par fichier.</p></div></div>
  @if (v.status!=='SIGNED'&&v.status!=='CANCELLED') {
   <form class="entry-form media-upload" (submit)="$event.preventDefault()">
-   <label>Catégorie du fichier<select name="mediaType" [(ngModel)]="mediaType"><option value="XRAY">Radiographie</option><option value="PHOTO">Photo clinique</option><option value="DOCUMENT">Document PDF</option><option value="DICOM">DICOM</option></select></label>
+   <label>Catégorie du fichier<select name="mediaType" [(ngModel)]="mediaType">@for (type of mediaTypes; track type.value) {<option [value]="type.value">{{type.label}}</option>}</select></label>
    <label>Description (facultative)<input name="mediaDescription" [(ngModel)]="mediaDescription" maxlength="2000" placeholder="Ex. Panoramique dentaire du jour"></label>
    <label>Choisir un fichier<input type="file" accept="image/jpeg,image/png,image/webp,application/pdf,application/dicom,.dcm" (change)="uploadMedia($event)" [disabled]="mediaUploading()" required></label>
    @if (mediaUploading()) {<p role="status">Envoi et sécurisation du fichier…</p>}
