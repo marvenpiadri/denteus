@@ -136,3 +136,8 @@ This ledger supersedes any older branch/PR status above the phased checklists. I
 - `b73a683b48f69dfac9495dfcd12668452ab58f86`: distinguish clinic-context loading from no active clinic; prevent closing the patient form while saving; reject blank treatment titles server-side.
 - `7699a543b78316ea525b68dcfad02a2e94a08430`: align Today-page copy with the actions that currently exist.
 - `c30d0dd4b05d18390796bf73e09ecc3cf74f6a9c`: restore the missing `PatientRecord` type import used by patient initials.
+- `bcb13cbedfcc8dfc53c3db7342985319adccc598`: validate FDI tooth numbers in odontogram plan changes.
+- `c25e9d24f521197f5535d9e0ef49ab8b086d3801`: allowlist patient-record roles and deny unknown roles, with a regression test.
+- `c984c7aaca7c6233371a258b02c9552f9f0a225e`: persist append-only odontogram snapshots per version in a new migration.
+- `c46e803136de4784cdac66a33f1e2019683a89e2`: add a permission-checked odontogram revision-history endpoint.
+- `ae70e2a67fc5a2632861ed9f363a657fa6b9a78e`: cover odontogram revision tenant isolation in the PostgreSQL integration test.
