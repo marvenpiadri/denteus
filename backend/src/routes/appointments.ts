@@ -3,7 +3,7 @@ import type { FastifyPluginAsync, FastifyReply } from 'fastify';
 import { requireClinicAccess } from '../auth/authorization.js';
 import type { PoolClient } from 'pg';
 import { pool } from '../db/pool.js';
-import { canManageAppointments, canTransitionAppointmentStatus, isValidAppointmentDuration } from '../domain/appointment-policy.js';
+import { canManageAppointments, canTransitionAppointmentStatus, isValidAppointmentDuration, isValidScheduleRange } from '../domain/appointment-policy.js';
 import type { AppointmentStatus } from '../domain/appointment-policy.js';
 
 interface ClinicParams {
@@ -147,9 +147,7 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
       if (!access) return;
       if (!canManageAppointments(access.effectiveRole)) return denyAppointmentRole(reply);
 
-      const from = Date.parse(request.query.from);
-      const to = Date.parse(request.query.to);
-      if (!Number.isFinite(from) || !Number.isFinite(to) || to <= from || to - from > 366 * 24 * 60 * 60_000) {
+      if (!isValidScheduleRange(request.query.from, request.query.to)) {
         return reply.code(400).send({
           error: { code: 'INVALID_SCHEDULE_RANGE', message: 'Choisissez une période valide d’un an maximum.' },
         });
