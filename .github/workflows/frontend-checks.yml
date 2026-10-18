@@ -34,8 +34,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: bun install --frozen-lockfile
       - name: Build Angular SSR application
         run: npm run build
       - name: Run frontend tests
