@@ -85,6 +85,7 @@ export class SchedulerCalendarComponent implements OnInit {
   readonly createRequested = output<EventDraft>();
   readonly eventSelected = output<CalendarEvent>();
   readonly dateChanged = output<string>();
+  readonly viewChanged = output<CalendarViewType>();
 
   protected readonly editor = signal<EditorState | null>(null);
   protected readonly sidebarOpen = signal(false);
@@ -121,6 +122,10 @@ export class SchedulerCalendarComponent implements OnInit {
       const date = this.store.focusDate();
       if (this.ready) this.dateChanged.emit(this.dateKey(date));
     });
+    effect(() => {
+      const view = this.store.view();
+      if (this.ready) this.viewChanged.emit(view);
+    });
   }
 
   ngOnInit(): void {
@@ -147,6 +152,7 @@ export class SchedulerCalendarComponent implements OnInit {
     this.ready = true;
     this.themeChange.emit(store.theme());
     this.dateChanged.emit(this.dateKey(store.focusDate()));
+    this.viewChanged.emit(store.view());
   }
 
   /* ---------------------------------- editor ---------------------------------- */
