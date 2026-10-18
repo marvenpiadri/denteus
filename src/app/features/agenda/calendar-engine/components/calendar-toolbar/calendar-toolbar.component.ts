@@ -13,17 +13,18 @@ import { CalIconComponent } from '../cal-icon/cal-icon.component';
 export class CalendarToolbarComponent {
   protected readonly store = inject(CalendarStore);
 
-  readonly searchPlaceholder = input('Search');
+  readonly searchPlaceholder = input('Rechercher');
+  readonly showThemeToggle = input(true);
   readonly newLabel = input('New event');
   readonly newEvent = output<void>();
   readonly toggleSidebar = output<void>();
   readonly toggleTheme = output<void>();
 
   protected readonly views: { id: CalendarViewType; label: string }[] = [
-    { id: 'day', label: 'Day' },
-    { id: 'week', label: 'Week' },
-    { id: 'month', label: 'Month' },
-    { id: 'year', label: 'Year' },
+    { id: 'day', label: 'Jour' },
+    { id: 'week', label: 'Semaine' },
+    { id: 'month', label: 'Mois' },
+    { id: 'year', label: 'Année' },
   ];
 
   protected onSearch(event: Event): void {
