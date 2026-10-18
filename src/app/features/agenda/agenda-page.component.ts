@@ -602,9 +602,10 @@ export class AgendaPageComponent {
       return { from, to: addCalendarDays(from, 7) };
     }
     if (view === 'month') {
-      const from = date.slice(0, 7) + '-01';
-      const next = new Date(Number(date.slice(0, 4)), Number(date.slice(5, 7)), 1, 12);
-      return { from, to: next.getFullYear() + '-' + String(next.getMonth() + 1).padStart(2, '0') + '-01' };
+      const firstOfMonth = date.slice(0, 7) + '-01';
+      const weekdayOffset = (new Date(firstOfMonth + 'T12:00:00').getDay() + 6) % 7;
+      const from = addCalendarDays(firstOfMonth, -weekdayOffset);
+      return { from, to: addCalendarDays(from, 42) };
     }
     if (view === 'year') {
       const year = Number(date.slice(0, 4));
