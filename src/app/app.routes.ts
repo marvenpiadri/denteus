@@ -11,6 +11,7 @@ import { AgendaPageComponent } from './features/agenda/agenda-page.component';
 import { RecallsPageComponent } from './features/recalls/recalls-page.component';
 import { ClinicSettingsPageComponent } from './features/settings/clinic-settings-page.component';
 import { ClinicReportsPageComponent } from './features/reports/clinic-reports-page.component';
+import { ClinicTeamPageComponent } from './features/team/clinic-team-page.component';
 
 export const routes: Routes = [
   {
@@ -84,7 +85,7 @@ export const routes: Routes = [
       },
       {
         path: 'team',
-        component: WorkspacePageComponent,
+        component: ClinicTeamPageComponent,
         title: 'Équipe et accès | Dentaleus',
         data: {
           title: 'Équipe et accès',
