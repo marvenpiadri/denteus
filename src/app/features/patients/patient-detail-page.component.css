@@ -3,3 +3,82 @@
 .clinical-history-card{display:grid;gap:16px;padding:20px;background:var(--surface-raised);border:1px solid var(--border-subtle);border-radius:var(--radius-card)}.clinical-history-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}.clinical-history-heading h2{margin:0;color:var(--text-primary);font-size:17px}.clinical-history-heading p:not(.eyebrow){max-width:680px;margin:7px 0 0;color:var(--text-tertiary);font-size:12px;line-height:1.6}.treatment-entry-form{display:grid;gap:16px;padding:16px;border:1px solid var(--border-subtle);border-radius:10px;background:var(--surface-raised)}.treatment-entry-form .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.treatment-entry-form label{display:block;margin-bottom:7px;color:var(--text-secondary);font-size:11px;font-weight:750}.treatment-entry-form input,.treatment-entry-form select,.treatment-entry-form textarea{width:100%;min-height:var(--control-height);padding:9px 10px;border:1px solid var(--border-control);border-radius:7px;background:var(--surface-raised);color:var(--text-primary);font-size:12px}.treatment-entry-form textarea{resize:vertical}.treatment-entry-form small{display:block;margin-top:5px;color:var(--text-tertiary);font-size:10px;line-height:1.5}.treatment-timeline{display:grid;gap:12px}.treatment-record{display:grid;gap:12px;padding:16px;border:1px solid var(--border-subtle);border-radius:10px;background:var(--surface-raised)}.treatment-record-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.treatment-record-header h3{margin:0;color:var(--text-primary);font-size:14px}.treatment-record-header p{margin:5px 0 0;color:var(--text-tertiary);font-size:11px;line-height:1.5}.treatment-status{display:inline-flex;align-items:center;min-height:24px;padding:4px 8px;border:1px solid var(--border-subtle);border-radius:6px;background:var(--surface-muted);color:var(--status-neutral-text);font-size:10px;font-weight:800;white-space:nowrap}.treatment-status[data-status="COMPLETED"]{border-color:var(--status-success-border);background:var(--status-success-bg);color:var(--status-success-text)}.treatment-status[data-status="DECLINED"]{border-color:var(--status-danger-border);background:var(--status-danger-bg);color:var(--status-danger-text)}.treatment-status[data-status="ACCEPTED"]{border-color:var(--status-purple-border);background:var(--status-purple-bg);color:var(--status-purple-text)}.treatment-teeth{display:flex;align-items:center;flex-wrap:wrap;gap:6px}.treatment-teeth>span:first-child{margin-right:3px;color:var(--text-tertiary);font-size:10px;font-weight:750}.tooth-chip{padding:4px 7px;border:1px solid var(--status-accent-border);border-radius:6px;background:var(--status-accent-bg);color:var(--status-info-text);font-size:10px;font-weight:750}.treatment-no-teeth{margin:0;color:var(--text-tertiary);font-size:11px;font-style:italic}.treatment-note{margin:0;padding:10px 12px;border-left:3px solid var(--status-accent-border);border-radius:0 6px 6px 0;background:var(--surface-muted);color:var(--text-secondary);font-size:12px;line-height:1.65;white-space:pre-wrap}.treatment-attribution{display:flex;flex-wrap:wrap;gap:8px 14px;color:var(--text-tertiary);font-size:10px}.treatment-events{padding-top:9px;border-top:1px solid var(--surface-muted)}.treatment-events summary{color:var(--text-secondary);font-size:11px;font-weight:750;cursor:pointer}.treatment-events p{margin:8px 0 0;color:var(--text-tertiary);font-size:10px;line-height:1.5}.treatment-actions{display:flex;align-items:center;flex-wrap:wrap;gap:7px;padding-top:10px;border-top:1px solid var(--surface-muted)}.treatment-actions>span{color:var(--text-tertiary);font-size:10px}.treatment-empty{display:grid;gap:6px;padding:28px 18px;border:1px dashed var(--border-subtle);border-radius:var(--radius-control);text-align:center;color:var(--text-tertiary);font-size:12px;line-height:1.6}.treatment-empty strong{color:var(--text-secondary)}.treatment-empty p{margin:0}.clinical-history-footnote{margin:0;padding-top:12px;border-top:1px solid var(--surface-muted);color:var(--text-tertiary);font-size:10px;line-height:1.6}@media(max-width:650px){.clinical-history-card{padding:14px}.clinical-history-heading{flex-direction:column}.treatment-entry-form{padding:12px}.treatment-entry-form .form-grid{grid-template-columns:1fr}.treatment-record{padding:12px}.treatment-record-header{flex-direction:column}.treatment-status{align-self:flex-start}}
 .tooth-history-filter{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0;padding:9px 12px;border:1px solid var(--status-accent-border);border-radius:7px;background:var(--status-accent-bg);color:var(--status-info-text);font-size:11px}.tooth-history-filter button{padding:4px 7px;border:1px solid var(--status-accent-border);border-radius:5px;background:var(--surface-raised);color:var(--status-info-text);font-size:10px;font-weight:750}
 .treatment-visit-link{margin:0;padding:8px 10px;border:1px solid var(--border-subtle);border-radius:6px;background:var(--surface-muted);color:var(--text-secondary);font-size:11px;line-height:1.5}
+
+
+/* Clinical interaction polish: preserve scanability while making every action easy to locate. */
+.detail-page :where(button, a, input, select, textarea, summary):focus-visible {
+  outline: 3px solid var(--border-focus);
+  outline-offset: 2px;
+}
+.detail-page :where(input, select, textarea) {
+  scroll-margin-block: 24px;
+}
+.detail-page .detail-heading > .primary-button {
+  min-height: 42px;
+  flex: none;
+}
+.detail-page .form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+.detail-page .form-actions button,
+.detail-page .treatment-actions button,
+.detail-page .tooth-history-filter button {
+  min-height: 38px;
+}
+.detail-page .treatment-entry-form :where(input, select, textarea):focus-visible {
+  border-color: var(--color-brand);
+}
+.detail-page .treatment-record {
+  scroll-margin-top: 20px;
+}
+.detail-page .treatment-record:focus-within {
+  border-color: var(--color-brand-border);
+}
+.detail-page .treatment-actions > span {
+  margin-right: 3px;
+}
+.detail-page .clinical-history-footnote {
+  max-width: 920px;
+}
+@media (max-width: 650px) {
+  .detail-page .detail-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .detail-page .detail-heading > .primary-button {
+    width: 100%;
+  }
+  .detail-page .form-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .detail-page .form-actions button {
+    width: 100%;
+  }
+  .detail-page .treatment-actions {
+    align-items: stretch;
+  }
+  .detail-page .treatment-actions > span {
+    flex-basis: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .detail-page * { scroll-behavior: auto; }
+}
+
+.detail-page .field-error {
+  margin: 8px 0 0;
+  color: var(--color-danger);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.detail-page .field-error button {
+  min-height: 32px;
+  margin-left: 6px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

@@ -35,10 +35,32 @@ export class PatientListPageComponent {
   phone = '';
   email = '';
   private requestSequence = 0;
+  private mutationSequence = 0;
+  private activeClinicId = '';
 
   constructor() {
     effect(() => {
       const clinic = this.tenant.activeClinic();
+      const clinicId = clinic?.id ?? '';
+      if (this.activeClinicId !== clinicId) {
+        this.activeClinicId = clinicId;
+        this.requestSequence++;
+        this.mutationSequence++;
+        this.patients.set([]);
+        this.total.set(0);
+        this.loading.set(false);
+        this.saving.set(false);
+        this.error.set('');
+        this.formError.set('');
+        this.showCreateForm.set(false);
+        this.search = '';
+        this.firstName = '';
+        this.lastName = '';
+        this.birthDate = '';
+        this.gender = '';
+        this.phone = '';
+        this.email = '';
+      }
       if (isPlatformBrowser(this.platformId) && clinic) {
         void this.loadPatients(clinic.organizationId, clinic.id, this.search);
       }
@@ -60,11 +82,11 @@ export class PatientListPageComponent {
     this.error.set('');
     try {
       const response = await this.patientsApi.list(organizationId, clinicId, query);
-      if (requestSequence !== this.requestSequence) return;
+      if (requestSequence !== this.requestSequence || this.tenant.activeClinic()?.id !== clinicId) return;
       this.patients.set(response.data);
       this.total.set(response.count);
     } catch (error) {
-      if (requestSequence !== this.requestSequence) return;
+      if (requestSequence !== this.requestSequence || this.tenant.activeClinic()?.id !== clinicId) return;
       this.patients.set([]);
       this.total.set(0);
       this.error.set(error instanceof HttpErrorResponse && error.status === 401
@@ -73,7 +95,7 @@ export class PatientListPageComponent {
           ? 'Cette clinique n’est plus accessible avec votre compte.'
           : 'Les dossiers patients ne peuvent pas être chargés. Vérifiez votre connexion puis réessayez.');
     } finally {
-      if (requestSequence === this.requestSequence) this.loading.set(false);
+      if (requestSequence === this.requestSequence && this.tenant.activeClinic()?.id === clinicId) this.loading.set(false);
     }
   }
 
@@ -81,6 +103,7 @@ export class PatientListPageComponent {
     const clinic = this.tenant.activeClinic();
     if (!clinic || this.saving()) return;
     this.formError.set('');
+    const mutationSequence = ++this.mutationSequence;
     this.saving.set(true);
     const input: CreatePatientInput = {
       firstName: this.firstName.trim(),
@@ -92,6 +115,7 @@ export class PatientListPageComponent {
     };
     try {
       await this.patientsApi.create(clinic.organizationId, clinic.id, input);
+      if (mutationSequence !== this.mutationSequence || this.tenant.activeClinic()?.id !== clinic.id) return;
       this.firstName = '';
       this.lastName = '';
       this.birthDate = '';
@@ -101,13 +125,14 @@ export class PatientListPageComponent {
       this.showCreateForm.set(false);
       await this.loadPatients(clinic.organizationId, clinic.id, this.search);
     } catch (error) {
+      if (mutationSequence !== this.mutationSequence || this.tenant.activeClinic()?.id !== clinic.id) return;
       this.formError.set(error instanceof HttpErrorResponse && error.status === 403
         ? 'Votre rôle ne permet pas de créer un dossier patient.'
         : error instanceof HttpErrorResponse && error.status === 401
           ? 'Votre session a expiré. Reconnectez-vous avant de continuer.'
           : 'Le dossier n’a pas été enregistré. Aucune donnée n’a été ajoutée à la liste. Réessayez.');
     } finally {
-      this.saving.set(false);
+      if (mutationSequence === this.mutationSequence) this.saving.set(false);
     }
   }
 

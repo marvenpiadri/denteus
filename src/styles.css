@@ -365,3 +365,55 @@ a {
 .secondary-button { border-color: var(--border-control); background: var(--surface-raised); color: var(--text-secondary); }
 .secondary-button:hover:not(:disabled) { border-color: var(--color-brand-border); background: var(--surface-hover); color: var(--text-primary); }
 :where(.primary-button, .secondary-button):disabled { opacity: .55; cursor: not-allowed; }
+
+
+/* UX foundation: predictable controls, readable clinical content and consistent focus. */
+:root {
+  --space-page-inline: clamp(16px, 2.8vw, 36px);
+  --space-section: 20px;
+  --text-reading: 14px;
+  --line-reading: 1.6;
+}
+body { line-height: 1.5; }
+:where(button, input, select, textarea) { min-width: 0; }
+:where(input, select, textarea) { line-height: 1.4; }
+:where(button, a, input, select, textarea):focus-visible {
+  outline-color: var(--border-focus);
+}
+:where(.primary-button, .secondary-button) { min-height: 42px; }
+:where(.error-message, .success-message, [role="alert"], [role="status"]) { overflow-wrap: anywhere; }
+
+/* Patient record: keep identity, administrative details and care history visually distinct. */
+html body .detail-page { gap: 20px; }
+html body .detail-page .detail-heading {
+  padding: clamp(18px, 2.4vw, 28px);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-panel);
+}
+html body .detail-page .patient-heading { gap: 16px; }
+html body .detail-page .patient-avatar {
+  width: 56px; height: 56px; border-radius: 16px;
+  font-size: 16px;
+}
+html body .detail-page .detail-heading h1 {
+  font-size: clamp(25px, 2.5vw, 32px);
+  line-height: 1.2; letter-spacing: -.7px;
+}
+html body .detail-page .detail-card,
+html body .detail-page .clinical-history-card {
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-panel);
+}
+html body .detail-page .clinical-history-card { gap: 20px; }
+html body .detail-page .clinical-history-heading h2 { font-size: 19px; line-height: 1.3; }
+html body .detail-page .info-grid { gap: 24px 32px; }
+html body .detail-page .info-grid dt { font-size: 11px; letter-spacing: .01em; }
+html body .detail-page .info-grid dd { font-size: 13px; line-height: 1.65; }
+@media (max-width: 650px) {
+  html body .detail-page { gap: 14px; }
+  html body .detail-page .patient-heading { align-items: center; gap: 12px; }
+  html body .detail-page .patient-avatar { width: 44px; height: 44px; border-radius: 12px; }
+  html body .detail-page .detail-heading h1 { font-size: 23px; overflow-wrap: anywhere; }
+  html body .detail-page .clinical-history-heading { gap: 12px; }
+  html body .detail-page .clinical-history-heading .primary-button { width: 100%; }
+}

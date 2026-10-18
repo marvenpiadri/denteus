@@ -41,6 +41,7 @@ export class PatientDetailPageComponent {
   readonly treatmentsLoading = signal(false);
   readonly patientAppointments = signal<AppointmentRecord[]>([]);
   readonly patientAppointmentsLoading = signal(false);
+  readonly patientAppointmentsError = signal('');
   readonly availableTreatmentAppointments = computed(() => this.patientAppointments().filter((item) => item.status !== 'CANCELLED' && item.status !== 'NO_SHOW'));
   readonly treatmentsSaving = signal(false);
   readonly treatmentsError = signal('');
@@ -84,6 +85,8 @@ export class PatientDetailPageComponent {
   treatmentSurface: ToothSurface = 'WHOLE';
   treatmentNotes = '';
   private requestSequence = 0;
+  private treatmentLoadSequence = 0;
+  private patientAppointmentsLoadSequence = 0;
 
   constructor() {
     effect(() => {
@@ -101,9 +104,33 @@ export class PatientDetailPageComponent {
     const activeClinicId = clinicId ?? clinic?.id;
     if (!organization || !activeClinicId || !patientId) return;
     const requestSequence = ++this.requestSequence;
+    // A route change must never carry one patient's tooth selection or open
+    // clinical-entry draft into another patient's record.
     this.patient.set(null);
+    this.treatments.set([]);
+    this.patientAppointments.set([]);
+    this.patientAppointmentsError.set('');
+    this.treatmentLoadSequence++;
+    this.patientAppointmentsLoadSequence++;
+    this.selectedTeeth.set([]);
+    this.showPrimaryTeeth.set(false);
+    this.showTreatmentForm.set(false);
+    this.treatmentTitle = '';
+    this.treatmentAppointmentId = '';
+    this.treatmentCategory = 'RESTORATIVE';
+    this.treatmentStatus = 'PLANNED';
+    this.treatmentSurface = 'WHOLE';
+    this.treatmentNotes = '';
+    this.treatmentsError.set('');
+    this.treatmentsSuccess.set('');
+    this.treatmentsLoading.set(false);
+    this.patientAppointmentsLoading.set(false);
     this.loading.set(true);
+    this.saving.set(false);
+    this.treatmentsSaving.set(false);
     this.error.set('');
+    this.success.set('');
+    this.editing.set(false);
     this.conflict.set(false);
     try {
       const patient = await this.api.get(organization, activeClinicId, patientId);
@@ -136,35 +163,51 @@ export class PatientDetailPageComponent {
   }
 
   private async loadTreatments(organizationId: string, clinicId: string, patientId: string, requestSequence: number): Promise<void> {
+    const loadSequence = ++this.treatmentLoadSequence;
     this.treatmentsLoading.set(true);
     this.treatmentsError.set('');
     try {
       const records = await this.treatmentApi.list(organizationId, clinicId, patientId);
-      if (requestSequence !== this.requestSequence || this.patientId() !== patientId || this.tenant.activeClinic()?.id !== clinicId) return;
+      if (requestSequence !== this.requestSequence || loadSequence !== this.treatmentLoadSequence || this.patientId() !== patientId || this.tenant.activeClinic()?.id !== clinicId) return;
       this.treatments.set(records);
     } catch (error) {
-      if (requestSequence !== this.requestSequence) return;
+      if (requestSequence !== this.requestSequence || loadSequence !== this.treatmentLoadSequence || this.tenant.activeClinic()?.id !== clinicId || this.patientId() !== patientId) return;
       this.treatments.set([]);
       this.treatmentsError.set(error instanceof HttpErrorResponse && error.status === 403
         ? 'Votre rôle ne permet pas de consulter les informations cliniques de ce patient.'
         : 'L’historique des soins ne peut pas être chargé. Réessayez.');
     } finally {
-      if (requestSequence === this.requestSequence) this.treatmentsLoading.set(false);
+      if (requestSequence === this.requestSequence && loadSequence === this.treatmentLoadSequence) this.treatmentsLoading.set(false);
     }
   }
 
   private async loadPatientAppointments(organizationId: string, clinicId: string, patientId: string, requestSequence: number): Promise<void> {
+    const loadSequence = ++this.patientAppointmentsLoadSequence;
     this.patientAppointmentsLoading.set(true);
+    this.patientAppointmentsError.set('');
     try {
       const records = await this.appointmentsApi.listForPatient(organizationId, clinicId, patientId);
-      if (requestSequence !== this.requestSequence || this.patientId() !== patientId || this.tenant.activeClinic()?.id !== clinicId) return;
+      if (requestSequence !== this.requestSequence || loadSequence !== this.patientAppointmentsLoadSequence || this.patientId() !== patientId || this.tenant.activeClinic()?.id !== clinicId) return;
       this.patientAppointments.set(records);
     } catch {
-      if (requestSequence !== this.requestSequence) return;
+      if (requestSequence !== this.requestSequence || loadSequence !== this.patientAppointmentsLoadSequence || this.tenant.activeClinic()?.id !== clinicId || this.patientId() !== patientId) return;
       this.patientAppointments.set([]);
+      this.patientAppointmentsError.set('Les rendez-vous associés ne peuvent pas être chargés. Réessayez avant de choisir un rendez-vous.');
     } finally {
-      if (requestSequence === this.requestSequence) this.patientAppointmentsLoading.set(false);
+      if (requestSequence === this.requestSequence && loadSequence === this.patientAppointmentsLoadSequence) this.patientAppointmentsLoading.set(false);
     }
+  }
+
+  retryTreatments(): void {
+    const clinic = this.tenant.activeClinic();
+    const patient = this.patient();
+    if (clinic && patient) void this.loadTreatments(clinic.organizationId, clinic.id, patient.id, this.requestSequence);
+  }
+
+  retryPatientAppointments(): void {
+    const clinic = this.tenant.activeClinic();
+    const patient = this.patient();
+    if (clinic && patient) void this.loadPatientAppointments(clinic.organizationId, clinic.id, patient.id, this.requestSequence);
   }
 
   appointmentStatusLabel(status: AppointmentStatus): string {
@@ -182,6 +225,7 @@ export class PatientDetailPageComponent {
     const clinic = this.tenant.activeClinic();
     const patient = this.patient();
     if (!clinic || !patient || this.treatmentsSaving() || !this.treatmentTitle.trim()) return;
+    const requestSequence = this.requestSequence;
     this.treatmentsSaving.set(true);
     this.treatmentsError.set('');
     this.treatmentsSuccess.set('');
@@ -195,7 +239,7 @@ export class PatientDetailPageComponent {
     };
     try {
       const created = await this.treatmentApi.create(clinic.organizationId, clinic.id, patient.id, input);
-      if (this.tenant.activeClinic()?.id !== clinic.id || this.patientId() !== patient.id) return;
+      if (requestSequence !== this.requestSequence || this.tenant.activeClinic()?.id !== clinic.id || this.patientId() !== patient.id) return;
       this.treatments.set([created, ...this.treatments()]);
       this.treatmentTitle = '';
       this.treatmentAppointmentId = '';
@@ -207,13 +251,14 @@ export class PatientDetailPageComponent {
       this.showTreatmentForm.set(false);
       this.treatmentsSuccess.set('Le soin et les dents concernées ont été enregistrés dans l’historique du patient.');
     } catch (error) {
+      if (requestSequence !== this.requestSequence || this.tenant.activeClinic()?.id !== clinic.id || this.patientId() !== patient.id) return;
       this.treatmentsError.set(error instanceof HttpErrorResponse && error.status === 403
         ? 'Votre rôle ne permet pas d’ajouter un soin clinique.'
         : error instanceof HttpErrorResponse && error.status === 400
           ? 'Vérifiez les dents, les surfaces et les informations du soin.'
           : 'Le soin n’a pas été enregistré. Réessayez.');
     } finally {
-      this.treatmentsSaving.set(false);
+      if (requestSequence === this.requestSequence) this.treatmentsSaving.set(false);
     }
   }
 
@@ -247,21 +292,23 @@ export class PatientDetailPageComponent {
     const clinic = this.tenant.activeClinic();
     const patient = this.patient();
     if (!clinic || !patient || this.treatmentsSaving()) return;
+    const requestSequence = this.requestSequence;
     this.treatmentsSaving.set(true);
     this.treatmentsError.set('');
     this.treatmentsSuccess.set('');
     try {
       await this.treatmentApi.changeStatus(clinic.organizationId, clinic.id, patient.id, treatment.id, status);
       const records = await this.treatmentApi.list(clinic.organizationId, clinic.id, patient.id);
-      if (this.tenant.activeClinic()?.id !== clinic.id || this.patientId() !== patient.id) return;
+      if (requestSequence !== this.requestSequence || this.tenant.activeClinic()?.id !== clinic.id || this.patientId() !== patient.id) return;
       this.treatments.set(records);
       this.treatmentsSuccess.set('Le statut du soin a été enregistré dans son historique.');
     } catch (error) {
+      if (requestSequence !== this.requestSequence || this.tenant.activeClinic()?.id !== clinic.id || this.patientId() !== patient.id) return;
       this.treatmentsError.set(error instanceof HttpErrorResponse && error.status === 409
         ? 'Cette transition n’est plus autorisée. Actualisez l’historique.'
         : 'Le statut du soin n’a pas été modifié.');
     } finally {
-      this.treatmentsSaving.set(false);
+      if (requestSequence === this.requestSequence) this.treatmentsSaving.set(false);
     }
   }
 
@@ -275,6 +322,7 @@ export class PatientDetailPageComponent {
     const clinic = this.tenant.activeClinic();
     const patient = this.patient();
     if (!clinic || !patient || this.saving()) return;
+    const requestSequence = this.requestSequence;
     this.error.set('');
     this.success.set('');
     this.saving.set(true);
@@ -292,11 +340,12 @@ export class PatientDetailPageComponent {
     };
     try {
       const saved = await this.api.update(clinic.organizationId, clinic.id, patient.id, input);
-      if (this.tenant.activeClinic()?.id !== clinic.id || this.patientId() !== patient.id) return;
+      if (requestSequence !== this.requestSequence || this.tenant.activeClinic()?.id !== clinic.id || this.patientId() !== patient.id) return;
       this.patient.set(saved);
       this.editing.set(false);
       this.success.set('Les modifications ont été enregistrées.');
     } catch (error) {
+      if (requestSequence !== this.requestSequence || this.tenant.activeClinic()?.id !== clinic.id || this.patientId() !== patient.id) return;
       if (error instanceof HttpErrorResponse && error.status === 409) {
         this.conflict.set(true);
         this.error.set('Ce dossier a été modifié dans une autre session. Rechargez la dernière version avant de réessayer.');
@@ -306,7 +355,7 @@ export class PatientDetailPageComponent {
         this.error.set('Les modifications n’ont pas été enregistrées. Le dossier affiché reste inchangé.');
       }
     } finally {
-      this.saving.set(false);
+      if (requestSequence === this.requestSequence) this.saving.set(false);
     }
   }
 
