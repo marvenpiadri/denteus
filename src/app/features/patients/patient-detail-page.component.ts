@@ -41,6 +41,7 @@ export class PatientDetailPageComponent {
   readonly treatmentsLoading = signal(false);
   readonly patientAppointments = signal<AppointmentRecord[]>([]);
   readonly patientAppointmentsLoading = signal(false);
+  readonly patientAppointmentsError = signal('');
   readonly availableTreatmentAppointments = computed(() => this.patientAppointments().filter((item) => item.status !== 'CANCELLED' && item.status !== 'NO_SHOW'));
   readonly treatmentsSaving = signal(false);
   readonly treatmentsError = signal('');
@@ -84,6 +85,8 @@ export class PatientDetailPageComponent {
   treatmentSurface: ToothSurface = 'WHOLE';
   treatmentNotes = '';
   private requestSequence = 0;
+  private treatmentLoadSequence = 0;
+  private patientAppointmentsLoadSequence = 0;
 
   constructor() {
     effect(() => {
@@ -106,6 +109,9 @@ export class PatientDetailPageComponent {
     this.patient.set(null);
     this.treatments.set([]);
     this.patientAppointments.set([]);
+    this.patientAppointmentsError.set('');
+    this.treatmentLoadSequence++;
+    this.patientAppointmentsLoadSequence++;
     this.selectedTeeth.set([]);
     this.showPrimaryTeeth.set(false);
     this.showTreatmentForm.set(false);
@@ -157,35 +163,51 @@ export class PatientDetailPageComponent {
   }
 
   private async loadTreatments(organizationId: string, clinicId: string, patientId: string, requestSequence: number): Promise<void> {
+    const loadSequence = ++this.treatmentLoadSequence;
     this.treatmentsLoading.set(true);
     this.treatmentsError.set('');
     try {
       const records = await this.treatmentApi.list(organizationId, clinicId, patientId);
-      if (requestSequence !== this.requestSequence || this.patientId() !== patientId || this.tenant.activeClinic()?.id !== clinicId) return;
+      if (requestSequence !== this.requestSequence || loadSequence !== this.treatmentLoadSequence || this.patientId() !== patientId || this.tenant.activeClinic()?.id !== clinicId) return;
       this.treatments.set(records);
     } catch (error) {
-      if (requestSequence !== this.requestSequence) return;
+      if (requestSequence !== this.requestSequence || loadSequence !== this.treatmentLoadSequence || this.tenant.activeClinic()?.id !== clinicId || this.patientId() !== patientId) return;
       this.treatments.set([]);
       this.treatmentsError.set(error instanceof HttpErrorResponse && error.status === 403
         ? 'Votre rôle ne permet pas de consulter les informations cliniques de ce patient.'
         : 'L’historique des soins ne peut pas être chargé. Réessayez.');
     } finally {
-      if (requestSequence === this.requestSequence) this.treatmentsLoading.set(false);
+      if (requestSequence === this.requestSequence && loadSequence === this.treatmentLoadSequence) this.treatmentsLoading.set(false);
     }
   }
 
   private async loadPatientAppointments(organizationId: string, clinicId: string, patientId: string, requestSequence: number): Promise<void> {
+    const loadSequence = ++this.patientAppointmentsLoadSequence;
     this.patientAppointmentsLoading.set(true);
+    this.patientAppointmentsError.set('');
     try {
       const records = await this.appointmentsApi.listForPatient(organizationId, clinicId, patientId);
-      if (requestSequence !== this.requestSequence || this.patientId() !== patientId || this.tenant.activeClinic()?.id !== clinicId) return;
+      if (requestSequence !== this.requestSequence || loadSequence !== this.patientAppointmentsLoadSequence || this.patientId() !== patientId || this.tenant.activeClinic()?.id !== clinicId) return;
       this.patientAppointments.set(records);
     } catch {
-      if (requestSequence !== this.requestSequence) return;
+      if (requestSequence !== this.requestSequence || loadSequence !== this.patientAppointmentsLoadSequence || this.tenant.activeClinic()?.id !== clinicId || this.patientId() !== patientId) return;
       this.patientAppointments.set([]);
+      this.patientAppointmentsError.set('Les rendez-vous associés ne peuvent pas être chargés. Réessayez avant de choisir un rendez-vous.');
     } finally {
-      if (requestSequence === this.requestSequence) this.patientAppointmentsLoading.set(false);
+      if (requestSequence === this.requestSequence && loadSequence === this.patientAppointmentsLoadSequence) this.patientAppointmentsLoading.set(false);
     }
+  }
+
+  retryTreatments(): void {
+    const clinic = this.tenant.activeClinic();
+    const patient = this.patient();
+    if (clinic && patient) void this.loadTreatments(clinic.organizationId, clinic.id, patient.id, this.requestSequence);
+  }
+
+  retryPatientAppointments(): void {
+    const clinic = this.tenant.activeClinic();
+    const patient = this.patient();
+    if (clinic && patient) void this.loadPatientAppointments(clinic.organizationId, clinic.id, patient.id, this.requestSequence);
   }
 
   appointmentStatusLabel(status: AppointmentStatus): string {
