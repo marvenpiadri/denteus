@@ -96,6 +96,19 @@ const patientSelect = `
   to_char(p.updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS "updatedAt"
 `;
 
+// The list view only needs contact and identity summary fields. Keep sensitive
+// clinical/demographic details on the individual patient endpoint.
+const patientListSelect = `
+  p.id,
+  p.patient_number AS "patientNumber",
+  p.first_name AS "firstName",
+  p.last_name AS "lastName",
+  p.phone,
+  p.email,
+  p.city,
+  to_char(p.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS "createdAt"
+`;
+
 export const patientRoutes: FastifyPluginAsync = async (app) => {
   app.get<{ Params: ClinicParams; Querystring: PatientSearchQuery }>(
     '/organizations/:organizationId/clinics/:clinicId/patients',
@@ -111,7 +124,7 @@ export const patientRoutes: FastifyPluginAsync = async (app) => {
       const query = (request.query.q ?? '').trim().slice(0, 120);
       const result = await pool.query(
         `
-          SELECT ${patientSelect}
+          SELECT ${patientListSelect}
           FROM patients p
           JOIN patient_clinics pc
             ON pc.organization_id = p.organization_id
