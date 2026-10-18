@@ -1,10 +1,17 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, signal } from '@angular/core';
+import { CdkDrag, CdkDropList } from '@angular/cdk/drag-drop';
 import type { AppointmentRecord } from './appointment-api.service';
 import type { ClinicOperatory, ClinicProvider } from './scheduling-resource-api.service';
 
 export type CalendarResourceMode = 'day' | 'provider' | 'operatory';
 export interface CalendarResourceColumn { key: string; id: string | null; label: string; kind: 'all' | 'unassigned' | 'provider' | 'operatory'; }
 export interface PositionedCalendarAppointment { appointment: AppointmentRecord; topPx: number; heightPx: number; leftPct: number; widthPct: number; }
+export interface CalendarAppointmentDrop {
+  appointment: AppointmentRecord;
+  startsAt: string;
+  providerId?: string | null;
+  operatoryId?: string | null;
+}
 export interface CalendarSlotSelection {
   startsAt: string;
   providerId?: string;
@@ -27,6 +34,7 @@ export class AgendaCalendarComponent {
   @Input() loading = false;
   @Output() slotSelected = new EventEmitter<CalendarSlotSelection>();
   @Output() appointmentSelected = new EventEmitter<AppointmentRecord>();
+  @Output() appointmentDropped = new EventEmitter<CalendarAppointmentDrop>();
 
   readonly viewMode = signal<CalendarResourceMode>('day');
   readonly hours = Array.from({ length: 13 }, (_, index) => index + 7);
@@ -35,6 +43,58 @@ export class AgendaCalendarComponent {
     if (this.viewMode() === 'provider') return this.providers.length + 1;
     if (this.viewMode() === 'operatory') return this.operatories.length + 1;
     return 1;
+  }
+
+  dropListIds(): string[] {
+    return this.columns().map((column) => this.dropListId(column));
+  }
+
+  dropListId(column: CalendarResourceColumn): string {
+    return `agenda-lane-${column.key.replace(/[^a-zA-Z0-9_-]/g, '-')}`;
+  }
+
+  appointmentsForColumn(column: CalendarResourceColumn): AppointmentRecord[] {
+    return this.positionedAppointments(column).map((item) => item.appointment);
+  }
+
+  onAppointmentDrop(event: import('@angular/cdk/drag-drop').CdkDragDrop<AppointmentRecord[]>, column: CalendarResourceColumn): void {
+    const appointment = event.item.data as AppointmentRecord;
+    if (!appointment || ['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(appointment.status) || this.loading) return;
+    const lane = event.container.element.nativeElement;
+    const laneRect = lane.getBoundingClientRect();
+    const pointerOffset = event.dropPoint.y - laneRect.top - 14;
+    const snappedMinutes = Math.max(0, Math.min(12 * 60 + 45, Math.round(pointerOffset / 15) * 15));
+    const totalMinutes = 7 * 60 + snappedMinutes;
+    const hour = Math.floor(totalMinutes / 60);
+    const minute = totalMinutes % 60;
+    const startsAt = `${this.date}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+    const durationMs = new Date(appointment.endsAt).getTime() - new Date(appointment.startsAt).getTime();
+    const originalLocalDate = this.localDate(appointment.startsAt);
+    const originalLocalMinutes = this.localMinutes(appointment.startsAt);
+    const targetLocalMinutes = totalMinutes;
+    if (originalLocalDate === this.date && Math.abs(originalLocalMinutes - targetLocalMinutes) < 15 && column.kind === 'all') return;
+
+    const change: CalendarAppointmentDrop = { appointment, startsAt };
+    if (column.kind === 'provider') {
+      change.providerId = column.id;
+      change.operatoryId = appointment.operatoryId;
+    } else if (column.kind === 'operatory') {
+      change.operatoryId = column.id;
+      change.providerId = appointment.providerId;
+    } else if (column.kind === 'unassigned') {
+      if (this.viewMode() === 'provider') {
+        change.providerId = null;
+        change.operatoryId = appointment.operatoryId;
+      } else {
+        change.operatoryId = null;
+        change.providerId = appointment.providerId;
+      }
+    } else {
+      change.providerId = appointment.providerId;
+      change.operatoryId = appointment.operatoryId;
+    }
+    if (!Number.isFinite(durationMs) || durationMs <= 0) return;
+    this.appointmentDropped.emit(change);
   }
 
   defaultColumn(): CalendarResourceColumn {
