@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { Pool } from 'pg';
 
 const connectionString = process.env['DATABASE_URL'];
@@ -10,7 +10,7 @@ const pool = new Pool({ connectionString, max: 2 });
 test('clinical records enforce clinic scope and preserve signed notes through amendments', async () => {
  const suffix = randomUUID(), userId = `clinical-user-${suffix}`, orgId = `clinical-org-${suffix}`;
  const clinicId = `clinical-clinic-${suffix}`, otherClinicId = `clinical-other-clinic-${suffix}`, providerId = `clinical-provider-${suffix}`;
- const patientId = `clinical-patient-${suffix}`, encounterId = `encounter-${suffix}`, noteId = `note-${suffix}`, amendmentId = `amendment-${suffix}`, findingId = `finding-${suffix}`, procedureId = `procedure-${suffix}`;
+ const patientId = `clinical-patient-${suffix}`, encounterId = `encounter-${suffix}`, mediaId = `media-${suffix}`, noteId = `note-${suffix}`, amendmentId = `amendment-${suffix}`, findingId = `finding-${suffix}`, procedureId = `procedure-${suffix}`;
  const client = await pool.connect();
  try {
   await client.query('BEGIN');
@@ -23,6 +23,22 @@ test('clinical records enforce clinic scope and preserve signed notes through am
   await client.query('INSERT INTO patient_clinics (organization_id, patient_id, clinic_id) VALUES ($1, $2, $3)', [orgId, patientId, clinicId]);
   await client.query(`INSERT INTO clinic_providers (id, organization_id, clinic_id, user_id, display_name, role) VALUES ($1, $2, $3, $4, 'Clinical Dentist', 'DENTIST')`, [providerId, orgId, clinicId, userId]);
   await client.query('INSERT INTO clinical_encounters (id, organization_id, clinic_id, patient_id, responsible_provider_id, created_by_id) VALUES ($1, $2, $3, $4, $5, $6)', [encounterId, orgId, clinicId, patientId, providerId, userId]);
+  const mediaBytes = Buffer.from([0xff, 0xd8, 0xff, 0x00]);
+  const mediaChecksum = createHash('sha256').update(mediaBytes).digest('hex');
+  await client.query(
+   `INSERT INTO clinical_media
+      (id, organization_id, clinic_id, patient_id, encounter_id, media_type, storage_key, original_filename,
+       mime_type, size_bytes, checksum_sha256, content_bytes, uploaded_by_id)
+    VALUES ($1,$2,$3,$4,$5,'XRAY',NULL,'test-xray.jpg','image/jpeg',$6,$7,$8,$9)`,
+   [mediaId, orgId, clinicId, patientId, encounterId, mediaBytes.length, mediaChecksum, mediaBytes, userId],
+  );
+  const privateMedia = await client.query(
+   'SELECT content_bytes AS bytes, checksum_sha256 AS checksum FROM clinical_media WHERE organization_id=$1 AND clinic_id=$2 AND patient_id=$3 AND encounter_id=$4 AND id=$5',
+   [orgId, clinicId, patientId, encounterId, mediaId],
+  );
+  assert.deepEqual(privateMedia.rows[0]?.bytes, mediaBytes);
+  assert.equal(privateMedia.rows[0]?.checksum, mediaChecksum);
+  assert.equal((await client.query('SELECT count(*)::int AS count FROM clinical_media WHERE organization_id=$1 AND clinic_id=$2 AND id=$3', [orgId, otherClinicId, mediaId])).rows[0]?.count, 0);
   await client.query("INSERT INTO clinical_notes (id, organization_id, clinic_id, patient_id, encounter_id, content, created_by_id) VALUES ($1, $2, $3, $4, $5, 'Signed source note', $6)", [noteId, orgId, clinicId, patientId, encounterId, userId]);
   await client.query('UPDATE clinical_notes SET signed_at = now(), signed_by_id = $2, updated_by_id = $2, version = version + 1 WHERE id = $1', [noteId, userId]);
   await client.query("INSERT INTO clinical_note_amendments (id, organization_id, clinic_id, patient_id, encounter_id, note_id, reason, amended_content, amended_by_id) VALUES ($1, $2, $3, $4, $5, $6, 'Typographic correction', 'Corrected text', $7)", [amendmentId, orgId, clinicId, patientId, encounterId, noteId, userId]);
