@@ -34,6 +34,20 @@
       </div>
       <p class="data-note"><span aria-hidden="true">i</span> Les indicateurs de la journée apparaîtront ici lorsqu’ils seront reliés aux données métier réelles. Aucun chiffre de démonstration n’est affiché.</p>
     </section>
+  } @else if (isNotFound) {
+    <section class="empty-state" aria-labelledby="empty-state-title">
+      <span class="empty-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="8.5"/></svg>
+      </span>
+      <p class="availability-label">ERREUR 404</p>
+      <h2 id="empty-state-title">Cette adresse n’existe pas</h2>
+      <p>La page demandée est introuvable. Retournez à votre espace clinique ou ouvrez un module disponible.</p>
+      <div class="available-actions" aria-label="Navigation disponible">
+        <a routerLink="/crm/today">Aujourd’hui <span aria-hidden="true">↗</span></a>
+        <a routerLink="/crm/agenda">Agenda <span aria-hidden="true">↗</span></a>
+        <a routerLink="/crm/patients">Patients <span aria-hidden="true">↗</span></a>
+      </div>
+    </section>
   } @else {
     <section class="empty-state" aria-labelledby="empty-state-title">
       <span class="empty-icon" aria-hidden="true">
