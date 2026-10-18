@@ -32,7 +32,7 @@ interface RescheduleBody {
   operatoryId?: string | null;
 }
 interface StatusBody {
-  status: 'CONFIRMED' | 'ARRIVED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
+  status: 'SCHEDULED' | 'CONFIRMED' | 'ARRIVED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
 }
 
 const scheduleQuerySchema = {
@@ -76,7 +76,7 @@ const statusSchema = {
   additionalProperties: false,
   required: ['status'],
   properties: {
-    status: { type: 'string', enum: ['CONFIRMED', 'ARRIVED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'NO_SHOW'] },
+    status: { type: 'string', enum: ['SCHEDULED', 'CONFIRMED', 'ARRIVED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'NO_SHOW'] },
   },
 } as const;
 
@@ -406,6 +406,52 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
           return reply.code(409).send({
             error: { code: 'INVALID_STATUS_TRANSITION', message: 'Cette transition de statut n’est pas autorisée.' },
           });
+        }
+
+        if (request.body.status === 'ARRIVED') {
+          const appointmentDay = await client.query<{ isToday: boolean }>(
+            `SELECT (a.starts_at AT TIME ZONE c.timezone)::date = (now() AT TIME ZONE c.timezone)::date AS "isToday"
+             FROM appointments a JOIN clinics c
+               ON c.organization_id = a.organization_id AND c.id = a.clinic_id
+             WHERE a.organization_id = $1 AND a.clinic_id = $2 AND a.id = $3`,
+            [request.params.organizationId, request.params.clinicId, request.params.appointmentId],
+          );
+          if (!appointmentDay.rows[0]?.isToday) {
+            await client.query('ROLLBACK');
+            transactionOpen = false;
+            return reply.code(409).send({
+              error: { code: 'APPOINTMENT_NOT_TODAY', message: 'Un patient ne peut être marqué comme arrivé que le jour du rendez-vous.' },
+            });
+          }
+        }
+
+        if (request.body.status === 'SCHEDULED') {
+          const conflicts = await client.query<{ conflict: boolean }>(
+            `SELECT (
+               EXISTS (SELECT 1 FROM appointments a WHERE a.organization_id = $1 AND a.clinic_id = $2
+                 AND a.id <> $3 AND a.status NOT IN ('CANCELLED', 'NO_SHOW')
+                 AND a.patient_id = current.patient_id
+                 AND a.starts_at < current.ends_at AND a.ends_at > current.starts_at)
+               OR EXISTS (SELECT 1 FROM appointments a WHERE a.organization_id = $1 AND a.clinic_id = $2
+                 AND a.id <> $3 AND a.status NOT IN ('CANCELLED', 'NO_SHOW')
+                 AND a.provider_id = current.provider_id AND current.provider_id IS NOT NULL
+                 AND a.starts_at < current.ends_at AND a.ends_at > current.starts_at)
+               OR EXISTS (SELECT 1 FROM appointments a WHERE a.organization_id = $1 AND a.clinic_id = $2
+                 AND a.id <> $3 AND a.status NOT IN ('CANCELLED', 'NO_SHOW')
+                 AND a.operatory_id = current.operatory_id AND current.operatory_id IS NOT NULL
+                 AND a.starts_at < current.ends_at AND a.ends_at > current.starts_at)
+             ) AS conflict
+             FROM appointments current
+             WHERE current.organization_id = $1 AND current.clinic_id = $2 AND current.id = $3`,
+            [request.params.organizationId, request.params.clinicId, request.params.appointmentId],
+          );
+          if (conflicts.rows[0]?.conflict) {
+            await client.query('ROLLBACK');
+            transactionOpen = false;
+            return reply.code(409).send({
+              error: { code: 'APPOINTMENT_REINSTATEMENT_CONFLICT', message: 'Le créneau n’est plus disponible. Vérifiez le patient, le praticien et le fauteuil avant de rétablir ce rendez-vous.' },
+            });
+          }
         }
 
         await client.query(
