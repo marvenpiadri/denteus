@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { TenantContextService } from '../../core/tenant/tenant-context.service';
 import { PatientApiService } from './patient-api.service';
-import type { CreatePatientInput, PatientRecord } from './patient-api.service';
+import type { CreatePatientInput, PatientListRecord } from './patient-api.service';
 
 @Component({
   selector: 'app-patient-list-page',
@@ -19,7 +19,7 @@ export class PatientListPageComponent {
   private readonly patientsApi = inject(PatientApiService);
   private readonly platformId = inject(PLATFORM_ID);
 
-  readonly patients = signal<PatientRecord[]>([]);
+  readonly patients = signal<PatientListRecord[]>([]);
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly error = signal('');
