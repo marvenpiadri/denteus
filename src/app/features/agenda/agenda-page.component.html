@@ -12,9 +12,9 @@
 
   <section class="agenda-toolbar calendar-options" aria-label="Options du calendrier">
     <div class="calendar-resource-switcher" role="group" aria-label="Regrouper les rendez-vous">
-      <button type="button" [class.active]="calendarResourceView() === 'all'" (click)="calendarResourceView.set('all')">Tous les rendez-vous</button>
-      <button type="button" [class.active]="calendarResourceView() === 'provider'" (click)="calendarResourceView.set('provider')">Par praticien</button>
-      <button type="button" [class.active]="calendarResourceView() === 'operatory'" (click)="calendarResourceView.set('operatory')">Par fauteuil</button>
+      <button type="button" [class.active]="calendarResourceView() === 'all'" (click)="setCalendarResourceView('all')">Tous les rendez-vous</button>
+      <button type="button" [class.active]="calendarResourceView() === 'provider'" (click)="setCalendarResourceView('provider')">Par praticien</button>
+      <button type="button" [class.active]="calendarResourceView() === 'operatory'" (click)="setCalendarResourceView('operatory')">Par fauteuil</button>
     </div>
     <div class="calendar-date-control"><label for="agenda-date">Aller à la date</label><input id="agenda-date" type="date" [ngModel]="selectedDate()" (ngModelChange)="selectedDate.set($event)" [disabled]="saving() || changingStatusId() !== null"></div>
     <span class="timezone-label">{{ tenant.activeClinic()?.timezone || 'Africa/Casablanca' }}</span>
