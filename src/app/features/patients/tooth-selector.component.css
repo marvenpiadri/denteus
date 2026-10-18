@@ -222,3 +222,18 @@
 @media (prefers-reduced-motion: reduce) {
   .tooth { transition: none; }
 }
+
+.tooth-selection-count {
+  margin-left: auto;
+  padding: 5px 9px;
+  border: 1px solid var(--color-brand-border);
+  border-radius: 999px;
+  background: var(--color-brand-soft);
+  color: var(--color-brand-strong);
+  font-size: 10px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 650px) {
+  .tooth-selection-count { margin-left: 0; }
+}
