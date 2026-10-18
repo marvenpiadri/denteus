@@ -41,6 +41,26 @@ describe('AgendaCalendarComponent', () => {
     expect(positioned.every((item) => item.widthPct < 50)).toBe(true);
   });
 
+  it('emits a snapped local start time when an active appointment is dropped', () => {
+    const component = new AgendaCalendarComponent();
+    component.date = '2026-10-18';
+    component.timeZone = 'Africa/Casablanca';
+    const record = appointment('move-me', '2026-10-18T09:15:00.000Z', '2026-10-18T09:45:00.000Z');
+    const lane = { getBoundingClientRect: () => ({ top: 100 }) };
+    const event = {
+      item: { data: record },
+      container: { element: { nativeElement: lane } },
+      dropPoint: { x: 200, y: 100 + 14 + 195 },
+    };
+    let emitted: { appointment: AppointmentRecord; startsAt: string } | undefined;
+    component.appointmentDropped.subscribe((change) => { emitted = change; });
+
+    component.onAppointmentDrop(event as never, component.defaultColumn());
+
+    expect(emitted?.appointment.id).toBe('move-me');
+    expect(emitted?.startsAt).toBe('2026-10-18T10:15');
+  });
+
   it('does not show events from a different clinic-local date in this day view', () => {
     const component = new AgendaCalendarComponent();
     component.date = '2026-10-18';
