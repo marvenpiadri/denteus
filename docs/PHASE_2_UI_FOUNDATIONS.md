@@ -1,6 +1,23 @@
 # Phase 2 — UI foundations and design consistency
 
+**Status:** implementation in progress; owner build/browser verification is intentionally separate.  
 **Direction:** a product-grade clinical workspace, not a dashboard concept. Replace the old visual execution rather than preserve it. Retain only proven behavior and domain conventions. Keep Dentaleus recognizable through a restrained clinical teal accent, but redesign layout, hierarchy, density, typography, navigation, component states, and responsive behavior.
+
+## Implementation progress
+
+- [x] Added a documented Phase 2 scope and exit criteria.
+- [x] Added shared semantic tokens for surfaces, text, borders, focus, radii, elevation, actions, and light/dark status colors.
+- [x] Rebuilt the authenticated shell with clearer navigation groups, custom inline icons, active clinic context, account controls, and a responsive mobile drawer.
+- [x] Removed concept-style “reconstruction” notice and “validation before pilot” banner from the main workspace.
+- [x] Added system dark-mode preference as the initial theme when the user has not saved a preference; explicit choice remains persisted.
+- [x] Migrated shared colors in patient list/detail, agenda, recalls, authentication, onboarding, and workspace styles toward semantic tokens.
+- [x] Added theme-aware semantic status colors for success, information, warning, danger, neutral, and accepted treatment states.
+- [x] Replaced the Today placeholder with honest, useful links into persisted agenda, patient, and recall workflows without fabricated metrics.
+- [x] Replaced generic future-step placeholder copy on unfinished modules with a clear unavailable state and links to existing workflows.
+- [x] Removed obsolete route-level “next step” copy and kept existing business logic/API contracts intact.
+- [ ] Continue normalizing shared control states and the remaining hard-coded feature-specific colors.
+- [ ] Review sign-in/sign-up, patient forms/details, agenda, and recalls for responsive and dark-theme consistency.
+- [ ] Owner to run build/tests and browser review; no verification result is claimed in this document.
 
 ## Non-negotiables
 
