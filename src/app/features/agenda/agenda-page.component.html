@@ -105,6 +105,7 @@
     [initialEvents]="calendarEvents()"
     [initialCategories]="calendarCategories()"
     [focusDate]="selectedDate()"
+    [timeZone]="tenant.activeClinic()?.timezone || 'Africa/Casablanca'"
     [defaultView]="calendarView()"
     [lanes]="calendarLanes()"
     [gateway]="calendarGateway"
