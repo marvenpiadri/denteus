@@ -264,6 +264,8 @@ a {
   --color-danger-strong: #8f2018;
   --color-danger-border: #f2c5c1;
   --radius-control: 9px;
+  --control-height: 40px;
+  --control-height-comfortable: 46px;
   --radius-card: 14px;
   --radius-panel: 18px;
   --shadow-card: 0 2px 5px rgb(20 46 55 / 3%), 0 12px 34px rgb(20 46 55 / 4%);
