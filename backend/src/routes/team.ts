@@ -133,6 +133,24 @@ export const teamRoutes: FastifyPluginAsync = async (app) => {
       try {
         await client.query('BEGIN');
         await client.query('SELECT pg_advisory_xact_lock(hashtext($1), hashtext($2))', [organizationId, clinicId]);
+        const lockedMembership = await client.query<{ role: string }>(
+          'SELECT role FROM clinic_memberships WHERE organization_id = $1 AND clinic_id = $2 AND user_id = $3 FOR UPDATE',
+          [organizationId, clinicId, userId],
+        );
+        if (!lockedMembership.rowCount) {
+          await client.query('ROLLBACK');
+          return reply.code(404).send({ error: { code: 'MEMBERSHIP_NOT_FOUND', message: 'Ce membre n’a pas accès à cette clinique.' } });
+        }
+        if (lockedMembership.rows[0].role === 'CLINIC_ADMIN' && request.body.role !== 'CLINIC_ADMIN') {
+          const admins = await client.query<{ count: number }>(
+            "SELECT count(*)::integer AS count FROM clinic_memberships WHERE organization_id = $1 AND clinic_id = $2 AND role = 'CLINIC_ADMIN'",
+            [organizationId, clinicId],
+          );
+          if (admins.rows[0].count <= 1) {
+            await client.query('ROLLBACK');
+            return reply.code(409).send({ error: { code: 'LAST_CLINIC_ADMIN', message: 'La clinique doit conserver au moins un administrateur.' } });
+          }
+        }
         const result = await client.query<{ userId: string; role: string }>(
           `UPDATE clinic_memberships SET role = $4
            WHERE organization_id = $1 AND clinic_id = $2 AND user_id = $3
@@ -191,6 +209,24 @@ export const teamRoutes: FastifyPluginAsync = async (app) => {
       try {
         await client.query('BEGIN');
         await client.query('SELECT pg_advisory_xact_lock(hashtext($1), hashtext($2))', [organizationId, clinicId]);
+        const lockedMembership = await client.query<{ role: string }>(
+          'SELECT role FROM clinic_memberships WHERE organization_id = $1 AND clinic_id = $2 AND user_id = $3 FOR UPDATE',
+          [organizationId, clinicId, userId],
+        );
+        if (!lockedMembership.rowCount) {
+          await client.query('ROLLBACK');
+          return reply.code(404).send({ error: { code: 'MEMBERSHIP_NOT_FOUND', message: 'Ce membre n’a pas accès à cette clinique.' } });
+        }
+        if (lockedMembership.rows[0].role === 'CLINIC_ADMIN') {
+          const admins = await client.query<{ count: number }>(
+            "SELECT count(*)::integer AS count FROM clinic_memberships WHERE organization_id = $1 AND clinic_id = $2 AND role = 'CLINIC_ADMIN'",
+            [organizationId, clinicId],
+          );
+          if (admins.rows[0].count <= 1) {
+            await client.query('ROLLBACK');
+            return reply.code(409).send({ error: { code: 'LAST_CLINIC_ADMIN', message: 'La clinique doit conserver au moins un administrateur.' } });
+          }
+        }
         const removed = await client.query(
           'DELETE FROM clinic_memberships WHERE organization_id = $1 AND clinic_id = $2 AND user_id = $3 RETURNING user_id',
           [organizationId, clinicId, userId],
