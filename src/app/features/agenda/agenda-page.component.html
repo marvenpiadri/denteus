@@ -1,0 +1,153 @@
+<section class="agenda-page" aria-labelledby="agenda-title">
+  <header class="page-heading">
+    <div><p class="eyebrow">ORGANISATION DU CABINET</p><h1 id="agenda-title">Agenda</h1><p class="page-description">Les horaires sont affichés dans le fuseau de la clinique active.</p></div>
+    <div class="heading-actions">
+      <button class="secondary-button" type="button" (click)="showResourceSetup.set(!showResourceSetup())" [disabled]="!tenant.activeClinic()">{{ showResourceSetup() ? 'Fermer les ressources' : 'Praticiens & fauteuils' }}</button>
+      <button class="primary-button" type="button" (click)="openCreateForm()" [disabled]="!tenant.activeClinic()">+ Nouveau rendez-vous</button>
+    </div>
+  </header>
+
+  @if (success()) { <div class="success-message" role="status">{{ success() }}</div> }
+  @if (error()) { <div class="error-message" role="alert">{{ error() }} <button type="button" (click)="refreshAppointments()">Réessayer</button></div> }
+
+  <section class="agenda-toolbar" aria-label="Choisir une journée">
+    <div class="date-navigation"><button type="button" class="icon-button" (click)="moveDate(-1)" aria-label="Jour précédent">←</button><label for="agenda-date">Journée</label><input id="agenda-date" type="date" [ngModel]="selectedDate()" (ngModelChange)="selectedDate.set($event)"><button type="button" class="icon-button" (click)="moveDate(1)" aria-label="Jour suivant">→</button></div>
+    <span class="timezone-label">{{ tenant.activeClinic()?.timezone || 'Africa/Casablanca' }}</span>
+  </section>
+
+  @if (showResourceSetup()) {
+    <section class="resource-setup" aria-labelledby="resource-setup-title">
+      <header class="resource-setup-heading">
+        <div><h2 id="resource-setup-title">Ressources du planning</h2><p>Créez les praticiens et fauteuils de cette clinique, puis définissez les horaires hebdomadaires des praticiens. Les disponibilités sont vérifiées côté serveur.</p></div>
+      </header>
+      @if (resourceError()) { <div class="error-message" role="alert">{{ resourceError() }}</div> }
+      <div class="resource-forms">
+        <form class="resource-form" (ngSubmit)="createProvider()">
+          <h3>Ajouter un praticien</h3>
+          <label for="provider-name">Nom affiché *</label>
+          <input id="provider-name" name="providerName" [(ngModel)]="providerName" maxlength="160" required placeholder="Ex. Dr. Nadia El Amrani">
+          <label for="provider-role">Fonction *</label>
+          <select id="provider-role" name="providerRole" [(ngModel)]="providerRole">
+            <option value="DENTIST">Dentiste</option><option value="ORTHODONTIST">Orthodontiste</option><option value="HYGIENIST">Hygiéniste</option><option value="ASSISTANT">Assistant(e)</option><option value="SPECIALIST">Spécialiste</option>
+          </select>
+          <button class="primary-button" type="submit" [disabled]="resourceSaving() || !providerName.trim()">Ajouter le praticien</button>
+        </form>
+        <form class="resource-form" (ngSubmit)="createOperatory()">
+          <h3>Ajouter un fauteuil</h3>
+          <label for="operatory-name">Nom du fauteuil / salle *</label>
+          <input id="operatory-name" name="operatoryName" [(ngModel)]="operatoryName" maxlength="100" required placeholder="Ex. Fauteuil 1">
+          <label for="chair-number">Numéro (facultatif)</label>
+          <input id="chair-number" name="chairNumber" type="number" min="1" max="999" [(ngModel)]="chairNumber" placeholder="1">
+          <button class="primary-button" type="submit" [disabled]="resourceSaving() || !operatoryName.trim()">Ajouter le fauteuil</button>
+        </form>
+      </div>
+      <div class="resource-lists">
+        <section class="resource-list"><h3>Praticiens actifs · {{ providers().length }}</h3>
+          @if (providers().length) {
+            @for (provider of providers(); track provider.id) {
+              <div class="resource-row"><span class="resource-color" [style.background]="provider.color"></span><div><strong>{{ provider.displayName }}</strong><small>{{ provider.role }} · {{ provider.workingHours.length }} jour(s) configuré(s)</small></div></div>
+            }
+          } @else { <p class="resource-empty">Ajoutez un praticien pour configurer ses horaires.</p> }
+        </section>
+        <section class="resource-list"><h3>Fauteuils actifs · {{ operatories().length }}</h3>
+          @if (operatories().length) {
+            @for (operatory of operatories(); track operatory.id) {
+              <div class="resource-row"><span class="resource-color" [style.background]="operatory.color"></span><div><strong>{{ operatory.name }}</strong><small>{{ operatory.chairNumber ? 'Fauteuil n°' + operatory.chairNumber : 'Numéro non défini' }}</small></div></div>
+            }
+          } @else { <p class="resource-empty">Ajoutez au moins un fauteuil pour affecter les rendez-vous.</p> }
+        </section>
+      </div>
+      @if (providers().length) {
+        <form class="working-hours-form" (ngSubmit)="saveProviderHours()">
+          <div class="working-hours-title"><div><h3>Horaires hebdomadaires</h3><p>Seules les journées cochées seront ouvertes. Une journée sans horaire enregistré ne sera pas disponible pour les rendez-vous assignés.</p></div>
+            <label for="hours-provider">Praticien</label><select id="hours-provider" name="hoursProviderId" [(ngModel)]="hoursProviderId" (ngModelChange)="syncHoursDraft()">@for (provider of providers(); track provider.id) { <option [value]="provider.id">{{ provider.displayName }}</option> }</select>
+          </div>
+          <div class="hours-grid">
+            @for (day of weekdays; track day.dayOfWeek) {
+              <div class="hours-row"><label class="day-toggle"><input type="checkbox" [name]="'day-enabled-' + day.dayOfWeek" [(ngModel)]="day.enabled"><span>{{ day.label }}</span></label>
+                <label [for]="'day-start-' + day.dayOfWeek">De</label><input [id]="'day-start-' + day.dayOfWeek" [name]="'day-start-' + day.dayOfWeek" type="time" [(ngModel)]="day.startsAt" [disabled]="!day.enabled">
+                <label [for]="'day-end-' + day.dayOfWeek">à</label><input [id]="'day-end-' + day.dayOfWeek" [name]="'day-end-' + day.dayOfWeek" type="time" [(ngModel)]="day.endsAt" [disabled]="!day.enabled">
+              </div>
+            }
+          </div>
+          <div class="form-actions"><button class="primary-button" type="submit" [disabled]="resourceSaving() || !hoursProviderId">{{ resourceSaving() ? 'Enregistrement…' : 'Enregistrer les horaires' }}</button></div>
+        </form>
+      }
+    </section>
+  }
+
+  @if (showCreateForm()) {
+    <section class="appointment-form-card" aria-labelledby="new-appointment-title">
+      <div class="card-heading"><div><h2 id="new-appointment-title">Nouveau rendez-vous</h2><p>La durée doit être comprise entre 5 minutes et 8 heures. Le serveur vérifie les conflits de patient, praticien et fauteuil.</p></div><button type="button" class="close-button" (click)="showCreateForm.set(false)" aria-label="Fermer le formulaire">×</button></div>
+      @if (formError()) { <div class="error-message" role="alert">{{ formError() }}</div> }
+      @if (patientsError()) { <div class="error-message" role="alert">{{ patientsError() }} <button type="button" (click)="retryPatientOptions()">Réessayer</button></div> }
+      @if (resourceError()) { <div class="error-message" role="alert">{{ resourceError() }} <button type="button" (click)="retryResources()">Réessayer</button></div> }
+      <form (ngSubmit)="createAppointment()" #appointmentForm="ngForm">
+        <div class="form-grid">
+          <div class="wide-field"><label for="patientId">Patient *</label><select id="patientId" name="patientId" [(ngModel)]="patientId" required [disabled]="loadingPatients()"><option value="" disabled>{{ loadingPatients() ? 'Chargement des patients…' : 'Sélectionner un patient' }}</option>@for (patient of patients(); track patient.id) { <option [value]="patient.id">{{ patient.lastName }} {{ patient.firstName }} · {{ patient.patientNumber }}</option> }</select><small>Seuls les patients autorisés dans la clinique active sont proposés.</small></div>
+          <div><label for="appointment-provider">Praticien</label><select id="appointment-provider" name="providerId" [(ngModel)]="providerId" [required]="providers().length > 0 || operatories().length > 0" [disabled]="loadingResources() || !!resourceError()"><option value="">Non affecté</option>@for (provider of providers(); track provider.id) { <option [value]="provider.id">{{ provider.displayName }}</option> }</select><small>Un praticien doit avoir des horaires configurés.</small></div>
+          <div><label for="appointment-operatory">Fauteuil / salle</label><select id="appointment-operatory" name="operatoryId" [(ngModel)]="operatoryId" [required]="providers().length > 0 || operatories().length > 0" [disabled]="loadingResources() || !!resourceError()"><option value="">Non affecté</option>@for (operatory of operatories(); track operatory.id) { <option [value]="operatory.id">{{ operatory.name }}</option> }</select></div>
+          <div><label for="startsAt">Début *</label><input id="startsAt" name="startsAt" type="datetime-local" [(ngModel)]="startsAt" required></div>
+          <div><label for="endsAt">Fin *</label><input id="endsAt" name="endsAt" type="datetime-local" [(ngModel)]="endsAt" required></div>
+          <div class="wide-field"><label for="reason">Motif (facultatif)</label><input id="reason" name="reason" [(ngModel)]="reason" maxlength="300" placeholder="Ex. contrôle, consultation, suivi"></div>
+        </div>
+        <div class="form-actions"><button type="button" class="secondary-button" (click)="showCreateForm.set(false)" [disabled]="saving()">Annuler</button><button type="submit" class="primary-button" [disabled]="appointmentForm.invalid || saving() || loadingPatients() || loadingResources() || !!resourceError() || !patients().length">{{ saving() ? 'Enregistrement…' : 'Enregistrer le rendez-vous' }}</button></div>
+      </form>
+    </section>
+  }
+
+  <app-agenda-calendar
+    [appointments]="appointments()"
+    [providers]="providers()"
+    [operatories]="operatories()"
+    [date]="selectedDate()"
+    [timeZone]="tenant.activeClinic()?.timezone || 'Africa/Casablanca'"
+    [loading]="loading() || saving()"
+    (slotSelected)="openCreateAtTime($event)"
+    (appointmentSelected)="openReschedule($event)"
+    (appointmentDropped)="dropAppointment($event)"
+  />
+
+  <section class="appointment-list" aria-label="Rendez-vous de la journée">
+    <div class="list-heading"><div><h2>{{ selectedDate() ? formatCalendarDate(selectedDate()) : 'Chargement de la journée' }}</h2><p>{{ appointments().length }} rendez-vous affiché{{ appointments().length > 1 ? 's' : '' }}</p></div><button type="button" class="secondary-button" (click)="refreshAppointments()" [disabled]="loading()">Actualiser</button></div>
+
+    @if (loading() && !appointments().length) {
+      <div class="list-state" role="status"><span class="loading-indicator" aria-hidden="true"></span>Chargement de l’agenda…</div>
+    } @else if (!loading() && !appointments().length && !error()) {
+      <div class="empty-state"><span class="empty-icon" aria-hidden="true">▦</span><h3>Aucun rendez-vous prévu</h3><p>Cette journée est libre. Créez un rendez-vous pour commencer à organiser la file du cabinet. Configurez les praticiens et fauteuils si vous souhaitez affecter les ressources.</p><button type="button" class="secondary-button" (click)="openCreateForm()">Planifier un rendez-vous</button></div>
+    } @else {
+      <div class="appointment-items">
+        @for (appointment of appointments(); track appointment.id) {
+          <article class="appointment-item">
+            <div class="appointment-time"><strong>{{ formatTime(appointment.startsAt) }}</strong><span>{{ formatTime(appointment.endsAt) }}</span></div>
+            <div class="appointment-main"><div class="patient-line"><a [routerLink]="['/crm/patients', appointment.patientId]">{{ appointment.patientFirstName }} {{ appointment.patientLastName }}</a><span class="patient-number">{{ appointment.patientNumber }}</span></div><p>{{ appointment.reason || 'Motif non précisé' }}</p><div class="appointment-meta"><span class="status-label" [attr.data-status]="appointment.status">{{ statusLabel(appointment.status) }}</span><span>{{ formatDate(appointment.startsAt) }}</span>@if (appointment.providerName) { <span class="resource-meta">{{ appointment.providerName }}</span> } @if (appointment.operatoryName) { <span class="resource-meta">{{ appointment.operatoryName }}</span> }</div></div>
+            <div class="appointment-actions">
+              @for (transition of availableTransitions(appointment.status); track transition) {
+                <button type="button" class="status-action" (click)="requestStatusChange(appointment, transition)" [disabled]="changingStatusId() !== null" [attr.aria-label]="statusLabel(transition) + ' : ' + appointment.patientFirstName + ' ' + appointment.patientLastName">{{ statusLabel(transition) }}</button>
+              }
+              @if (canReschedule(appointment.status)) { <button type="button" class="status-action status-action--secondary" (click)="openReschedule(appointment)">Déplacer</button> }
+            </div>
+            @if (pendingStatusChange()?.appointmentId === appointment.id) {
+              <div class="status-confirmation" role="group" aria-label="Confirmer le changement de statut">
+                <p>{{ pendingStatusChange()?.status === 'CANCELLED' ? 'Confirmer l’annulation de ce rendez-vous ?' : 'Confirmer que le patient ne s’est pas présenté ?' }}</p>
+                <button type="button" class="status-action status-action--danger" (click)="confirmStatusChange()" [disabled]="changingStatusId() !== null">Confirmer</button>
+                <button type="button" class="status-action status-action--secondary" (click)="pendingStatusChange.set(null)">Garder le rendez-vous</button>
+              </div>
+            }
+            @if (reschedulingId() === appointment.id) {
+              <form class="reschedule-form" (ngSubmit)="saveReschedule(appointment)">
+                <label [for]="'reschedule-start-' + appointment.id">Nouveau début</label><input [id]="'reschedule-start-' + appointment.id" name="rescheduleStart" type="datetime-local" [(ngModel)]="rescheduleStartsAt" required>
+                <label [for]="'reschedule-end-' + appointment.id">Nouvelle fin</label><input [id]="'reschedule-end-' + appointment.id" name="rescheduleEnd" type="datetime-local" [(ngModel)]="rescheduleEndsAt" required>
+                <label [for]="'reschedule-provider-' + appointment.id">Praticien</label><select [id]="'reschedule-provider-' + appointment.id" name="rescheduleProvider" [(ngModel)]="rescheduleProviderId" [required]="providers().length > 0 || operatories().length > 0"><option value="">Non affecté</option>@for (provider of providers(); track provider.id) { <option [value]="provider.id">{{ provider.displayName }}</option> }</select>
+                <label [for]="'reschedule-operatory-' + appointment.id">Fauteuil</label><select [id]="'reschedule-operatory-' + appointment.id" name="rescheduleOperatory" [(ngModel)]="rescheduleOperatoryId" [required]="providers().length > 0 || operatories().length > 0"><option value="">Non affecté</option>@for (operatory of operatories(); track operatory.id) { <option [value]="operatory.id">{{ operatory.name }}</option> }</select>
+                @if (rescheduleError()) { <p class="inline-error" role="alert">{{ rescheduleError() }}</p> }
+                <div class="reschedule-actions"><button type="button" class="secondary-button" (click)="reschedulingId.set(null)" [disabled]="saving()">Annuler</button><button type="submit" class="primary-button" [disabled]="saving() || loadingResources() || !!resourceError()">{{ saving() ? 'Déplacement…' : 'Confirmer le déplacement' }}</button></div>
+              </form>
+            }
+          </article>
+        }
+      </div>
+      <p class="list-footnote">Les rendez-vous sont enregistrés dans PostgreSQL. Les conflits de praticien et de fauteuil sont vérifiés lorsqu’ils sont affectés; configurez les horaires avant d’attribuer un praticien.</p>
+    }
+  </section>
+</section>

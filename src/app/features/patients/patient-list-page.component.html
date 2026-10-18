@@ -1,0 +1,55 @@
+<section class="patients-page" aria-labelledby="patients-title">
+  <header class="page-heading">
+    <div><p class="eyebrow">DOSSIERS CLINIQUES</p><h1 id="patients-title">Patients</h1><p class="page-description">Retrouvez et gérez les dossiers de la clinique active.</p></div>
+    <button class="primary-button" type="button" (click)="toggleCreateForm()" [disabled]="!tenant.activeClinic()">
+      {{ showCreateForm() ? 'Fermer le formulaire' : '+ Nouveau patient' }}
+    </button>
+  </header>
+
+  @if (!tenant.activeClinic() && !tenant.loading()) {
+    <div class="empty-state"><span class="empty-icon" aria-hidden="true">⌂</span><h2>Aucune clinique sélectionnée</h2><p>Créez une clinique ou vérifiez que votre compte dispose d’un accès.</p><a routerLink="/onboarding/clinic">Configurer une clinique</a></div>
+  } @else {
+    <section class="patient-tools" aria-label="Recherche de patients">
+      <form class="search-form" (ngSubmit)="searchPatients()">
+        <label for="patient-search">Rechercher un patient</label>
+        <div class="search-row"><input id="patient-search" name="search" [(ngModel)]="search" placeholder="Nom, numéro de dossier ou téléphone"><button type="submit" [disabled]="loading()">Rechercher</button></div>
+      </form>
+      <div class="result-count" aria-live="polite">{{ total() }} dossier{{ total() > 1 ? 's' : '' }}</div>
+    </section>
+
+    @if (showCreateForm()) {
+      <section class="create-panel" aria-labelledby="create-patient-title">
+        <div class="panel-heading"><div><h2 id="create-patient-title">Nouveau dossier patient</h2><p>Les informations seront enregistrées dans la clinique active.</p></div></div>
+        @if (formError()) { <div class="error-message" role="alert">{{ formError() }}</div> }
+        <form class="patient-form" (ngSubmit)="createPatient()" #patientForm="ngForm">
+          <div class="form-grid">
+            <div><label for="firstName">Prénom <span aria-hidden="true">*</span></label><input id="firstName" name="firstName" [(ngModel)]="firstName" required minlength="1" maxlength="100"></div>
+            <div><label for="lastName">Nom <span aria-hidden="true">*</span></label><input id="lastName" name="lastName" [(ngModel)]="lastName" required minlength="1" maxlength="100"></div>
+            <div><label for="birthDate">Date de naissance</label><input id="birthDate" name="birthDate" type="date" [(ngModel)]="birthDate"></div>
+            <div><label for="gender">Sexe (facultatif)</label><select id="gender" name="gender" [(ngModel)]="gender"><option value="">Non renseigné</option><option value="F">Féminin</option><option value="M">Masculin</option><option value="OTHER">Autre</option></select></div>
+            <div><label for="phone">Téléphone</label><input id="phone" name="phone" type="tel" [(ngModel)]="phone" autocomplete="tel" maxlength="40"></div>
+            <div><label for="email">E-mail</label><input id="email" name="email" type="email" [(ngModel)]="email" autocomplete="email" maxlength="254"></div>
+          </div>
+          <div class="form-actions"><button class="secondary-button" type="button" (click)="showCreateForm.set(false)" [disabled]="saving()">Annuler</button><button class="primary-button" type="submit" [disabled]="patientForm.invalid || saving()">{{ saving() ? 'Enregistrement…' : 'Enregistrer le patient' }}</button></div>
+        </form>
+      </section>
+    }
+
+    @if (error()) { <div class="error-message" role="alert">{{ error() }} <button type="button" (click)="searchPatients()">Réessayer</button></div> }
+
+    <section class="patient-list" aria-label="Liste des patients">
+      @if (loading() && !patients().length) {
+        <div class="list-state" role="status"><span class="loading-indicator" aria-hidden="true"></span>Chargement des dossiers autorisés…</div>
+      } @else if (!loading() && !patients().length && !error()) {
+        <div class="empty-state"><span class="empty-icon" aria-hidden="true">♙</span><h2>Aucun patient trouvé</h2><p>{{ search ? 'Essayez un autre nom, numéro de dossier ou téléphone.' : 'Ce cabinet ne contient encore aucun dossier patient.' }}</p>@if (!search) { <button class="secondary-button" type="button" (click)="showCreateForm.set(true)">Créer le premier dossier</button> }</div>
+      } @else if (patients().length) {
+        <div class="table-scroll"><table><thead><tr><th scope="col">Patient</th><th scope="col">N° de dossier</th><th scope="col">Téléphone</th><th scope="col">Ville</th><th scope="col">Créé le</th></tr></thead><tbody>
+          @for (patient of patients(); track patient.id) {
+            <tr><td><div class="patient-identity"><span class="patient-avatar" aria-hidden="true">{{ patientInitials(patient) }}</span><div><a class="patient-name-link" [routerLink]="['/crm/patients', patient.id]">{{ patient.firstName }} {{ patient.lastName }}</a><small>{{ patient.email || 'Aucune adresse e-mail' }}</small></div></div></td><td><span class="patient-number">{{ patient.patientNumber }}</span></td><td>{{ patient.phone || '—' }}</td><td>{{ patient.city || '—' }}</td><td>{{ patient.createdAt | date:'dd/MM/yyyy' }}</td></tr>
+          }
+        </tbody></table></div>
+        <p class="list-footnote">Affichage limité aux 100 premiers dossiers retournés par l’API.</p>
+      }
+    </section>
+  }
+</section>

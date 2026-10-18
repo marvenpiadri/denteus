@@ -1,0 +1,107 @@
+<div class="clinical-app">
+  <a class="skip-link" href="#main-content">Passer au contenu principal</a>
+
+  @if (mobileNavigationOpen()) {
+    <button
+      class="navigation-backdrop"
+      type="button"
+      aria-label="Fermer le menu"
+      (click)="closeMobileNavigation()"></button>
+  }
+
+  <aside class="sidebar" [class.sidebar--mobile-open]="mobileNavigationOpen()" aria-label="Navigation principale">
+    <a class="brand" routerLink="/crm/today" (click)="closeMobileNavigation()" aria-label="Dentaleus — espace clinique">
+      <span class="brand-mark" aria-hidden="true">D</span>
+      <span class="brand-name">dentaleus</span>
+    </a>
+
+    <div class="workspace-label">ESPACE CLINIQUE</div>
+    <div class="clinic-context">
+      <span class="context-icon" aria-hidden="true">⌂</span>
+      <div class="clinic-context-copy">
+        @if (tenantContext.loading()) {
+          <strong>Chargement des cliniques…</strong>
+          <small>Vérification des accès</small>
+        } @else if (tenantContext.clinics().length) {
+          <label for="active-clinic">Clinique active</label>
+          <select id="active-clinic" [value]="tenantContext.activeClinic()?.id ?? ''" (change)="selectClinic($any($event.target).value)">
+            @for (clinic of tenantContext.clinics(); track clinic.id) {
+              <option [value]="clinic.id">{{ clinic.name }} · {{ clinic.organizationName }}</option>
+            }
+          </select>
+        } @else {
+          <strong>Aucune clinique disponible</strong>
+          <small><a routerLink="/onboarding/clinic">Créer une clinique</a></small>
+        }
+        @if (tenantContext.error()) { <small class="clinic-error" role="alert">{{ tenantContext.error() }}</small> }
+      </div>
+    </div>
+
+    <nav class="primary-navigation" aria-label="Modules cliniques">
+      <a routerLink="/crm/today" routerLinkActive="nav-link--active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMobileNavigation()">
+        <span class="nav-icon" aria-hidden="true">◷</span><span>Aujourd’hui</span>
+      </a>
+      <a routerLink="/crm/agenda" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
+        <span class="nav-icon" aria-hidden="true">▦</span><span>Agenda</span>
+      </a>
+      <a routerLink="/crm/patients" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
+        <span class="nav-icon" aria-hidden="true">♙</span><span>Patients</span>
+      </a>
+      <a routerLink="/crm/recalls" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
+        <span class="nav-icon" aria-hidden="true">↻</span><span>Rappels patients</span>
+      </a>
+      <a routerLink="/crm/clinical" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
+        <span class="nav-icon" aria-hidden="true">✚</span><span>Soins et odontogramme</span>
+      </a>
+      <a routerLink="/crm/team" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
+        <span class="nav-icon" aria-hidden="true">♧</span><span>Équipe et accès</span>
+      </a>
+      <a routerLink="/crm/reports" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
+        <span class="nav-icon" aria-hidden="true">▤</span><span>Rapports</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a routerLink="/crm/settings" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
+        <span class="nav-icon" aria-hidden="true">⚙</span><span>Paramètres du cabinet</span>
+      </a>
+      <div class="session-placeholder">
+        @if (sessions.user(); as user) {
+          <span class="session-avatar" aria-hidden="true">{{ userInitial }}</span>
+          <span class="session-copy"><strong>{{ user.name || user.email }}</strong><small>{{ user.email }}</small></span>
+          <button class="sign-out-button" type="button" (click)="signOut()" [disabled]="signingOut()">
+            {{ signingOut() ? '…' : 'Déconnexion' }}
+          </button>
+        } @else {
+          <span class="session-avatar" aria-hidden="true">…</span>
+          <span class="session-copy"><strong>Vérification de session</strong><small>Aucune identité affichée côté serveur</small></span>
+        }
+      </div>
+    </div>
+  </aside>
+
+  <div class="workspace">
+    <header class="topbar">
+      <button class="mobile-menu-button" type="button" (click)="toggleMobileNavigation()" [attr.aria-expanded]="mobileNavigationOpen()" aria-label="Ouvrir la navigation">
+        <span aria-hidden="true">☰</span>
+      </button>
+      <div class="topbar-context">
+        <span class="eyebrow">DENTALEUS CLINICAL</span>
+        <span class="topbar-title">Espace de travail</span>
+      </div>
+      <div class="topbar-status"><span class="status-dot" aria-hidden="true"></span> Validation avant pilote</div>
+      <button class="theme-toggle" type="button" (click)="toggleTheme()" [attr.aria-label]="theme() === 'dark' ? 'Activer le thème clair' : 'Activer le thème sombre'" [attr.aria-pressed]="theme() === 'dark'"><span aria-hidden="true">{{ theme() === 'dark' ? '☀' : '☾' }}</span><span class="theme-toggle-label">{{ theme() === 'dark' ? 'Clair' : 'Sombre' }}</span></button>
+    </header>
+
+    <main id="main-content" class="main-content">
+      @if (signOutError()) {
+        <div class="sign-out-error" role="alert">{{ signOutError() }}</div>
+      }
+      <div class="foundation-notice" role="status">
+        <span class="notice-icon" aria-hidden="true">i</span>
+        <p><strong>Fondation en reconstruction.</strong> Les écrans sont reconstruits autour des données authentifiées. Aucun dossier fictif n’est affiché et cet espace ne doit pas encore être utilisé avec des données patient réelles.</p>
+      </div>
+      <router-outlet />
+    </main>
+  </div>
+</div>

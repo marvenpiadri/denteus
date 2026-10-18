@@ -27,15 +27,17 @@ Target: a realistic, tested first-customer release by October 31, 2026. This is 
 
 ## Current findings
 
-- The CRM UI has useful existing modules for patients, appointments, odontograms, treatment plans, reports, clinic settings and subscriptions.
-- The old Express-mounted demo API and its hardcoded/in-memory patient and report endpoints have been removed from the SSR server.
-- Fastify now has Better Auth sessions, session-scoped organization listing, and PostgreSQL-backed patient and odontogram routes scoped to authorized organization/clinic paths. Added role-policy unit tests, a PostgreSQL tenant-constraint/persistence integration test, and a CI workflow; execution results still need confirmation.
-- Appointment routes, frontend API/auth integration, and first-clinic onboarding are not yet implemented. Do not use real patient data until migration, authentication, tenant isolation and restart-persistence tests pass.
-- Tenant state in `TenantService` is initialized with hardcoded organizations, clinics and users.
-- `src/app/app.routes.ts` is currently empty; the shell uses tab state rather than actual feature routes.
-- Both `denteus` and `dentist-page` currently declare Angular 21 packages. Confirm the desired Angular target before changing framework versions.
-- The current odontogram integration correctly treats the Advanced Odontogram payload as the clinical chart source of truth. Preserve that boundary.
-- The interactive 3D dental atlas is not part of the CRM app. It belongs only inside an optional public clinic website Page template.
+- The old Angular root was a single tab-state prototype with an empty router. The refactor branch now has a route-driven clinical shell and explicit URLs for today's work, agenda, patients, clinical chart, team, reports and settings.
+- The new workspace intentionally shows no fictional patients, appointments, user identity or metrics while the authenticated API context is unavailable.
+- The disconnected prototype feature components, hardcoded data services, mock tenancy state, and legacy tab-navigation components have been removed from the refactor branch. Clinical screens and domain types will be rebuilt against typed API contracts rather than ported wholesale.
+- The CRM global stylesheet no longer imports Tailwind utilities or the odontogram library stylesheet. The 3D atlas and its rendering styles are not part of the CRM application.
+- Fastify has Better Auth sessions, session-scoped organization listing, and PostgreSQL-backed patient and odontogram routes scoped to authorized organization/clinic paths. Backend CI has not yet been confirmed green.
+- The new frontend CI workflow currently reports failure without useful job-step logs; build/test validation remains unverified. Do not interpret this as a code-level failure or as a passing build until a runnable job provides logs.
+- Sign-in and sign-up pages now use Better Auth email/password sessions. A transactional Fastify endpoint creates an organization, first clinic, owner memberships and an audit event; the onboarding UI collects the initial clinic details. The CRM shell loads authorized organizations/clinics and lets the user select an active clinic. The patient list/search/create/detail/edit flow now calls the tenant-scoped PostgreSQL API; patient edits are audited and use optimistic concurrency. API-client tests have been authored but are not verified as passing. Appointment persistence and timezone-aware scheduling, patient detail/edit, and a first persistent recall queue with contact-attempt history are now implemented on the branch. The recall UI is connected to tenant-scoped Fastify/PostgreSQL endpoints; appointment resource scheduling, provider/chair conflict prevention, clinical note/chart workflow, treatment planning, financial workflows, and end-to-end auth/tenant tests remain incomplete. Tests are authored but have not been verified as passing. Do not use real patient data.
+- Angular remains on version 21; do not combine an unrequested major framework upgrade with this refactor.
+- The 3D dental atlas is not part of the CRM app. It belongs only inside an optional public clinic website Page template.
+
+See [Real-world dental CRM requirements](./REAL_WORLD_DENTAL_CRM_REQUIREMENTS.md) for the product benchmark, sources from the ADA, Dentrix and Open Dental, workflow gaps, and acceptance gates.
 
 ## Phases and acceptance gates
 

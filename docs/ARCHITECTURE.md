@@ -1,132 +1,76 @@
-# Denteus architecture
+# Dentaleus architecture
 
-## Clinical source of truth
+**Status:** this document describes the current refactor branch plus explicit future boundaries. It is not a claim that every clinical module is production-ready.
 
-The Advanced Odontogram is the only source of truth for tooth-level clinical state and tooth-level treatment intent.
-
-```
-Patient
-  -> Advanced Odontogram
-      -> Status
-      -> Plan
-      -> Plan changes
-      -> Periodontal chart
-```
-
-Denteus does not maintain a second tooth-condition representation.
-
-## Business workflow
+## Runtime boundaries
 
 ```
-Diagnosis
-  -> Odontogram Status
-  -> Odontogram Plan
-  -> Treatment Plan
-  -> Appointment
-  -> Procedure completed
-  -> Invoice
-  -> Payment
+src/app/        Angular 21 application, routes, feature UI and SSR config
+src/server.ts   Angular SSR server entry
+backend/        Separate Fastify 5 API service
+backend/src/auth/ Better Auth session and tenant authorization
+backend/src/routes/ HTTP API route modules
+backend/src/domain/ Framework-independent domain policies and tests
+backend/src/db/ PostgreSQL pool, SQL migrations and schema tests
 ```
 
-The odontogram owns clinical semantics. Denteus owns pricing, scheduling, acceptance, completion workflow, billing references, documents, audit and tenancy.
+The Angular SSR server and Fastify API are separate processes. The frontend uses relative `/api` requests through the development proxy; production routing must explicitly route API requests to Fastify and page requests to Angular SSR. Do not assume SSR itself is the clinical API.
 
-## Current repository boundary
+The backend currently uses Fastify, Better Auth, `pg`, and hand-written SQL migrations. Prisma is not currently the persistence layer. Do not describe an in-memory odontogram or a `src/server/backend` implementation as the current source of truth.
 
-```
-src/app/       Angular application and UI
-src/server/    temporary HTTP adapter
-src/server/backend/
-               framework-neutral domain/persistence modules
-```
+## Authentication and tenant scope
 
-The backend is intentionally inside this Angular repository for now. It can later move to a standalone Node/Fastify service without moving the Angular application into an `apps/web` monorepo.
+- Better Auth owns sign-in, sessions, accounts, and verification records.
+- API routes must resolve the session from request cookies/headers, then verify organization and clinic membership server-side.
+- Patient, appointment, recall, treatment, and odontogram operations must validate that the target record belongs to the active organization and clinic.
+- UI route guards and hidden controls are usability aids, not authorization boundaries.
+- Sensitive clinical changes need durable audit history. Cross-tenant negative tests are required before production use.
 
-## Persistence
+## Clinical data boundaries
 
-The current odontogram store is in-memory and temporary.
+The patient record is the central entry point, but different concepts must remain distinct:
 
-Production target:
-
-```
-Angular
-  -> HTTP API
-  -> Node/Fastify
-  -> Prisma
-  -> PostgreSQL
-```
-
-The exact versioned odontogram Status/Plan payload should be retained as JSONB, with relational Denteus metadata around it.
-
-## Patient workspace
-
-The patient workspace is being split into focused components:
-
-- patient header
-- workspace navigation
-- odontogram
-- periodontal history
-- treatment planning
-- clinical notes
-- documents
-- billing
-
-The goal is to make each component understandable without requiring knowledge of the whole application.
+- **Patient demographics:** identity and contact details.
+- **Clinical odontogram:** canonical tooth-level clinical status and plan state. Avoid maintaining a competing tooth-condition representation in the treatment-history UI.
+- **Treatment history:** dated care items with FDI tooth/surface references, status, performer and audit events. The current implementation is an initial workflow, not a complete clinical chart.
+- **Clinical notes/findings:** a dated, attributable, auditable record; signed append-only notes and complete medical/dental history are still outstanding.
+- **Appointments:** scheduling records linked to a patient and optional provider/operatory resources.
+- **Recalls:** follow-up records and contact-attempt history. Automated messaging and delivery receipts are not implemented.
+- **Billing:** retain treatment and patient context plus invoice references; use the X-Facture integration boundary rather than building a competing invoice engine.
 
 ## Scheduling
 
-Appointments are business records. Availability must consider:
+Appointments are persisted business records. Availability and rescheduling must consider:
 
-- clinic
-- practitioner
-- chair
-- duration
-- working window
-- existing active appointments
+- organization and clinic scope
+- patient overlap
+- practitioner and operatory assignment
+- appointment duration and status
+- provider working hours in the clinic's timezone
+- future breaks, leave, holidays, and multiple working intervals
 
-The scheduling domain service is framework-independent and can later move to the Node backend.
+The server is authoritative for conflicts. Client drag-and-drop is an interaction only; every move must use the tenant-scoped rescheduling API, reload server state after a conflict, and offer an accessible non-drag alternative.
 
-## Invoicing
+Current scope is a day calendar with provider/operatory resource columns and 15-minute drag rescheduling. Week/month views, resize, and richer availability rules remain incomplete.
 
-Denteus will not become a second invoice engine.
+## Public clinic Pages
 
-Future billing boundary:
+Public clinic websites are a separate experience from the authenticated CRM. Public pages may include an optional 3D dental atlas as a template section, but the atlas is not part of CRM navigation and must never expose patient records, appointments, clinical notes, or other private data.
 
-```
-Denteus
-  -> X-Facture API
-  -> invoice/document engine
-```
+Public booking must use a clinic-scoped public interface and expose only the minimum information required to request an appointment. Availability must be checked again server-side when a request is submitted.
 
-Denteus retains the patient/treatment context and invoice references while X-Facture owns invoice generation and document infrastructure.
+## Persistence and migrations
 
-## Public booking
+- PostgreSQL is the current persistence target and is accessed through `pg`.
+- SQL files in `backend/src/db/migrations` are the schema source; migration execution is serialized with a PostgreSQL advisory lock and records applied migration names.
+- Changes to schema must include forward migrations and relevant integration coverage.
+- Backup/restore and migration recovery need explicit production verification.
+- Do not use real patient data until authorization, tenant isolation, persistence, backup/restore, and clinical workflow acceptance tests have passed.
 
-Future public booking is clinic-scoped and patient-facing:
+## Current feature state
 
-```
-QR code
-  -> public booking URL
-  -> clinic
-  -> service/practitioner
-  -> available slot
-  -> patient contact
-  -> appointment request
-```
+Implemented initial flows include authentication/onboarding, tenant context, patient CRUD, day scheduling and resource setup, treatment history linked to FDI teeth/surfaces, and patient recalls. These are foundations, not proof of production readiness.
 
-No clinical record is exposed through the public booking surface.
+Generic workspace placeholders remain for areas such as today's work, clinical chart, team, reports, and settings. The full odontogram workflow, dated findings, signed notes, complete treatment planning, consent, billing, public Pages, automated communications, and end-to-end acceptance remain outstanding.
 
-## Implementation phases
-
-1. Clinical core and odontogram
-2. Patient workspace decomposition
-3. Scheduling and chair availability
-4. Public booking and QR
-5. Treatment plan workflow
-6. Treatment-to-appointment workflow
-7. Procedure completion and clinical updates
-8. X-Facture API integration
-9. Communications and reminders
-10. Documents and imaging
-11. Laboratory workflow
-12. Reporting and operational intelligence
-13. Authentication, PostgreSQL, Prisma and production tenant isolation
+See `docs/PHASED_IMPROVEMENT_PLAN.md` for phased work and explicit exit gates.

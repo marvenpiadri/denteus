@@ -1,0 +1,30 @@
+<main class="onboarding-page">
+  <section class="onboarding-card" aria-labelledby="onboarding-title">
+    <a class="brand" routerLink="/sign-in"><span class="brand-mark" aria-hidden="true">D</span><span>dentaleus</span></a>
+    <p class="eyebrow">CONFIGURATION INITIALE · 1 SUR 1</p>
+    <h1 id="onboarding-title">Configurez votre clinique</h1>
+    <p class="intro">Ces informations créent votre espace de travail et vous attribuent le rôle de propriétaire. Vous pourrez compléter les détails du cabinet ensuite.</p>
+    @if (error()) { <div class="form-error" role="alert">{{ error() }}</div> }
+    <form (ngSubmit)="submit()" #clinicForm="ngForm">
+      <div class="section-title">Organisation</div>
+      <label for="organizationName">Nom de l’organisation</label>
+      <input id="organizationName" name="organizationName" [ngModel]="organizationName" (ngModelChange)="updateOrganizationName($event)" required minlength="2" maxlength="120">
+      <label for="organizationSlug">Adresse de l’organisation</label>
+      <div class="slug-input"><span>dentaleus.com/</span><input id="organizationSlug" name="organizationSlug" [(ngModel)]="organizationSlug" (ngModelChange)="updateSlug($event)" required minlength="3" maxlength="60" pattern="[a-z0-9]+([a-z0-9-]*[a-z0-9])?"></div>
+      <p class="hint">Lettres minuscules, chiffres et tirets. Cette adresse est unique.</p>
+      <div class="section-title clinic-section">Clinique principale</div>
+      <label for="clinicName">Nom de la clinique</label>
+      <input id="clinicName" name="clinicName" [(ngModel)]="clinicName" required minlength="2" maxlength="120">
+      <label for="city">Ville</label>
+      <input id="city" name="city" [(ngModel)]="city" autocomplete="address-level2" maxlength="120">
+      <label for="address">Adresse</label>
+      <input id="address" name="address" [(ngModel)]="address" autocomplete="street-address" maxlength="500">
+      <div class="two-columns">
+        <div><label for="phone">Téléphone</label><input id="phone" name="phone" type="tel" [(ngModel)]="phone" autocomplete="tel" maxlength="40"></div>
+        <div><label for="email">E-mail du cabinet</label><input id="email" name="email" type="email" [(ngModel)]="email" autocomplete="email" maxlength="254"></div>
+      </div>
+      <p class="hint">Fuseau horaire initial : Africa/Casablanca · Devise : MAD. Ces réglages pourront être modifiés.</p>
+      <button type="submit" [disabled]="clinicForm.invalid || submitting()">{{ submitting() ? 'Création de l’espace…' : 'Créer mon espace clinique' }}</button>
+    </form>
+  </section>
+</main>

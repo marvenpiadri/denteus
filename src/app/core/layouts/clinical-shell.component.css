@@ -1,0 +1,55 @@
+:host{display:block;min-height:100dvh;color:var(--text-primary,#172b3a);font-family:Inter,Arial,sans-serif}
+*{box-sizing:border-box}
+.clinical-app{min-height:100dvh;background:#f5f8fa;display:grid;grid-template-columns:252px minmax(0,1fr)}
+.skip-link{position:fixed;top:8px;left:8px;z-index:1000;padding:10px 14px;background:#fff;color:#123d3a;border:2px solid #087f75;border-radius:8px;transform:translateY(-160%)}
+.skip-link:focus{transform:translateY(0)}
+.sidebar{position:sticky;top:0;height:100dvh;display:flex;flex-direction:column;gap:0;padding:22px 14px 14px;background:#fff;border-right:1px solid #e0e8ec;z-index:30}
+.brand{display:flex;align-items:center;gap:10px;padding:0 10px 26px;color:#18343e;text-decoration:none}
+.brand-mark{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#087f75;color:#fff;font-size:20px;font-weight:800}
+.brand-name{font-size:21px;letter-spacing:-.7px;font-weight:750}
+.workspace-label,.eyebrow{font-size:10px;line-height:1.4;letter-spacing:1.3px;font-weight:800;color:#71838c}
+.workspace-label{padding:0 11px 9px}
+.clinic-context{display:flex;align-items:flex-start;gap:10px;padding:12px 10px;margin-bottom:20px;background:#f5f8f9;border:1px solid #e4ecef;border-radius:10px}
+.context-icon{display:grid;place-items:center;width:30px;height:30px;border-radius:8px;background:#e2f3f0;color:#087f75;font-size:18px;flex:none}
+.clinic-context strong,.session-placeholder strong{display:block;font-size:12px;font-weight:700;color:#263f49}
+.clinic-context small,.session-placeholder small{display:block;margin-top:4px;font-size:10px;line-height:1.4;color:#7b8b93}
+.primary-navigation{display:grid;gap:4px}
+.primary-navigation a,.sidebar-footer>a{display:flex;align-items:center;gap:12px;min-height:42px;padding:0 11px;border-radius:8px;color:#536771;text-decoration:none;font-size:13px;font-weight:600;transition:background .15s ease,color .15s ease}
+.primary-navigation a:hover,.sidebar-footer>a:hover{background:#f3f7f8;color:#173e45}
+.primary-navigation a:focus-visible,.sidebar-footer>a:focus-visible,.brand:focus-visible,.mobile-menu-button:focus-visible{outline:3px solid #69b9b0;outline-offset:2px}
+.primary-navigation a.nav-link--active,.sidebar-footer>a.nav-link--active{background:#e5f4f1;color:#086f67;font-weight:750}
+.nav-icon{display:inline-grid;place-items:center;width:20px;font-size:18px;color:inherit;flex:none}
+.sidebar-footer{margin-top:auto;display:grid;gap:14px}
+.session-placeholder{display:flex;align-items:center;gap:10px;padding:13px 8px 4px;border-top:1px solid #e8eef0}
+.session-avatar{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#eef2f4;color:#71838c;font-weight:700}
+.workspace{min-width:0}
+.topbar{height:76px;display:flex;align-items:center;gap:18px;padding:0 clamp(20px,3vw,44px);background:rgba(255,255,255,.94);border-bottom:1px solid #e0e8ec}
+.topbar-context{display:grid;gap:3px}
+.topbar-title{font-size:16px;font-weight:750;letter-spacing:-.25px;color:#18343e}
+.topbar-status{margin-left:auto;display:flex;align-items:center;gap:8px;padding:8px 11px;border:1px solid #e1e9ec;border-radius:999px;color:#627780;font-size:11px;font-weight:650;background:#fbfcfc}
+.status-dot{width:7px;height:7px;border-radius:50%;background:#a6b3b9}
+.main-content{width:min(100%,1440px);margin:0 auto;padding:28px clamp(20px,3vw,44px) 56px}
+.foundation-notice{display:flex;align-items:flex-start;gap:11px;margin-bottom:26px;padding:13px 15px;border:1px solid #dbe8e8;border-radius:10px;background:#f0f7f6;color:#3d5d61}
+.foundation-notice p{margin:0;font-size:12px;line-height:1.6}
+.foundation-notice strong{color:#23484b}
+.notice-icon{display:grid;place-items:center;flex:none;width:20px;height:20px;border-radius:50%;background:#d7ebe7;color:#226c66;font-weight:800;font-size:12px}
+.mobile-menu-button{display:none;border:0;background:transparent;color:#24434c;font-size:21px;padding:8px;border-radius:8px}
+.navigation-backdrop{display:none}
+@media(max-width:900px){.clinical-app{grid-template-columns:minmax(0,1fr)}.sidebar{position:fixed;left:0;top:0;width:272px;transform:translateX(-105%);transition:transform .2s ease;box-shadow:12px 0 40px #18343e12}.sidebar--mobile-open{transform:translateX(0)}.navigation-backdrop{display:block;position:fixed;inset:0;z-index:20;border:0;background:#122b33a6}.mobile-menu-button{display:inline-grid;place-items:center}.topbar{height:68px;gap:12px}.topbar-status{font-size:10px;padding:7px 9px}.main-content{padding-top:20px}}
+@media(max-width:520px){.topbar{padding:0 14px}.topbar-status{max-width:132px;line-height:1.35;border-radius:8px}.main-content{padding:16px 14px 36px}.foundation-notice{margin-bottom:20px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+
+.session-placeholder{min-width:0}
+.session-copy{min-width:0;flex:1}
+.session-copy strong,.session-copy small{overflow-wrap:anywhere}
+.sign-out-button{align-self:center;flex:none;padding:6px 7px;border:1px solid #e0e8ec;border-radius:6px;background:#fff;color:#627780;font-size:10px;font-weight:700}
+.sign-out-button:hover{border-color:#c4d8dc;background:#f5f8f9;color:#17343d}
+.sign-out-button:focus-visible{outline:3px solid #69b9b0;outline-offset:2px}
+
+.sign-out-error{margin-bottom:16px;padding:11px 14px;border:1px solid #f2b8b5;border-left:4px solid #b42318;border-radius:8px;background:#fef3f2;color:#7a271a;font-size:12px;line-height:1.6}
+
+.clinic-context-copy{min-width:0;flex:1}
+.clinic-context-copy label{display:block;margin-bottom:5px;color:#71858c;font-size:10px;font-weight:750}
+.clinic-context-copy select{width:100%;min-width:0;border:0;background:transparent;color:#263f49;font-size:11px;font-weight:750;padding:2px 0;outline-offset:3px}
+.clinic-context-copy small a{color:#087f75;font-size:11px;font-weight:750}
+.clinic-context-copy .clinic-error{color:#b42318;overflow-wrap:anywhere}
