@@ -1,3 +1,7 @@
+ALTER TABLE patient_clinical_history_entries
+  ADD CONSTRAINT patient_clinical_history_scope_id_unique
+  UNIQUE (organization_id, clinic_id, patient_id, id);
+
 CREATE TABLE patient_clinical_history_amendments (
   id text PRIMARY KEY,
   organization_id text NOT NULL,
