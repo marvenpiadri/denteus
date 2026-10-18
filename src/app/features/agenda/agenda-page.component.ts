@@ -286,10 +286,10 @@ export class AgendaPageComponent {
     });
   }
 
-  private async loadAppointments(organizationId: string, clinicId: string, date: string, timeZone: string, view: 'day' | 'week' | 'month' | 'year' = this.calendarView()): Promise<void> {
+  private async loadAppointments(organizationId: string, clinicId: string, date: string, timeZone: string, view: 'day' | 'week' | 'month' | 'year' = this.calendarView(), preserveExisting = false): Promise<void> {
     const requestSequence = ++this.appointmentLoadSequence;
     this.loading.set(true);
-    this.appointments.set([]);
+    if (!preserveExisting) this.appointments.set([]);
     this.pendingStatusChange.set(null);
     this.error.set('');
     try {
@@ -301,7 +301,7 @@ export class AgendaPageComponent {
       this.appointments.set(response.data);
     } catch (error) {
       if (requestSequence !== this.appointmentLoadSequence || this.tenant.activeClinic()?.id !== clinicId || this.selectedDate() !== date) return;
-      this.appointments.set([]);
+      if (!preserveExisting) this.appointments.set([]);
       this.error.set(error instanceof HttpErrorResponse && error.status === 401
         ? 'Votre session a expiré. Reconnectez-vous.'
         : 'L’agenda ne peut pas être chargé. Vérifiez votre connexion puis réessayez.');
@@ -582,7 +582,7 @@ export class AgendaPageComponent {
         event.resources?.['operatory'] === 'unassigned' ? null : event.resources?.['operatory'] ?? appointment.operatoryId,
       );
       if (this.tenant.activeClinic()?.id === clinic.id) {
-        await this.loadAppointments(clinic.organizationId, clinic.id, this.selectedDate(), zone, this.calendarView());
+        await this.loadAppointments(clinic.organizationId, clinic.id, this.selectedDate(), zone, this.calendarView(), true);
       }
       return { ok: true };
     } catch (error) {
