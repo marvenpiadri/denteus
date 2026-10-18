@@ -32,7 +32,7 @@
                 <div class="role-editor"><select [name]="'role-' + member.userId" [(ngModel)]="roleDrafts[member.userId]" [attr.aria-label]="'Rôle clinique de ' + member.name">@for(role of roleOptions;track role.value){<option [value]="role.value">{{role.label}}</option>}</select><button type="button" (click)="saveRole(member)" [disabled]="saving() || roleDrafts[member.userId] === member.clinicRole">Enregistrer</button></div>
               } @else { <span class="clinic-role" [class.unassigned]="!member.clinicRole">{{roleLabel(member.clinicRole || (isOrganizationAdmin(member.organizationRole) ? member.organizationRole : null))}}</span> }
             </td>
-            @if(canManage()){<td>@if(member.clinicRole && !['ORGANIZATION_OWNER','ORGANIZATION_ADMIN'].includes(member.organizationRole)){<button class="remove-button" type="button" (click)="removeMember(member)" [disabled]="saving()">Retirer</button>} @else {<span class="muted">—</span>}</td>}
+            @if(canManage()){<td>@if(member.clinicRole && !isOrganizationAdmin(member.organizationRole)){<button class="remove-button" type="button" (click)="removeMember(member)" [disabled]="saving()">Retirer</button>} @else {<span class="muted">—</span>}</td>}
           </tr>
         }
       </tbody></table></div>
