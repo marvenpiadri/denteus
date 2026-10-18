@@ -7,7 +7,7 @@
 
   <aside class="sidebar" [class.sidebar--mobile-open]="mobileNavigationOpen()" [attr.inert]="isMobileViewport() && !mobileNavigationOpen() ? '' : null" [attr.aria-hidden]="isMobileViewport() && !mobileNavigationOpen() ? 'true' : null" aria-label="Navigation principale">
     <a class="brand" routerLink="/crm/today" (click)="closeMobileNavigation()" aria-label="Dentaleus — espace clinique">
-      <img class="brand-logo" [src]="theme() === 'dark' ? '/logo_light.png' : '/logo_black.png'" alt="Dentaleus" width="176" height="44" />
+      <img class="brand-logo" [src]="theme() === 'dark' ? '/logo_light.png' : '/logo_black.png'" alt="Dentaleus" />
     </a>
 
     <div class="sidebar-section-label">VOTRE CABINET</div>
