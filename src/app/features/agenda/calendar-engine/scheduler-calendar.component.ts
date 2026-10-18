@@ -79,6 +79,7 @@ export class SchedulerCalendarComponent implements OnInit {
   readonly lanes = input<LaneConfig | null>(null);
   readonly gateway = input<CalendarGateway | null>(null);
   readonly focusDate = input<string | null>(null);
+  readonly showAllDay = input(true);
 
   readonly eventsChange = output<CalendarEvent[]>();
   readonly themeChange = output<CalendarTheme>();
@@ -113,6 +114,7 @@ export class SchedulerCalendarComponent implements OnInit {
     });
 
     effect(() => this.store.lanes.set(this.lanes()));
+    effect(() => this.store.showAllDay.set(this.showAllDay()));
     effect(() => this.store.gateway.set(this.gateway()));
     effect(() => {
       const date = this.focusDate();
