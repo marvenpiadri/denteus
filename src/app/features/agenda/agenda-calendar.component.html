@@ -1,12 +1,15 @@
 <section class="calendar-card" aria-labelledby="calendar-heading">
   <header class="calendar-heading">
     <div>
-      <h2 id="calendar-heading">Planning de la journée</h2>
+      <h2 id="calendar-heading">{{ displayView() === 'day' ? 'Planning de la journée' : displayView() === 'week' ? 'Planning de la semaine' : displayView() === 'month' ? 'Planning du mois' : 'Vue annuelle' }}</h2>
       <p>Les rendez-vous sont positionnés selon leur heure de début et leur durée. Les conflits de patient, praticien et fauteuil sont vérifiés par le serveur. Faites glisser un rendez-vous pour déplacer son horaire ou changer de ressource.</p>
     </div>
     <div class="calendar-controls">
       <div class="view-switch" role="group" aria-label="Vue du planning">
-        <button type="button" [class.is-selected]="viewMode() === 'day'" (click)="setView('day')">Journée</button>
+        <button type="button" [class.is-selected]="displayView() === 'day'" (click)="setView('day')">Jour</button>
+        <button type="button" [class.is-selected]="displayView() === 'week'" (click)="setView('week')">Semaine</button>
+        <button type="button" [class.is-selected]="displayView() === 'month'" (click)="setView('month')">Mois</button>
+        <button type="button" [class.is-selected]="displayView() === 'year'" (click)="setView('year')">Année</button>
         <button type="button" [class.is-selected]="viewMode() === 'provider'" [disabled]="!providers.length" (click)="setView('provider')">Praticiens</button>
         <button type="button" [class.is-selected]="viewMode() === 'operatory'" [disabled]="!operatories.length" (click)="setView('operatory')">Fauteuils</button>
       </div>
