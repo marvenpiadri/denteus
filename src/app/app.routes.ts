@@ -49,7 +49,6 @@ export const routes: Routes = [
         data: {
           title: 'Aujourd’hui',
           description: 'Le point de départ de la journée clinique : priorités, arrivées et tâches à suivre.',
-          nextStep: 'La file de travail sera alimentée par les rendez-vous et les tâches persistés du cabinet.',
         },
       },
       {
@@ -79,7 +78,6 @@ export const routes: Routes = [
         data: {
           title: 'Soins et odontogramme',
           description: 'Le dossier clinique doit réunir un historique fiable, un plan de traitement et un odontogramme traçable.',
-          nextStep: 'L’accès au chart sera relié à la session, aux rôles cliniques et à une sauvegarde confirmée par PostgreSQL.',
         },
       },
       {
@@ -89,7 +87,6 @@ export const routes: Routes = [
         data: {
           title: 'Équipe et accès',
           description: 'Gérez les membres et leurs autorisations au niveau de l’organisation et de chaque clinique.',
-          nextStep: 'Les membres affichés devront provenir des adhésions réelles et les permissions seront appliquées par l’API.',
         },
       },
       {
@@ -99,7 +96,6 @@ export const routes: Routes = [
         data: {
           title: 'Rapports',
           description: 'Des indicateurs explicables, calculés à partir de données persistées et d’une période clairement définie.',
-          nextStep: 'Aucun chiffre ne sera affiché avant que sa définition et sa source de données soient vérifiées.',
         },
       },
       {
@@ -109,7 +105,6 @@ export const routes: Routes = [
         data: {
           title: 'Paramètres du cabinet',
           description: 'Configurez les informations, horaires et préférences de la clinique active.',
-          nextStep: 'Les paramètres seront liés à une clinique autorisée et sauvegardés côté serveur.',
         },
       },
     ],
@@ -121,7 +116,6 @@ export const routes: Routes = [
     data: {
       title: 'Page introuvable',
       description: 'Cette adresse ne correspond à aucun espace Dentaleus.',
-      nextStep: 'Vérifiez l’adresse ou revenez à l’espace clinique.',
     },
   },
 ];
