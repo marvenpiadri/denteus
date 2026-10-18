@@ -60,7 +60,15 @@ const bulkWorkingHoursSchema = {
         required: ['dayOfWeek', 'startsAt', 'endsAt'],
         properties: {
           dayOfWeek: { type: 'integer', minimum: 0, maximum: 6 },
-          startsAt: { type: 'string', pattern: '^([01]\\d|2[0-3]):[0-5]\\d
+          startsAt: { type: 'string', pattern: '^([01]\\d|2[0-3]):[0-5]\\d$' },
+          endsAt: { type: 'string', pattern: '^([01]\\d|2[0-3]):[0-5]\\d$' },
+        },
+      },
+    },
+  },
+} as const;
+interface BulkWorkingHoursBody { hours: WorkingHoursBody[]; }
+
   app.get<{ Params: ClinicParams }>('/organizations/:organizationId/clinics/:clinicId/scheduling-resources', async (request, reply) => {
     const access = await requireClinicAccess(request, reply, request.params.organizationId, request.params.clinicId);
     if (!access) return;
