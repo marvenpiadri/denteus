@@ -35,6 +35,7 @@ export class PatientOdontogramComponent implements AfterViewInit {
   readonly saving = signal(false);
   readonly error = signal('');
   readonly saveError = signal('');
+  readonly saveConflict = signal(false);
   readonly lastSavedAt = signal<string | null>(null);
   readonly revisions = signal<OdontogramRevision[]>([]);
   readonly revisionsLoading = signal(false);
@@ -126,6 +127,11 @@ export class PatientOdontogramComponent implements AfterViewInit {
     if (!clinic || !patientId) return;
     const context = `${clinic.organizationId}:${clinic.id}:${patientId}`;
     this.activeContext = context;
+    this.cancelScheduledSave();
+    this.saveQueued = false;
+    this.saveError.set('');
+    this.saveConflict.set(false);
+    this.loaded.set(false);
     await this.load(context, clinic.organizationId, clinic.id, patientId);
   }
 
@@ -164,6 +170,7 @@ export class PatientOdontogramComponent implements AfterViewInit {
     this.saveInFlight = true;
     this.saving.set(true);
     this.saveError.set('');
+    this.saveConflict.set(false);
     const base = this.collectionUrl(clinic.organizationId, clinic.id, patientId);
     try {
       const response = await firstValueFrom(this.http.put<{ data: OdontogramRecord }>(base, {
@@ -178,15 +185,18 @@ export class PatientOdontogramComponent implements AfterViewInit {
       void this.loadRevisions(base, this.requestSequence);
     } catch (error) {
       if (context !== this.activeContext) return;
+      const conflict = error instanceof HttpErrorResponse && error.status === 409;
+      this.saveConflict.set(conflict);
       this.saveError.set(error instanceof HttpErrorResponse && error.status === 403
         ? 'Votre rôle ne permet pas d’enregistrer les modifications dentaires.'
-        : error instanceof HttpErrorResponse && error.status === 409
-          ? 'Cet odontogramme a changé dans une autre session. Rechargez le dossier avant de poursuivre.'
+        : conflict
+          ? 'Cet odontogramme a changé dans une autre session. Rechargez la dernière version avant de reprendre vos modifications.'
           : 'Les modifications ne sont pas enregistrées. Réessayez avant de quitter ce dossier.');
     } finally {
       this.saveInFlight = false;
       this.saving.set(false);
-      if (this.saveQueued) { this.saveQueued = false; this.scheduleSave(); }
+      if (this.saveConflict()) this.saveQueued = false;
+      else if (this.saveQueued) { this.saveQueued = false; this.scheduleSave(); }
     }
   }
 
