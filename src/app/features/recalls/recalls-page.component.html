@@ -1,7 +1,7 @@
 <section class="recalls-page" aria-labelledby="recalls-title">
   <header class="page-heading">
     <div><p class="eyebrow">CONTINUITÉ DES SOINS</p><h1 id="recalls-title">Rappels patients</h1><p class="page-description">Suivez les échéances de contrôle et consignez chaque tentative de contact. Aucun message n’est envoyé automatiquement.</p></div>
-    <button type="button" class="primary-button" (click)="openCreate()" [disabled]="!tenant.activeClinic()">+ Nouveau rappel</button>
+    <button type="button" class="primary-button" (click)="openCreate()" [disabled]="!tenant.activeClinic() || saving() || contactSaving()">+ Nouveau rappel</button>
   </header>
 
   @if (success()) { <div class="success-message" role="status">{{ success() }}</div> }
@@ -25,7 +25,7 @@
           <div><label for="recall-interval">Intervalle (mois)</label><input id="recall-interval" name="intervalMonths" type="number" [(ngModel)]="intervalMonths" min="1" max="120" required></div>
           <div class="wide-field"><label for="recall-note">Note administrative (facultatif)</label><textarea id="recall-note" name="note" [(ngModel)]="note" rows="2" maxlength="2000"></textarea></div>
         </div>
-        <div class="form-actions"><button type="button" class="secondary-button" (click)="showCreateForm.set(false)" [disabled]="saving()">Annuler</button><button type="submit" class="primary-button" [disabled]="recallForm.invalid || saving() || loadingPatients() || !patients().length">{{ saving() ? 'Enregistrement…' : 'Créer le rappel' }}</button></div>
+        <div class="form-actions"><button type="button" class="secondary-button" (click)="showCreateForm.set(false)" [disabled]="saving()">Annuler</button><button type="submit" class="primary-button" [disabled]="recallForm.invalid || saving() || contactSaving() || loadingPatients() || !patients().length">{{ saving() ? 'Enregistrement…' : 'Créer le rappel' }}</button></div>
       </form>
     </section>
   }
@@ -46,24 +46,24 @@
             @if (recall.lastContactOutcome) { <p class="recall-note">Dernier résultat : {{ recall.lastContactOutcome }}</p> } @if (recall.note) { <p class="recall-note">{{ recall.note }}</p> }
           </div>
           <div class="recall-actions">
-            @if (recall.status === 'DUE' || recall.status === 'CONTACTED') { <button type="button" class="secondary-button" (click)="openContact(recall)">Consigner un contact</button> }
+            @if (recall.status === 'DUE' || recall.status === 'CONTACTED') { <button type="button" class="secondary-button" (click)="openContact(recall)" [disabled]="saving() || contactSaving()">Consigner un contact</button> }
             @if (recall.patientPhone) { <a class="contact-link" [href]="'tel:' + recall.patientPhone">Appeler le patient</a> }
             @if (recall.status === 'DUE' || recall.status === 'CONTACTED') {
-              <button type="button" class="status-action" (click)="changeRecallStatus(recall, 'SCHEDULED')" [disabled]="saving()">Planifié</button>
-              <button type="button" class="status-action" (click)="changeRecallStatus(recall, 'COMPLETED')" [disabled]="saving()">Effectué</button>
-              <button type="button" class="status-action status-action--quiet" (click)="changeRecallStatus(recall, 'DECLINED')" [disabled]="saving()">Refusé</button>
-              <button type="button" class="status-action status-action--quiet" (click)="changeRecallStatus(recall, 'INACTIVE')" [disabled]="saving()">Désactiver</button>
+              <button type="button" class="status-action" (click)="changeRecallStatus(recall, 'SCHEDULED')" [disabled]="saving() || contactSaving()">Planifié</button>
+              <button type="button" class="status-action" (click)="changeRecallStatus(recall, 'COMPLETED')" [disabled]="saving() || contactSaving()">Effectué</button>
+              <button type="button" class="status-action status-action--quiet" (click)="changeRecallStatus(recall, 'DECLINED')" [disabled]="saving() || contactSaving()">Refusé</button>
+              <button type="button" class="status-action status-action--quiet" (click)="changeRecallStatus(recall, 'INACTIVE')" [disabled]="saving() || contactSaving()">Désactiver</button>
             }
             @if (recall.status === 'SCHEDULED') {
-              <button type="button" class="status-action status-action--quiet" (click)="changeRecallStatus(recall, 'DUE')" [disabled]="saving()">À recontacter</button>
+              <button type="button" class="status-action status-action--quiet" (click)="changeRecallStatus(recall, 'DUE')" [disabled]="saving() || contactSaving()">À recontacter</button>
               <button type="button" class="status-action" (click)="changeRecallStatus(recall, 'COMPLETED')" [disabled]="saving()">Effectué</button>
               <button type="button" class="status-action status-action--quiet" (click)="changeRecallStatus(recall, 'INACTIVE')" [disabled]="saving()">Désactiver</button>
             }
             @if (recall.status === 'DECLINED' || recall.status === 'INACTIVE') {
-              <button type="button" class="status-action" (click)="changeRecallStatus(recall, 'DUE')" [disabled]="saving()">Réactiver</button>
+              <button type="button" class="status-action" (click)="changeRecallStatus(recall, 'DUE')" [disabled]="saving() || contactSaving()">Réactiver</button>
             }
             @if (recall.status === 'COMPLETED') {
-              <button type="button" class="status-action status-action--quiet" (click)="changeRecallStatus(recall, 'INACTIVE')" [disabled]="saving()">Archiver</button>
+              <button type="button" class="status-action status-action--quiet" (click)="changeRecallStatus(recall, 'INACTIVE')" [disabled]="saving() || contactSaving()">Archiver</button>
             }
           </div>
           @if (contactRecallId() === recall.id) {
@@ -72,7 +72,7 @@
               <div><label [for]="'contact-outcome-' + recall.id">Résultat *</label><select [id]="'contact-outcome-' + recall.id" name="contactOutcome" [(ngModel)]="contactOutcome" required><option value="NO_ANSWER">Pas de réponse</option><option value="REACHED">Patient joint</option><option value="CALL_BACK">Rappeler plus tard</option><option value="BOOKED">Rendez-vous pris</option><option value="DECLINED">Patient refuse</option><option value="INVALID_CONTACT">Coordonnées invalides</option></select></div>
               <div class="wide-field"><label [for]="'contact-note-' + recall.id">Note de suivi (facultatif)</label><input [id]="'contact-note-' + recall.id" name="contactNote" [(ngModel)]="contactNote" maxlength="2000"></div>
               @if (contactError()) { <p class="inline-error" role="alert">{{ contactError() }}</p> }
-              <div class="form-actions"><button type="button" class="secondary-button" (click)="contactRecallId.set(null)" [disabled]="contactSaving()">Annuler</button><button type="submit" class="primary-button" [disabled]="contactSaving()">{{ contactSaving() ? 'Enregistrement…' : 'Enregistrer la tentative' }}</button></div>
+              <div class="form-actions"><button type="button" class="secondary-button" (click)="contactRecallId.set(null)" [disabled]="contactSaving() || saving()">Annuler</button><button type="submit" class="primary-button" [disabled]="contactSaving() || saving()">{{ contactSaving() ? 'Enregistrement…' : 'Enregistrer la tentative' }}</button></div>
             </form>
           }
         </article>

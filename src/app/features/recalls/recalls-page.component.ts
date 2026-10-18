@@ -122,6 +122,7 @@ export class RecallsPageComponent {
   }
 
   openCreate(): void {
+    if (this.saving() || this.contactSaving() || !this.tenant.activeClinic()) return;
     this.formError.set('');
     this.patientId = '';
     this.recallType = 'Contrôle périodique';
@@ -133,7 +134,7 @@ export class RecallsPageComponent {
 
   async createRecall(): Promise<void> {
     const clinic = this.tenant.activeClinic();
-    if (!clinic || this.saving()) return;
+    if (!clinic || this.saving() || this.contactSaving()) return;
     const clinicSequence = this.clinicSequence;
     this.saving.set(true);
     this.formError.set('');
@@ -161,6 +162,7 @@ export class RecallsPageComponent {
   }
 
   openContact(recall: PatientRecall): void {
+    if (this.saving() || this.contactSaving()) return;
     this.contactRecallId.set(recall.id);
     this.contactError.set('');
     this.contactMethod = recall.preferredContactMethod && recall.preferredContactMethod !== 'UNKNOWN' ? recall.preferredContactMethod : 'PHONE';
@@ -170,7 +172,7 @@ export class RecallsPageComponent {
 
   async saveContact(recall: PatientRecall): Promise<void> {
     const clinic = this.tenant.activeClinic();
-    if (!clinic || this.contactSaving()) return;
+    if (!clinic || this.contactSaving() || this.saving()) return;
     const clinicSequence = this.clinicSequence;
     this.contactSaving.set(true);
     this.contactError.set('');
@@ -194,7 +196,7 @@ export class RecallsPageComponent {
 
   async changeRecallStatus(recall: PatientRecall, status: RecallStatus): Promise<void> {
     const clinic = this.tenant.activeClinic();
-    if (!clinic || this.saving()) return;
+    if (!clinic || this.saving() || this.contactSaving()) return;
     if ((status === 'DECLINED' || status === 'INACTIVE') && !globalThis.confirm('Confirmer ce changement de statut du rappel ?')) return;
     const clinicSequence = this.clinicSequence;
     this.saving.set(true);
