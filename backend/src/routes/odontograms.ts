@@ -102,7 +102,7 @@ export const odontogramRoutes: FastifyPluginAsync = async (app) => {
             extra_payload AS extra,
             updated_by_id AS "updatedById",
             created_at AS "createdAt",
-            updated_at AS "updatedAt"
+            to_char(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS "updatedAt"
           FROM odontogram_records
           WHERE organization_id = $1 AND clinic_id = $2 AND patient_id = $3
           LIMIT 1
@@ -213,7 +213,7 @@ export const odontogramRoutes: FastifyPluginAsync = async (app) => {
         const recordLockKey = [request.params.organizationId, request.params.clinicId, request.params.patientId].join(':');
         await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [recordLockKey]);
         const currentRecord = await client.query<{ updatedAt: string }>(
-          'SELECT updated_at AS "updatedAt" FROM odontogram_records WHERE organization_id = $1 AND clinic_id = $2 AND patient_id = $3 FOR UPDATE',
+          `SELECT to_char(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS "updatedAt" FROM odontogram_records WHERE organization_id = $1 AND clinic_id = $2 AND patient_id = $3 FOR UPDATE`,
           [request.params.organizationId, request.params.clinicId, request.params.patientId],
         );
         const currentUpdatedAt = currentRecord.rows[0]?.updatedAt;
@@ -253,7 +253,7 @@ export const odontogramRoutes: FastifyPluginAsync = async (app) => {
               extra_payload AS extra,
               updated_by_id AS "updatedById",
               created_at AS "createdAt",
-              updated_at AS "updatedAt"
+              to_char(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS "updatedAt"
           `,
           [
             randomUUID(),
