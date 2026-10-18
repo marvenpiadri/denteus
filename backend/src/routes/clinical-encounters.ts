@@ -20,6 +20,8 @@ interface AmendNoteBody { reason: string; amendedContent: string; }
 interface CreateFindingBody { findingType: 'OBSERVATION' | 'DIAGNOSIS' | 'SYMPTOM' | 'RISK' | 'OTHER'; description: string; severity?: 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL' | null; toothNo?: number | null; surface?: string | null; findingCode?: string | null; }
 interface CreateProcedureBody { title: string; category: 'EXAM' | 'HYGIENE' | 'RESTORATIVE' | 'ENDODONTICS' | 'EXTRACTION' | 'PROSTHODONTICS' | 'ORTHODONTICS' | 'PERIODONTICS' | 'IMPLANT' | 'OTHER'; notes?: string | null; toothSites?: Array<{ toothNo: number; surface: string }>; }
 interface ProcedureParams extends EncounterParams { procedureId: string; }
+interface FindingParams extends EncounterParams { findingId: string; }
+interface RecordAmendmentBody { reason: string; content: string; }
 
 const encounterTypes: EncounterType[] = ['CONSULTATION', 'EMERGENCY', 'FOLLOW_UP', 'PROCEDURE', 'OTHER'];
 const noteTypes: NoteType[] = ['CHIEF_COMPLAINT', 'EXAMINATION', 'ASSESSMENT', 'PROGRESS', 'DISCHARGE', 'OTHER'];
@@ -67,6 +69,7 @@ const createProcedureSchema = {
     } },
   },
 } as const;
+const recordAmendmentSchema = { type: 'object', additionalProperties: false, required: ['reason','content'], properties: { reason: { type: 'string', minLength: 1, maxLength: 1000 }, content: { type: 'string', minLength: 1, maxLength: 20000 } } } as const;
 const amendNoteSchema = {
   type: 'object', additionalProperties: false, required: ['reason', 'amendedContent'],
   properties: {
@@ -228,11 +231,17 @@ export const clinicalEncounterRoutes: FastifyPluginAsync = async (app) => {
            WHERE n.organization_id = $1 AND n.clinic_id = $2 AND n.patient_id = $3 AND n.encounter_id = $4 ORDER BY n.created_at`,
           [organizationId, clinicId, patientId, encounterId],
         ),
-        pool.query('SELECT id, finding_code AS "findingCode", finding_type AS "findingType", description, severity, tooth_no AS "toothNo", surface, recorded_by_id AS "recordedById", created_at AS "createdAt" FROM clinical_findings WHERE organization_id=$1 AND clinic_id=$2 AND patient_id=$3 AND encounter_id=$4 ORDER BY created_at', [organizationId, clinicId, patientId, encounterId]),
+        pool.query(
+          `SELECT f.id, f.finding_code AS "findingCode", f.finding_type AS "findingType", f.description, f.severity, f.tooth_no AS "toothNo", f.surface, f.recorded_by_id AS "recordedById", f.created_at AS "createdAt",
+                  COALESCE((SELECT jsonb_agg(jsonb_build_object('id', a.id, 'reason', a.reason, 'correctedDescription', a.corrected_description, 'amendedById', a.amended_by_id, 'createdAt', a.created_at) ORDER BY a.created_at) FROM clinical_finding_amendments a WHERE a.finding_id=f.id), '[]'::jsonb) AS amendments
+           FROM clinical_findings f WHERE f.organization_id=$1 AND f.clinic_id=$2 AND f.patient_id=$3 AND f.encounter_id=$4 ORDER BY f.created_at`,
+          [organizationId, clinicId, patientId, encounterId],
+        ),
         pool.query(
           `SELECT p.id, p.title, p.category, p.status, p.notes, p.performed_at AS "performedAt", p.performed_by_id AS "performedById",
                   p.recorded_by_id AS "recordedById", p.created_at AS "createdAt",
-                  COALESCE((SELECT jsonb_agg(jsonb_build_object('toothNo', s.tooth_no, 'surface', s.surface) ORDER BY s.tooth_no, s.surface) FROM clinical_procedure_sites s WHERE s.procedure_id=p.id), '[]'::jsonb) AS "toothSites"
+                  COALESCE((SELECT jsonb_agg(jsonb_build_object('toothNo', s.tooth_no, 'surface', s.surface) ORDER BY s.tooth_no, s.surface) FROM clinical_procedure_sites s WHERE s.procedure_id=p.id), '[]'::jsonb) AS "toothSites",
+                  COALESCE((SELECT jsonb_agg(jsonb_build_object('id', a.id, 'reason', a.reason, 'correctionDetails', a.correction_details, 'amendedById', a.amended_by_id, 'createdAt', a.created_at) ORDER BY a.created_at) FROM clinical_procedure_amendments a WHERE a.procedure_id=p.id), '[]'::jsonb) AS amendments
            FROM clinical_procedures p WHERE p.organization_id=$1 AND p.clinic_id=$2 AND p.patient_id=$3 AND p.encounter_id=$4 ORDER BY p.created_at`,
           [organizationId, clinicId, patientId, encounterId],
         ),
@@ -335,6 +344,51 @@ export const clinicalEncounterRoutes: FastifyPluginAsync = async (app) => {
         return { data: updated.rows[0] };
       } catch (error) { await client.query('ROLLBACK'); throw error; }
       finally { client.release(); }
+    },
+  );
+
+  app.post<{ Params: FindingParams; Body: RecordAmendmentBody }>(
+    '/organizations/:organizationId/clinics/:clinicId/patients/:patientId/encounters/:encounterId/findings/:findingId/amendments',
+    { schema: { body: recordAmendmentSchema } },
+    async (request, reply) => {
+      const { organizationId, clinicId, patientId, encounterId, findingId } = request.params;
+      const access = await requireClinicAccess(request, reply, organizationId, clinicId);
+      if (!access) return;
+      if (!canWriteOdontogram(access)) return denyInsufficientRole(reply);
+      const reason=request.body.reason.trim(), content=request.body.content.trim();
+      if(!reason||!content)return reply.code(400).send({error:{code:'INVALID_AMENDMENT',message:'A reason and corrected finding are required.'}});
+      const client=await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const finding=await client.query('SELECT id FROM clinical_findings WHERE organization_id=$1 AND clinic_id=$2 AND patient_id=$3 AND encounter_id=$4 AND id=$5 FOR UPDATE',[organizationId,clinicId,patientId,encounterId,findingId]);
+        if(!finding.rowCount){await client.query('ROLLBACK');return reply.code(404).send({error:{code:'FINDING_NOT_FOUND',message:'Clinical finding not found.'}});}
+        const result=await client.query(`INSERT INTO clinical_finding_amendments (id,organization_id,clinic_id,patient_id,encounter_id,finding_id,reason,corrected_description,amended_by_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id,reason,corrected_description AS "correctedDescription",amended_by_id AS "amendedById",created_at AS "createdAt"`,[randomUUID(),organizationId,clinicId,patientId,encounterId,findingId,reason,content,access.userId]);
+        await client.query(`INSERT INTO audit_events (id,organization_id,user_id,action,resource_type,resource_id,metadata) VALUES ($1,$2,$3,'CLINICAL_FINDING_AMENDED','CLINICAL_FINDING',$4,$5::jsonb)`,[randomUUID(),organizationId,access.userId,findingId,JSON.stringify({clinicId,patientId,encounterId,amendmentId:result.rows[0].id,reason})]);
+        await client.query('COMMIT');return reply.code(201).send({data:result.rows[0]});
+      } catch(error){await client.query('ROLLBACK');throw error;} finally{client.release();}
+    },
+  );
+
+  app.post<{ Params: ProcedureParams; Body: RecordAmendmentBody }>(
+    '/organizations/:organizationId/clinics/:clinicId/patients/:patientId/encounters/:encounterId/procedures/:procedureId/amendments',
+    { schema: { body: recordAmendmentSchema } },
+    async (request, reply) => {
+      const { organizationId, clinicId, patientId, encounterId, procedureId } = request.params;
+      const access = await requireClinicAccess(request, reply, organizationId, clinicId);
+      if (!access) return;
+      if (!canWriteOdontogram(access)) return denyInsufficientRole(reply);
+      const reason=request.body.reason.trim(), content=request.body.content.trim();
+      if(!reason||!content)return reply.code(400).send({error:{code:'INVALID_AMENDMENT',message:'A reason and correction details are required.'}});
+      const client=await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const procedure=await client.query('SELECT status FROM clinical_procedures WHERE organization_id=$1 AND clinic_id=$2 AND patient_id=$3 AND encounter_id=$4 AND id=$5 FOR UPDATE',[organizationId,clinicId,patientId,encounterId,procedureId]);
+        if(!procedure.rowCount){await client.query('ROLLBACK');return reply.code(404).send({error:{code:'PROCEDURE_NOT_FOUND',message:'Clinical procedure not found.'}});}
+        if(procedure.rows[0].status!=='COMPLETED'){await client.query('ROLLBACK');return reply.code(409).send({error:{code:'PROCEDURE_NOT_COMPLETED',message:'Only completed acts require a correction amendment.'}});}
+        const result=await client.query(`INSERT INTO clinical_procedure_amendments (id,organization_id,clinic_id,patient_id,encounter_id,procedure_id,reason,correction_details,amended_by_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id,reason,correction_details AS "correctionDetails",amended_by_id AS "amendedById",created_at AS "createdAt"`,[randomUUID(),organizationId,clinicId,patientId,encounterId,procedureId,reason,content,access.userId]);
+        await client.query(`INSERT INTO audit_events (id,organization_id,user_id,action,resource_type,resource_id,metadata) VALUES ($1,$2,$3,'CLINICAL_PROCEDURE_AMENDED','CLINICAL_PROCEDURE',$4,$5::jsonb)`,[randomUUID(),organizationId,access.userId,procedureId,JSON.stringify({clinicId,patientId,encounterId,amendmentId:result.rows[0].id,reason})]);
+        await client.query('COMMIT');return reply.code(201).send({data:result.rows[0]});
+      } catch(error){await client.query('ROLLBACK');throw error;} finally{client.release();}
     },
   );
 
