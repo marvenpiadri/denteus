@@ -12,6 +12,7 @@ import { appointmentRoutes } from './routes/appointments.js';
 import { recallRoutes } from './routes/recalls.js';
 import { schedulingResourceRoutes } from './routes/scheduling-resources.js';
 import { clinicalEncounterRoutes } from './routes/clinical-encounters.js';
+import { clinicalMediaRoutes } from './routes/clinical-media.js';
 import { patientHistoryRoutes } from './routes/patient-history.js';
 import { clinicSettingsRoutes } from './routes/clinic-settings.js';
 
@@ -117,6 +118,7 @@ await app.register(appointmentRoutes, { prefix: '/api/v1' });
 await app.register(recallRoutes, { prefix: '/api/v1' });
 await app.register(schedulingResourceRoutes, { prefix: '/api/v1' });
 await app.register(clinicalEncounterRoutes, { prefix: '/api/v1' });
+await app.register(clinicalMediaRoutes, { prefix: '/api/v1' });
 await app.register(patientHistoryRoutes, { prefix: '/api/v1' });
 await app.register(clinicSettingsRoutes, { prefix: '/api/v1' });
 
