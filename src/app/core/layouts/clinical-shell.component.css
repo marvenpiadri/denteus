@@ -325,3 +325,13 @@
 @media (prefers-reduced-motion: reduce) {
   .sidebar, .sidebar-collapse-toggle { transition: none; }
 }
+
+@media (max-width: 860px) {
+  .clinical-app.sidebar-collapsed .brand-copy,
+  .clinical-app.sidebar-collapsed .clinic-context-copy,
+  .clinical-app.sidebar-collapsed .session-copy { display: grid; }
+  .clinical-app.sidebar-collapsed .sidebar-section-label,
+  .clinical-app.sidebar-collapsed .navigation-group-label { display: block; }
+  .clinical-app.sidebar-collapsed .primary-navigation a span,
+  .clinical-app.sidebar-collapsed .settings-link span { display: inline; }
+}
