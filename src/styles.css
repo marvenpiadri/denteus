@@ -267,6 +267,27 @@ a {
   --radius-panel: 18px;
   --shadow-card: 0 2px 5px rgb(20 46 55 / 3%), 0 12px 34px rgb(20 46 55 / 4%);
   --shadow-popover: 0 16px 42px rgb(20 46 55 / 14%);
+  --status-success-border: #c5e4d7;
+  --status-success-bg: #eff8f3;
+  --status-success-text: #216e55;
+  --status-info-border: #bfe0dc;
+  --status-info-bg: #eef8f7;
+  --status-info-text: #176e69;
+  --status-danger-border: #f0d2cf;
+  --status-danger-bg: #fff5f4;
+  --status-danger-text: #9b3931;
+  --status-warning-border: #f0d8ae;
+  --status-warning-bg: #fff8e9;
+  --status-warning-text: #875900;
+  --status-neutral-border: #e0e6e8;
+  --status-neutral-bg: #f7f8f9;
+  --status-neutral-text: #687b82;
+  --status-purple-border: #d8d1f4;
+  --status-purple-bg: #f6f4ff;
+  --status-purple-text: #5943a3;
+  --status-accent-border: #cde4de;
+  --status-accent-bg: #eff8f6;
+  --status-accent-text: #176e69;
 }
 :root[data-theme='dark'] {
   --surface-topbar: color-mix(in srgb, var(--color-surface) 94%, transparent);
@@ -284,6 +305,27 @@ a {
   --color-danger-border: #754341;
   --shadow-card: 0 2px 5px rgb(0 0 0 / 12%), 0 12px 34px rgb(0 0 0 / 10%);
   --shadow-popover: 0 16px 42px rgb(0 0 0 / 35%);
+  --status-success-border: #2d6651;
+  --status-success-bg: #1c3c32;
+  --status-success-text: #9cdec0;
+  --status-info-border: #32616b;
+  --status-info-bg: #1b3d43;
+  --status-info-text: #a1dbe3;
+  --status-danger-border: #694143;
+  --status-danger-bg: #3b2829;
+  --status-danger-text: #f0b4ae;
+  --status-warning-border: #6e582b;
+  --status-warning-bg: #382f1d;
+  --status-warning-text: #f0c36c;
+  --status-neutral-border: #3a4c55;
+  --status-neutral-bg: #24353d;
+  --status-neutral-text: #b9cbd1;
+  --status-purple-border: #4f456f;
+  --status-purple-bg: #302943;
+  --status-purple-text: #c9b9ff;
+  --status-accent-border: #315d58;
+  --status-accent-bg: #1b3a38;
+  --status-accent-text: #b0e5dd;
 }
 :where(button, input, select, textarea) { font: inherit; }
 :where(button, a, input, select, textarea) { -webkit-tap-highlight-color: transparent; }
