@@ -247,6 +247,10 @@ export class MonthViewComponent {
   protected onChipPointerDown(ev: PointerEvent, chip: MonthChip): void {
     if (ev.button !== 0) return;
     ev.stopPropagation();
+    if (chip.event.locked) {
+      this.store.notify(chip.event.lockedReason ?? 'Ce rendez-vous ne peut pas être déplacé.', 'info');
+      return;
+    }
     this.endDrag();
     const anchor = this.dateAt(ev);
     if (!anchor) return;
@@ -295,7 +299,7 @@ export class MonthViewComponent {
       return;
     }
     if (preview.start.getTime() !== d.event.start.getTime()) {
-      this.store.updateEvent({ ...d.event, start: preview.start, end: preview.end });
+      void this.store.commitUpdate({ ...d.event, start: preview.start, end: preview.end });
     }
   };
 
