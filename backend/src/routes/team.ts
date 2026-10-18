@@ -33,7 +33,6 @@ export const teamRoutes: FastifyPluginAsync = async (app) => {
     const result = await pool.query(
       `SELECT u.id AS "userId", u.name, u.email,
               om.role AS "organizationRole", cm.role AS "clinicRole",
-              cm.created_at AS "joinedAt",
               CASE WHEN om.role IN ('ORGANIZATION_OWNER','ORGANIZATION_ADMIN')
                    THEN om.role ELSE COALESCE(cm.role, om.role) END AS "effectiveRole"
        FROM organization_memberships om
