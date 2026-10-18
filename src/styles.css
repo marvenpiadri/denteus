@@ -257,6 +257,7 @@ a {
   --color-action: #087f75;
   --color-action-hover: #066a63;
   --text-on-brand: #ffffff;
+  --text-on-action: #ffffff;
   --color-success: #17805d;
   --color-success-soft: #e3f5eb;
   --color-warning-strong: #805500;
@@ -298,6 +299,7 @@ a {
   --color-action: #168d81;
   --color-action-hover: #20a194;
   --text-on-brand: #102a2a;
+  --text-on-action: #ffffff;
   --color-success: #71d6ae;
   --color-success-soft: #193b31;
   --color-warning-strong: #f0c36c;
