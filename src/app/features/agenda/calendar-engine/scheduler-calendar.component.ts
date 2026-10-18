@@ -119,6 +119,10 @@ export class SchedulerCalendarComponent implements OnInit {
       if (this.ready && date) this.store.goToDate(new Date(date + 'T12:00:00'));
     });
     effect(() => {
+      const view = this.defaultView();
+      if (this.ready) this.store.setView(view);
+    });
+    effect(() => {
       const date = this.store.focusDate();
       if (this.ready) this.dateChanged.emit(this.dateKey(date));
     });
