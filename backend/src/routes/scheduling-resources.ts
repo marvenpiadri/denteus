@@ -197,6 +197,33 @@ interface BulkWorkingHoursBody { hours: WorkingHoursBody[]; }
               hour.dayOfWeek, hour.startsAt, hour.endsAt],
           );
         }
+
+        const invalidatedAppointments = await client.query(
+          `SELECT 1
+           FROM appointments a
+           JOIN clinics c ON c.organization_id = a.organization_id AND c.id = a.clinic_id
+           WHERE a.organization_id = $1 AND a.clinic_id = $2 AND a.provider_id = $3
+             AND a.status NOT IN ('CANCELLED', 'NO_SHOW') AND a.ends_at > now()
+             AND NOT EXISTS (
+               SELECT 1 FROM provider_working_hours h
+               WHERE h.organization_id = a.organization_id AND h.clinic_id = a.clinic_id
+                 AND h.provider_id = a.provider_id
+                 AND h.day_of_week = EXTRACT(DOW FROM (a.starts_at AT TIME ZONE c.timezone))::int
+                 AND (a.starts_at AT TIME ZONE c.timezone)::date = (a.ends_at AT TIME ZONE c.timezone)::date
+                 AND (a.starts_at AT TIME ZONE c.timezone)::time >= h.starts_at
+                 AND (a.ends_at AT TIME ZONE c.timezone)::time <= h.ends_at
+             )
+           LIMIT 1`,
+          [request.params.organizationId, request.params.clinicId, request.params.providerId],
+        );
+        if (invalidatedAppointments.rowCount) {
+          await client.query('ROLLBACK');
+          transactionOpen = false;
+          return reply.code(409).send({
+            error: { code: 'WORKING_HOURS_CONFLICT', message: 'Ces horaires ne couvrent plus un ou plusieurs rendez-vous à venir. Déplacez d’abord ces rendez-vous, puis réessayez.' },
+          });
+        }
+
         await client.query(
           `INSERT INTO audit_events (id, organization_id, user_id, action, resource_type, resource_id, metadata)
            VALUES ($1, $2, $3, 'PROVIDER_WORKING_HOURS_REPLACED', 'CLINIC_PROVIDER', $4, $5::jsonb)`,
