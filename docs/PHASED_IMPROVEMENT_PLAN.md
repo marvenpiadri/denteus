@@ -133,6 +133,8 @@ This ledger supersedes any older branch/PR status above the phased checklists. I
 
 ### Change log
 
+- `pending verification`: connect the official `ZoliQua/Angular-Advanced-Odontogram` v2.6.0 Angular SVG component to the patient record, persist its state through the clinic-scoped odontogram API, show revision history, and load the package stylesheet. The dependency was already declared; no additional library was added. Build/browser verification remains pending because Actions runners are unavailable.
+
 - `b73a683b48f69dfac9495dfcd12668452ab58f86`: distinguish clinic-context loading from no active clinic; prevent closing the patient form while saving; reject blank treatment titles server-side.
 - `7699a543b78316ea525b68dcfad02a2e94a08430`: align Today-page copy with the actions that currently exist.
 - `c30d0dd4b05d18390796bf73e09ecc3cf74f6a9c`: restore the missing `PatientRecord` type import used by patient initials.

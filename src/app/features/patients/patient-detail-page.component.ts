@@ -11,12 +11,13 @@ import type { PatientRecord, UpdatePatientInput } from './patient-api.service';
 import { PatientTreatmentApiService } from './patient-treatment-api.service';
 import type { CreatePatientTreatmentInput, PatientTreatment, ToothSurface, TreatmentCategory, TreatmentStatus } from './patient-treatment-api.service';
 import { ToothSelectorComponent } from './tooth-selector.component';
+import { PatientOdontogramComponent } from './patient-odontogram.component';
 import { AppointmentApiService } from '../agenda/appointment-api.service';
 import type { AppointmentRecord, AppointmentStatus } from '../agenda/appointment-api.service';
 
 @Component({
   selector: 'app-patient-detail-page',
-  imports: [FormsModule, DatePipe, RouterLink, ToothSelectorComponent],
+  imports: [FormsModule, DatePipe, RouterLink, ToothSelectorComponent, PatientOdontogramComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './patient-detail-page.component.html',
   styleUrl: './patient-detail-page.component.css',

@@ -1,0 +1,41 @@
+<section class="odontogram-card" aria-labelledby="patient-odontogram-title">
+  <header class="odontogram-heading">
+    <div>
+      <p class="eyebrow">DOSSIER CLINIQUE</p>
+      <h2 id="patient-odontogram-title">Odontogramme</h2>
+      <p>Chart SVG interactif. Les modifications sont enregistrées dans la clinique active et conservent un historique des versions.</p>
+    </div>
+    <div class="save-state" aria-live="polite">
+      @if (loading()) { <span>Chargement…</span> }
+      @else if (saving()) { <span>Enregistrement…</span> }
+      @else if (lastSavedAt()) { <span>Enregistré {{ lastSavedAt() | date:'dd/MM/yyyy à HH:mm' }}</span> }
+      @else if (loaded()) { <span>Pas encore enregistré</span> }
+    </div>
+  </header>
+  @if (error()) {
+    <div class="chart-message chart-error" role="alert">{{ error() }} <button type="button" (click)="retry()">Réessayer</button></div>
+  }
+  <div class="upstream-chart" [hidden]="!loaded() || !!error()">
+    <aao-odontogram-shell language="fr" numberingSystem="FDI" [darkMode]="false" [enableNotes]="true" [enableIcdas]="true" />
+  </div>
+  @if (saveError()) { <div class="chart-message chart-error" role="alert">{{ saveError() }}</div> }
+  @if (!loaded() && !error()) { <p class="revision-state" role="status">Chargement de l’odontogramme sécurisé du patient…</p> }
+  @if (loaded() && !error()) {
+    <section class="revision-list" aria-labelledby="odontogram-revisions-title">
+      <div class="revision-heading"><h3 id="odontogram-revisions-title">Historique des versions</h3><span>{{ revisions().length }} version(s) récente(s)</span></div>
+      @if (revisionsLoading()) {
+        <p class="revision-state" role="status">Chargement de l’historique…</p>
+      } @else if (revisionsError()) {
+        <p class="revision-state" role="alert">{{ revisionsError() }}</p>
+      } @else if (!revisions().length) {
+        <p class="revision-state">Aucune version enregistrée. La première version sera créée après une modification.</p>
+      } @else {
+        <ol>
+          @for (revision of revisions(); track revision.versionNo) {
+            <li><span class="revision-version">v{{ revision.versionNo }}</span><span class="revision-detail"><strong>{{ revision.recordedByName || 'Membre de l’équipe' }}</strong><time [attr.datetime]="revision.createdAt">{{ revision.createdAt | date:'dd/MM/yyyy à HH:mm' }}</time></span></li>
+          }
+        </ol>
+      }
+    </section>
+  }
+</section>
