@@ -97,6 +97,14 @@ export class ClinicTeamPageComponent {
     }
   }
 
+  get assignedCount(): number {
+    return this.members().filter((member) => !!member.clinicRole).length;
+  }
+
+  isOrganizationAdmin(role: string): boolean {
+    return role === 'ORGANIZATION_OWNER' || role === 'ORGANIZATION_ADMIN';
+  }
+
   get availableMembers(): TeamMember[] {
     return this.members().filter((member) => !member.clinicRole && !['ORGANIZATION_OWNER', 'ORGANIZATION_ADMIN'].includes(member.organizationRole));
   }
