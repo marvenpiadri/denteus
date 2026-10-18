@@ -13,6 +13,7 @@ import { recallRoutes } from './routes/recalls.js';
 import { schedulingResourceRoutes } from './routes/scheduling-resources.js';
 import { clinicalEncounterRoutes } from './routes/clinical-encounters.js';
 import { patientHistoryRoutes } from './routes/patient-history.js';
+import { clinicSettingsRoutes } from './routes/clinic-settings.js';
 
 const clientOrigins = (process.env['CLIENT_ORIGINS'] ?? 'http://localhost:3000')
   .split(',')
@@ -117,6 +118,7 @@ await app.register(recallRoutes, { prefix: '/api/v1' });
 await app.register(schedulingResourceRoutes, { prefix: '/api/v1' });
 await app.register(clinicalEncounterRoutes, { prefix: '/api/v1' });
 await app.register(patientHistoryRoutes, { prefix: '/api/v1' });
+await app.register(clinicSettingsRoutes, { prefix: '/api/v1' });
 
 app.setNotFoundHandler(async (_request, reply) => reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Route not found.' } }));
 app.setErrorHandler((error, request, reply) => {
