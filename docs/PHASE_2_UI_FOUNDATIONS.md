@@ -15,9 +15,18 @@
 - [x] Replaced the Today placeholder with honest, useful links into persisted agenda, patient, and recall workflows without fabricated metrics.
 - [x] Replaced generic future-step placeholder copy on unfinished modules with a clear unavailable state and links to existing workflows.
 - [x] Removed obsolete route-level “next step” copy and kept existing business logic/API contracts intact.
-- [ ] Continue normalizing shared control states and the remaining hard-coded feature-specific colors.
-- [ ] Review sign-in/sign-up, patient forms/details, agenda, and recalls for responsive and dark-theme consistency.
+- [x] Centralized primary/secondary button primitives and shared control sizing/radius tokens.
+- [x] Replaced remaining clinical status colors with semantic tokens for success, information, warning, danger, neutral, and accepted treatment states.
+- [x] Removed duplicate status overrides where semantic theme tokens now own the values.
+- [x] Updated sign-in/sign-up, clinic onboarding, patient forms/details, agenda, recalls, and workspace styles to use shared surface, text, border, focus, and action tokens.
+- [x] Applied the saved/system theme before rendering all routes, including sign-in, sign-up, and onboarding.
+- [x] Made the mobile navigation drawer inert while closed, dynamically labeled, and closable with Escape.
+- [ ] Owner visual review at desktop/tablet/mobile widths and build/test execution.
 - [ ] Owner to run build/tests and browser review; no verification result is claimed in this document.
+
+## Tooling note
+
+Graphify was requested but no Graphify workspace is configured for this agent, so graph-based dependency tracing was unavailable. Source relationships were inspected through repository files. This is a tooling limitation, not a claim that Graphify findings were produced.
 
 ## Non-negotiables
 
