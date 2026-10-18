@@ -3,3 +3,24 @@
 .patient-name-link{display:block;padding:0;border:0;background:transparent;color:var(--text-primary);text-align:left;font-size:12px;font-weight:750;text-decoration:none}
 .patient-name-link:hover{color:var(--color-brand);text-decoration:underline}
 .patient-name-link:focus-visible{outline:3px solid var(--border-focus);outline-offset:2px;border-radius:3px}
+
+
+/* Patient list refinements: prioritize identity and keep the table usable on narrow screens. */
+.patients-page { gap: 22px; }
+.page-heading h1 { line-height: 1.15; }
+.patient-tools { align-items: end; gap: 18px; }
+.search-row input { min-height: 44px; }
+.search-row button { min-height: 44px; padding-inline: 14px; }
+.patient-list { box-shadow: var(--shadow-panel); }
+tbody tr { transition: background-color .12s ease; }
+tbody tr:focus-within { background: var(--surface-hover); }
+.patient-name-link { min-height: 32px; }
+@media (max-width: 680px) {
+  .patient-tools { gap: 8px; }
+  .search-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+  .search-row button { min-width: 82px; }
+  .table-scroll { overflow-x: auto; overscroll-behavior-inline: contain; }
+}
+@media (prefers-reduced-motion: reduce) {
+  tbody tr { transition: none; }
+}
