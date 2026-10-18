@@ -10,8 +10,13 @@
   @if (success()) { <div class="success-message" role="status">{{ success() }}</div> }
   @if (error()) { <div class="error-message" role="alert">{{ error() }} <button type="button" (click)="refreshAppointments()">Réessayer</button></div> }
 
-  <section class="agenda-toolbar" aria-label="Naviguer dans le calendrier">
-    <div class="date-navigation"><button type="button" class="icon-button" (click)="moveDate(-1)" [disabled]="saving() || changingStatusId() !== null" [attr.aria-label]="calendarView() === 'day' ? 'Jour précédent' : calendarView() === 'week' ? 'Semaine précédente' : calendarView() === 'month' ? 'Mois précédent' : 'Année précédente'">←</button><label for="agenda-date">{{ calendarView() === 'day' ? 'Journée' : calendarView() === 'week' ? 'Semaine' : calendarView() === 'month' ? 'Mois' : 'Année' }}</label><input id="agenda-date" type="date" [ngModel]="selectedDate()" (ngModelChange)="selectedDate.set($event)" [disabled]="saving() || changingStatusId() !== null"><button type="button" class="icon-button" (click)="moveDate(1)" [disabled]="saving() || changingStatusId() !== null" [attr.aria-label]="calendarView() === 'day' ? 'Jour suivant' : calendarView() === 'week' ? 'Semaine suivante' : calendarView() === 'month' ? 'Mois suivant' : 'Année suivante'">→</button></div>
+  <section class="agenda-toolbar calendar-options" aria-label="Options du calendrier">
+    <div class="calendar-resource-switcher" role="group" aria-label="Regrouper les rendez-vous">
+      <button type="button" [class.active]="calendarResourceView() === 'all'" (click)="calendarResourceView.set('all')">Tous les rendez-vous</button>
+      <button type="button" [class.active]="calendarResourceView() === 'provider'" (click)="calendarResourceView.set('provider')">Par praticien</button>
+      <button type="button" [class.active]="calendarResourceView() === 'operatory'" (click)="calendarResourceView.set('operatory')">Par fauteuil</button>
+    </div>
+    <div class="calendar-date-control"><label for="agenda-date">Aller à la date</label><input id="agenda-date" type="date" [ngModel]="selectedDate()" (ngModelChange)="selectedDate.set($event)" [disabled]="saving() || changingStatusId() !== null"></div>
     <span class="timezone-label">{{ tenant.activeClinic()?.timezone || 'Africa/Casablanca' }}</span>
   </section>
 
@@ -96,18 +101,20 @@
     </section>
   }
 
-  <app-agenda-calendar
-    [appointments]="appointments()"
-    [providers]="providers()"
-    [operatories]="operatories()"
-    [date]="selectedDate()"
-    (viewChanged)="changeCalendarView($event)"
-    (calendarDayPicked)="onCalendarDateSelected($event)"
-    [timeZone]="tenant.activeClinic()?.timezone || 'Africa/Casablanca'"
-    [loading]="loading() || saving()"
-    (slotSelected)="openCreateAtTime($event)"
-    (appointmentSelected)="openReschedule($event)"
-    (appointmentDropped)="dropAppointment($event)"
+  <cal-scheduler
+    [initialEvents]="calendarEvents()"
+    [initialCategories]="calendarCategories()"
+    [focusDate]="selectedDate()"
+    [defaultView]="calendarView()"
+    [lanes]="calendarLanes()"
+    [gateway]="calendarGateway"
+    [externalManagement]="true"
+    [locale]="'fr-FR'"
+    [theme]="'light'"
+    (dateChanged)="onCalendarDateChanged($event)"
+    (viewChanged)="onCalendarViewChanged($event)"
+    (createRequested)="onCalendarCreateRequested($event)"
+    (eventSelected)="onCalendarEventSelected($event)"
   />
 
   <section class="waiting-room" aria-label="Salle d’attente et soins en cours">
