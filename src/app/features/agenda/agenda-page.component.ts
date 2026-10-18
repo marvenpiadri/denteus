@@ -530,6 +530,11 @@ export class AgendaPageComponent {
     return metadata[status];
   }
 
+  setCalendarResourceView(mode: 'all' | 'provider' | 'operatory'): void {
+    this.calendarResourceView.set(mode);
+    if (mode !== 'all' && this.calendarView() !== 'day') this.calendarView.set('day');
+  }
+
   onCalendarDateChanged(date: string): void {
     if (date && date !== this.selectedDate()) this.selectedDate.set(date);
   }
