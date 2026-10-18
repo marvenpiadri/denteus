@@ -21,6 +21,7 @@ export interface CalendarSlotSelection {
 @Component({
   selector: 'app-agenda-calendar',
   standalone: true,
+  imports: [CdkDrag, CdkDropList],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './agenda-calendar.component.html',
   styleUrl: './agenda-calendar.component.css',
