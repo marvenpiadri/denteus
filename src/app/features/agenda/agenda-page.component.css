@@ -41,3 +41,50 @@
 @media (prefers-reduced-motion: reduce) {
   .appointment-item { transition: none; }
 }
+
+
+/* Calendar occupies the available workspace width and receives a real, bounded viewport height. */
+:host { display: block; width: 100%; min-width: 0; min-height: 0; }
+.agenda-page { width: 100%; min-width: 0; }
+app-agenda-calendar { display: block; width: 100%; min-width: 0; min-height: 0; }
+.agenda-page > app-agenda-calendar { align-self: stretch; }
+.heading-actions { gap: 10px; }
+.heading-actions .primary-button,
+.heading-actions .secondary-button {
+  min-height: 42px;
+  padding: 10px 15px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.2;
+}
+.agenda-toolbar { gap: 16px; padding: 12px 16px; }
+.date-navigation { gap: 8px; }
+.date-navigation .icon-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+  font-size: 17px;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+.date-navigation .icon-button:hover:not(:disabled) {
+  border-color: var(--color-brand-border);
+  background: var(--surface-hover);
+  color: var(--color-brand);
+}
+.date-navigation input {
+  min-height: 40px;
+  border-radius: 10px;
+  background: var(--surface-raised);
+}
+.timezone-label { min-height: 34px; display: inline-flex; align-items: center; }
+@media (min-width: 1000px) {
+  .agenda-page { gap: 18px; }
+  app-agenda-calendar { min-height: min(820px, calc(100vh - 240px)); }
+}
+@media (max-width: 600px) {
+  .heading-actions { gap: 8px; }
+  .heading-actions .primary-button, .heading-actions .secondary-button { min-height: 42px; }
+  .agenda-toolbar { padding: 12px; }
+}
