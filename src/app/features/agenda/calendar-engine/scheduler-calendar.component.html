@@ -1,6 +1,6 @@
 <div class="shell" [class.sidebar-open]="sidebarOpen()">
   <aside class="sidebar" aria-label="Calendars">
-    <cal-sidebar />
+    <cal-sidebar brand="Denteus" heading="Statuts" />
   </aside>
   @if (sidebarOpen()) {
     <div class="scrim" (click)="sidebarOpen.set(false)"></div>
@@ -11,6 +11,9 @@
       (newEvent)="openCreate()"
       (toggleSidebar)="sidebarOpen.set(!sidebarOpen())"
       (toggleTheme)="toggleTheme()"
+      [searchPlaceholder]="'Rechercher un rendez-vous'"
+      [newLabel]="'Nouveau rendez-vous'"
+      [showThemeToggle]="false"
     />
 
     @switch (store.view()) {
