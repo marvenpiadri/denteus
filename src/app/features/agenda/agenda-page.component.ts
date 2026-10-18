@@ -591,6 +591,10 @@ export class AgendaPageComponent {
     this.calendarView.set(view);
   }
 
+  onCalendarDateSelected(date: string): void {
+    this.selectedDate.set(date);
+  }
+
   private appointmentRange(date: string, view: 'day' | 'week' | 'month' | 'year'): { from: string; to: string } {
     if (view === 'week') {
       const offset = (new Date(date + 'T12:00:00').getDay() + 6) % 7;
