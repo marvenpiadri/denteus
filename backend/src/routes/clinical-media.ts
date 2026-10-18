@@ -2,6 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import type { FastifyPluginAsync } from 'fastify';
 import { canReadOdontogram, canWriteOdontogram, denyInsufficientRole, requireClinicAccess } from '../auth/authorization.js';
 import { pool } from '../db/pool.js';
+import { allowedClinicalMimeTypes, isClinicalMediaCategoryCompatible, isValidClinicalBase64, matchesClinicalFileSignature, maxClinicalMediaBytes, safeClinicalFilename, type ClinicalMediaType } from '../domain/clinical-media-policy.js';
 
 interface MediaParams {
   organizationId: string;
@@ -11,39 +12,13 @@ interface MediaParams {
   mediaId?: string;
 }
 interface UploadBody {
-  mediaType: 'XRAY' | 'PHOTO' | 'DOCUMENT' | 'DICOM';
+  mediaType: ClinicalMediaType;
   originalFilename: string;
   mimeType: string;
   contentBase64: string;
   description?: string | null;
   capturedAt?: string | null;
 }
-const allowedMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'application/pdf', 'application/dicom']);
-const maxBytes = 8 * 1024 * 1024;
-const uploadSchema = {
-  type: 'object', additionalProperties: false,
-  required: ['mediaType', 'originalFilename', 'mimeType', 'contentBase64'],
-  properties: {
-    mediaType: { type: 'string', enum: ['XRAY', 'PHOTO', 'DOCUMENT', 'DICOM'] },
-    originalFilename: { type: 'string', minLength: 1, maxLength: 255 },
-    mimeType: { type: 'string', enum: [...allowedMimeTypes] },
-    contentBase64: { type: 'string', minLength: 1, maxLength: Math.ceil(maxBytes * 4 / 3) + 8 },
-    description: { anyOf: [{ type: 'string', maxLength: 2000 }, { type: 'null' }] },
-    capturedAt: { anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }] },
-  },
-} as const;
-function safeFilename(value: string): string {
-  return value.replace(/[\\/\\r\\n\\0]/g, '_').replace(/[^\\p{L}\\p{N}._ ()-]/gu, '_').slice(0, 255) || 'clinical-file';
-}
-function matchesSignature(bytes: Buffer, mime: string): boolean {
-  if (mime === 'image/jpeg') return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
-  if (mime === 'image/png') return bytes.length >= 8 && bytes.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10]));
-  if (mime === 'image/webp') return bytes.length >= 12 && bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP';
-  if (mime === 'application/pdf') return bytes.length >= 5 && bytes.toString('ascii', 0, 5) === '%PDF-';
-  if (mime === 'application/dicom') return bytes.length >= 132 && bytes.toString('ascii', 128, 132) === 'DICM';
-  return false;
-}
-
 export const clinicalMediaRoutes: FastifyPluginAsync = async (app) => {
   app.post<{ Params: MediaParams; Body: UploadBody }>(
     '/organizations/:organizationId/clinics/:clinicId/patients/:patientId/encounters/:encounterId/media',
@@ -59,29 +34,23 @@ export const clinicalMediaRoutes: FastifyPluginAsync = async (app) => {
       );
       if (!patient.rowCount) return reply.code(404).send({ error: { code: 'PATIENT_NOT_FOUND', message: 'Patient not found.' } });
 
-      const filename = safeFilename(request.body.originalFilename.trim());
+      const filename = safeClinicalFilename(request.body.originalFilename.trim());
       const mimeType = request.body.mimeType.toLowerCase();
-      if (!allowedMimeTypes.has(mimeType)) {
+      if (!allowedClinicalMimeTypes.has(mimeType)) {
         return reply.code(415).send({ error: { code: 'UNSUPPORTED_CLINICAL_FILE', message: 'Use JPEG, PNG, WebP, PDF, or DICOM files.' } });
       }
-      if (request.body.contentBase64.length > Math.ceil(maxBytes * 4 / 3) + 8 || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(request.body.contentBase64)) {
+      if (!isValidClinicalBase64(request.body.contentBase64)) {
         return reply.code(400).send({ error: { code: 'INVALID_FILE_ENCODING', message: 'The uploaded file is not valid base64 data.' } });
       }
       const bytes = Buffer.from(request.body.contentBase64, 'base64');
-      if (!bytes.length || bytes.length > maxBytes) {
+      if (!bytes.length || bytes.length > maxClinicalMediaBytes) {
         return reply.code(413).send({ error: { code: 'CLINICAL_FILE_TOO_LARGE', message: 'Clinical files must be 8 MiB or smaller.' } });
       }
-      if (!matchesSignature(bytes, mimeType)) {
+      if (!matchesClinicalFileSignature(bytes, mimeType)) {
         return reply.code(415).send({ error: { code: 'FILE_SIGNATURE_MISMATCH', message: 'The file contents do not match the selected file type.' } });
       }
       const mediaType = request.body.mediaType;
-      const categoryTypes: Record<UploadBody['mediaType'], string[]> = {
-        XRAY: ['image/jpeg', 'image/png', 'image/webp', 'application/dicom'],
-        PHOTO: ['image/jpeg', 'image/png', 'image/webp'],
-        DOCUMENT: ['application/pdf'],
-        DICOM: ['application/dicom'],
-      };
-      if (!categoryTypes[mediaType].includes(mimeType)) {
+      if (!isClinicalMediaCategoryCompatible(mediaType, mimeType)) {
         return reply.code(400).send({ error: { code: 'MEDIA_TYPE_MISMATCH', message: 'Choose a category compatible with the file type.' } });
       }
 
