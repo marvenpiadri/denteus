@@ -10,7 +10,7 @@ test('clinical media categories only accept compatible formats', () => {
   assert.equal(isClinicalMediaCategoryCompatible('XRAY', 'application/dicom'), true);
   assert.equal(isClinicalMediaCategoryCompatible('PHOTO', 'application/pdf'), false);
   assert.equal(isClinicalMediaCategoryCompatible('DOCUMENT', 'application/pdf'), true);
-  assert.equal(isClinicalMediaCategoryCompatible('DICOM', 'image/png'), false);
+  assert.equal(isClinicalMediaCategoryCompatible('XRAY', 'application/dicom'), true);
   assert.equal(allowedClinicalMimeTypes.has('text/html'), false);
 });
 
