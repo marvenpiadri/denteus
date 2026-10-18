@@ -76,8 +76,8 @@ export function isValidWorkingHours(hours: readonly WorkingHourInput[]): boolean
   for (const hour of hours) {
     if (!Number.isInteger(hour.dayOfWeek) || hour.dayOfWeek < 0 || hour.dayOfWeek > 6) return false;
     if (days.has(hour.dayOfWeek)) return false;
-    if (!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(hour.startsAt)
-      || !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(hour.endsAt)
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(hour.startsAt)
+      || !/^([01]\d|2[0-3]):[0-5]\d$/.test(hour.endsAt)
       || hour.endsAt <= hour.startsAt) return false;
     days.add(hour.dayOfWeek);
   }
