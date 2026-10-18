@@ -6,7 +6,7 @@ export type EncounterType='CONSULTATION'|'EMERGENCY'|'FOLLOW_UP'|'PROCEDURE'|'OT
 export type NoteType='CHIEF_COMPLAINT'|'EXAMINATION'|'ASSESSMENT'|'PROGRESS'|'DISCHARGE'|'OTHER';
 export type FindingType='OBSERVATION'|'DIAGNOSIS'|'SYMPTOM'|'RISK'|'OTHER';
 export type ProcedureCategory='EXAM'|'HYGIENE'|'RESTORATIVE'|'ENDODONTICS'|'EXTRACTION'|'PROSTHODONTICS'|'ORTHODONTICS'|'PERIODONTICS'|'IMPLANT'|'OTHER';
-export type ClinicalMediaType='XRAY'|'PHOTO'|'DOCUMENT'|'DICOM';
+export type ClinicalMediaType='XRAY'|'PHOTO'|'DOCUMENT';
 export interface ClinicalMediaUpload { mediaType:ClinicalMediaType; originalFilename:string; mimeType:string; contentBase64:string; description?:string|null; capturedAt?:string|null; }
 export interface ClinicalNote { id:string; noteType:NoteType; content:string; createdByName?:string|null; signedById:string|null; signedByName?:string|null; signedAt:string|null; createdAt:string; amendments:Array<{id:string;reason:string;amendedContent:string;amendedById:string|null;createdAt:string}>; }
 export interface ClinicProvider { id:string; displayName:string; role:'DENTIST'|'ORTHODONTIST'; }
