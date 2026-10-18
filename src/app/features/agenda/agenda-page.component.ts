@@ -1,6 +1,6 @@
 import { isPlatformBrowser } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, PLATFORM_ID, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, PLATFORM_ID, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { TenantContextService } from '../../core/tenant/tenant-context.service';
@@ -30,6 +30,7 @@ export class AgendaPageComponent {
 
   readonly selectedDate = signal('');
   readonly appointments = signal<AppointmentRecord[]>([]);
+  readonly waitingRoomAppointments = computed(() => this.appointments().filter((appointment) => appointment.status === 'ARRIVED'));
   readonly patients = signal<PatientRecord[]>([]);
   readonly providers = signal<ClinicProvider[]>([]);
   readonly operatories = signal<ClinicOperatory[]>([]);
