@@ -1,7 +1,7 @@
 :host{display:block;min-height:100dvh}
 *{box-sizing:border-box}
-.auth-page{min-height:100dvh;display:grid;place-items:center;padding:32px 18px;background:radial-gradient(ellipse at 50% 0%,#e4f3f0 0%,var(--surface-canvas) 44%,var(--surface-canvas) 100%);color:var(--text-primary)}
-.auth-panel{width:min(100%,440px);padding:clamp(26px,5vw,42px);background:#fff;border:1px solid var(--border-subtle);border-radius:18px;box-shadow:0 24px 70px rgb(24 59 68 / 7%)}
+.auth-page{min-height:100dvh;display:grid;place-items:center;padding:32px 18px;background:radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--color-brand-soft) 72%, var(--surface-canvas)) 0%, var(--surface-canvas) 54%);color:var(--text-primary)}
+.auth-panel{width:min(100%,440px);padding:clamp(26px,5vw,42px);background:var(--surface-raised);border:1px solid var(--border-subtle);border-radius:18px;box-shadow:0 24px 70px rgb(24 59 68 / 7%)}
 .brand{display:inline-flex;align-items:center;gap:10px;color:var(--text-primary);text-decoration:none;font-size:21px;letter-spacing:-.7px;font-weight:780}
 .brand-mark{display:grid;place-items:center;width:35px;height:35px;border-radius:10px;background:var(--color-brand);color:#fff;font-size:20px;font-weight:800}
 .auth-intro{margin:38px 0 26px}
@@ -11,7 +11,7 @@ h1{margin:11px 0 10px;color:var(--text-primary);font-size:30px;line-height:1.2;l
 form{display:grid;gap:19px}
 .field{display:grid;gap:8px}
 label{font-size:12px;font-weight:750;color:var(--text-primary)}
-input{width:100%;min-height:46px;padding:11px 12px;border:1px solid var(--border-control);border-radius:8px;background:#fff;color:var(--text-primary);font-size:13px;outline:none;transition:border-color .15s,box-shadow .15s}
+input{width:100%;min-height:46px;padding:11px 12px;border:1px solid var(--border-control);border-radius:8px;background:var(--surface-raised);color:var(--text-primary);font-size:13px;outline:none;transition:border-color .15s,box-shadow .15s}
 input::placeholder{color:#9aa9af}
 input:focus{border-color:var(--color-brand);box-shadow:0 0 0 3px var(--color-brand)1b}
 input:disabled{background:var(--surface-muted);color:#82939a}
