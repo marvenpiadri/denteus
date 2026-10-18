@@ -183,8 +183,9 @@ export class AgendaPageComponent {
     this.pendingStatusChange.set(null);
     this.error.set('');
     try {
-      const from = localDateTimeToIso(`${date}T00:00`, timeZone);
-      const to = localDateTimeToIso(`${addCalendarDays(date, 1)}T00:00`, timeZone);
+      const range = this.appointmentRange(date, view);
+      const from = localDateTimeToIso(`${range.from}T00:00`, timeZone);
+      const to = localDateTimeToIso(`${range.to}T00:00`, timeZone);
       const response = await this.appointmentsApi.list(organizationId, clinicId, from, to);
       if (requestSequence !== this.appointmentLoadSequence || this.tenant.activeClinic()?.id !== clinicId || this.selectedDate() !== date) return;
       this.appointments.set(response.data);
