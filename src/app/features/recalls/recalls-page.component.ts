@@ -140,14 +140,18 @@ export class RecallsPageComponent {
         intervalMonths: Number(this.intervalMonths),
         ...(this.note.trim() ? { note: this.note.trim() } : {}),
       });
+      if (clinicSequence !== this.clinicSequence || this.tenant.activeClinic()?.id !== clinic.id) return;
       this.showCreateForm.set(false);
       this.success.set('Le rappel a été enregistré.');
       await this.loadRecalls(clinic.organizationId, clinic.id, this.filterStatus(), this.query());
     } catch (error) {
+      if (clinicSequence !== this.clinicSequence || this.tenant.activeClinic()?.id !== clinic.id) return;
       this.formError.set(error instanceof HttpErrorResponse && error.status === 404
         ? 'Ce patient n’est pas accessible dans la clinique active.'
         : 'Le rappel n’a pas été enregistré. Vérifiez les champs et réessayez.');
-    } finally { this.saving.set(false); }
+    } finally {
+      if (clinicSequence === this.clinicSequence) this.saving.set(false);
+    }
   }
 
   openContact(recall: PatientRecall): void {
