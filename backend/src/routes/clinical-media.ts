@@ -75,8 +75,13 @@ export const clinicalMediaRoutes: FastifyPluginAsync = async (app) => {
         return reply.code(415).send({ error: { code: 'FILE_SIGNATURE_MISMATCH', message: 'The file contents do not match the selected file type.' } });
       }
       const mediaType = request.body.mediaType;
-      if ((mediaType === 'DICOM') !== (mimeType === 'application/dicom') ||
-          (mediaType === 'XRAY' && !['image/jpeg', 'image/png', 'image/webp', 'application/dicom'].includes(mimeType))) {
+      const categoryTypes: Record<UploadBody['mediaType'], string[]> = {
+        XRAY: ['image/jpeg', 'image/png', 'image/webp', 'application/dicom'],
+        PHOTO: ['image/jpeg', 'image/png', 'image/webp'],
+        DOCUMENT: ['application/pdf'],
+        DICOM: ['application/dicom'],
+      };
+      if (!categoryTypes[mediaType].includes(mimeType)) {
         return reply.code(400).send({ error: { code: 'MEDIA_TYPE_MISMATCH', message: 'Choose a category compatible with the file type.' } });
       }
 
@@ -93,7 +98,7 @@ export const clinicalMediaRoutes: FastifyPluginAsync = async (app) => {
         }
         if (['SIGNED', 'CANCELLED'].includes(encounter.rows[0].status)) {
           await client.query('ROLLBACK');
-          return reply.code(409).send({ error: { code: 'ENCOUNTER_CLOSED', message: 'Reopen the clinical workflow before attaching files to a closed encounter.' } });
+          return reply.code(409).send({ error: { code: 'ENCOUNTER_CLOSED', message: 'Closed visits cannot accept additional files.' } });
         }
         const id = randomUUID();
         const checksum = createHash('sha256').update(bytes).digest('hex');
@@ -147,6 +152,11 @@ export const clinicalMediaRoutes: FastifyPluginAsync = async (app) => {
       reply.header('X-Content-Type-Options', 'nosniff');
       reply.header('Content-Security-Policy', "default-src 'none'; sandbox");
       reply.header('ETag', `"${media.checksumSha256}"`);
+      await pool.query(
+        `INSERT INTO audit_events (id, organization_id, user_id, action, resource_type, resource_id, metadata)
+         VALUES ($1,$2,$3,'CLINICAL_MEDIA_DOWNLOADED','CLINICAL_MEDIA',$4,$5::jsonb)`,
+        [randomUUID(), organizationId, access.userId, mediaId, JSON.stringify({ clinicId, patientId, encounterId, checksum: media.checksumSha256 })],
+      );
       return reply.send(media.contentBytes);
     },
   );
