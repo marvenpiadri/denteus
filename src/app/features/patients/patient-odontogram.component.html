@@ -18,7 +18,12 @@
   <div class="upstream-chart" [hidden]="!loaded() || !!error()">
     <aao-odontogram-shell language="fr" numberingSystem="FDI" [darkMode]="false" [enableNotes]="true" [enableIcdas]="true" />
   </div>
-  @if (saveError()) { <div class="chart-message chart-error" role="alert">{{ saveError() }}</div> }
+  @if (saveError()) {
+    <div class="chart-message chart-error" role="alert">
+      {{ saveError() }}
+      @if (saveConflict()) { <button type="button" (click)="retry()">Recharger le dossier</button> }
+    </div>
+  }
   @if (!loaded() && !error()) { <p class="revision-state" role="status">Chargement de l’odontogramme sécurisé du patient…</p> }
   @if (loaded() && !error()) {
     <section class="revision-list" aria-labelledby="odontogram-revisions-title">
