@@ -35,7 +35,6 @@ export class AgendaPageComponent {
     return this.appointments().filter((appointment) => toClinicDateTimeInput(appointment.startsAt, zone).slice(0, 10) === this.selectedDate());
   });
   readonly appointments = signal<AppointmentRecord[]>([]);
-  readonly waitingRoomAppointments = computed(() => this.appointments().filter((appointment) => appointment.status === 'ARRIVED'));
   readonly patients = signal<PatientRecord[]>([]);
   readonly waitingRoomAppointments = computed(() => this.dayAppointments().filter((appointment) => appointment.status === 'ARRIVED'));
   readonly inTreatmentAppointments = computed(() => this.dayAppointments().filter((appointment) => appointment.status === 'IN_PROGRESS'));
