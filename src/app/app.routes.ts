@@ -10,6 +10,7 @@ import { PatientDetailPageComponent } from './features/patients/patient-detail-p
 import { AgendaPageComponent } from './features/agenda/agenda-page.component';
 import { RecallsPageComponent } from './features/recalls/recalls-page.component';
 import { ClinicSettingsPageComponent } from './features/settings/clinic-settings-page.component';
+import { ClinicReportsPageComponent } from './features/reports/clinic-reports-page.component';
 
 export const routes: Routes = [
   {
@@ -92,7 +93,7 @@ export const routes: Routes = [
       },
       {
         path: 'reports',
-        component: WorkspacePageComponent,
+        component: ClinicReportsPageComponent,
         title: 'Rapports | Dentaleus',
         data: {
           title: 'Rapports',
