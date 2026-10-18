@@ -51,6 +51,9 @@ export class AgendaPageComponent {
   readonly pendingStatusChange = signal<{ appointmentId: string; status: Exclude<AppointmentStatus, 'SCHEDULED'> } | null>(null);
   private patientOptionsClinicId = '';
   private resourceOptionsClinicId = '';
+  private appointmentLoadSequence = 0;
+  private resourceLoadSequence = 0;
+  private patientOptionsLoadSequence = 0;
 
   patientId = '';
   startsAt = '';
@@ -105,6 +108,7 @@ export class AgendaPageComponent {
   }
 
   private async loadAppointments(organizationId: string, clinicId: string, date: string, timeZone: string): Promise<void> {
+    const requestSequence = ++this.appointmentLoadSequence;
     this.loading.set(true);
     this.appointments.set([]);
     this.pendingStatusChange.set(null);
@@ -113,7 +117,7 @@ export class AgendaPageComponent {
       const from = localDateTimeToIso(`${date}T00:00`, timeZone);
       const to = localDateTimeToIso(`${addCalendarDays(date, 1)}T00:00`, timeZone);
       const response = await this.appointmentsApi.list(organizationId, clinicId, from, to);
-      if (this.tenant.activeClinic()?.id !== clinicId || this.selectedDate() !== date) return;
+      if (requestSequence !== this.appointmentLoadSequence || this.tenant.activeClinic()?.id !== clinicId || this.selectedDate() !== date) return;
       this.appointments.set(response.data);
     } catch (error) {
       if (this.tenant.activeClinic()?.id !== clinicId || this.selectedDate() !== date) return;
@@ -122,16 +126,17 @@ export class AgendaPageComponent {
         ? 'Votre session a expiré. Reconnectez-vous.'
         : 'L’agenda ne peut pas être chargé. Vérifiez votre connexion puis réessayez.');
     } finally {
-      if (this.tenant.activeClinic()?.id === clinicId && this.selectedDate() === date) this.loading.set(false);
+      if (requestSequence === this.appointmentLoadSequence && this.tenant.activeClinic()?.id === clinicId && this.selectedDate() === date) this.loading.set(false);
     }
   }
 
   private async loadResources(organizationId: string, clinicId: string): Promise<void> {
+    const requestSequence = ++this.resourceLoadSequence;
     this.loadingResources.set(true);
     this.resourceError.set('');
     try {
       const result = await this.resourcesApi.list(organizationId, clinicId);
-      if (this.tenant.activeClinic()?.id !== clinicId) return;
+      if (requestSequence !== this.resourceLoadSequence || this.tenant.activeClinic()?.id !== clinicId) return;
       this.providers.set(result.providers);
       this.operatories.set(result.operatories);
       if (!this.providerId || !result.providers.some((item) => item.id === this.providerId)) this.providerId = '';
@@ -144,7 +149,7 @@ export class AgendaPageComponent {
       this.operatories.set([]);
       this.resourceError.set('Les ressources du planning ne peuvent pas être chargées.');
     } finally {
-      if (this.tenant.activeClinic()?.id === clinicId) this.loadingResources.set(false);
+      if (requestSequence === this.resourceLoadSequence && this.tenant.activeClinic()?.id === clinicId) this.loadingResources.set(false);
     }
   }
 
@@ -236,18 +241,19 @@ export class AgendaPageComponent {
   }
 
   private async loadPatientOptions(organizationId: string, clinicId: string): Promise<void> {
+    const requestSequence = ++this.patientOptionsLoadSequence;
     this.loadingPatients.set(true);
     this.patientsError.set('');
     try {
       const response = await this.patientsApi.list(organizationId, clinicId);
-      if (this.tenant.activeClinic()?.id !== clinicId) return;
+      if (requestSequence !== this.patientOptionsLoadSequence || this.tenant.activeClinic()?.id !== clinicId) return;
       this.patients.set(response.data);
     } catch {
       if (this.tenant.activeClinic()?.id !== clinicId) return;
       this.patients.set([]);
       this.patientsError.set('La liste des patients ne peut pas être chargée. Vous devez pouvoir accéder aux dossiers pour planifier un rendez-vous.');
     } finally {
-      if (this.tenant.activeClinic()?.id === clinicId) this.loadingPatients.set(false);
+      if (requestSequence === this.patientOptionsLoadSequence && this.tenant.activeClinic()?.id === clinicId) this.loadingPatients.set(false);
     }
   }
 
