@@ -15,6 +15,20 @@ Denteam positions itself as an all-in-one dental practice platform across deskto
 - Access beyond the live application: a separate Denteam Offline app described as an encrypted, read-only local copy of patient data, appointments, treatment plans, documents, and financial information.
 - Deployment and trust: a public architecture page describes per-customer database and S3 isolation, customer-controlled infrastructure options, encryption, IAM, backups, auditability, exports, and reversibility.
 
+## Other visible Moroccan-market competitors
+
+These are first-pass comparisons from public marketing pages, not hands-on product evaluations:
+
+- **[WeDent](https://www.wedent.ma/)** positions itself around a locally oriented all-in-one cloud practice tool: multi-chair scheduling, WhatsApp reminders, patient records and odontograms, estimates, invoices, and Moroccan mutual-insurance paperwork (CNSS/CNOPS). Its public page advertises a 1,000 DH/year price point; verify current pricing directly before using it in any commercial comparison.
+- **[Dentiz](https://dentiz.ai/)** promotes a broad suite with day/week/practitioner scheduling, chair-conflict prevention, treatment plans, documents, stock, financial tracking, and AI-supported stock forecasting/cephalometry. It publicly advertises both cloud and in-office installation, plus a 14-day trial.
+- **[Doctopus](https://doctopus.ma/blog/bien-choisir-logiciel-gestion-cabinet-dentaire-maroc)** is also useful as a market-education source: its checklist emphasizes shared agenda/online booking, patient records, Moroccan mutual-insurance forms, estimates/invoicing and unpaid balances, WhatsApp recalls, imaging/statistics, backups, and access controls.
+
+### Competitive read
+
+The recurring baseline is clear: a Moroccan dental practice expects patient records, an interactive odontogram, a shared calendar, treatment estimates and billing, recall/WhatsApp workflows, reports, and clinic/team permissions to feel like one product. Denteam's more distinctive public themes are its offline encrypted read-only app and data-sovereignty architecture; WeDent foregrounds local pricing and WhatsApp/mutual-insurance workflows; Dentiz emphasizes broad module coverage and deployment flexibility.
+
+Denteus should not try to win by advertising a longer feature list. Win first on a reliable patient-to-treatment workflow, fast and clear day-to-day UI, accurate clinical data, transparent backup/export, and role/clinic isolation. Validate pricing, offline mode, integrations, and regulatory claims directly before treating any competitor's public page as proof of production behavior.
+
 ## Strategic implications for Denteus
 
 1. **Make the patient record the centre of the product.** The clinical record should connect appointments, charting, planned/completed treatment, notes, images, prescriptions, consent, and documents without pretending that a list of past procedures is a complete clinical record.

@@ -2,7 +2,7 @@ import { DatePipe, isPlatformBrowser } from '@angular/common';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { AfterViewInit, ChangeDetectionStrategy, Component, PLATFORM_ID, effect, inject, input, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { OdontogramShellComponent, getPlanChart, getPlanChanges, getStatusChart, importStatus, onStateChange } from 'angular-advanced-odontogram';
+import { OdontogramShellComponent, getPlanChart, getPlanChanges, getStatusChart, importStatus, onStateChange, setPlanChart } from 'angular-advanced-odontogram';
 import { TenantContextService } from '../../core/tenant/tenant-context.service';
 
 interface OdontogramRecord {
@@ -93,12 +93,14 @@ export class PatientOdontogramComponent implements AfterViewInit {
       this.applyingServerState = true;
       try {
         if (response.data?.status) {
-          importStatus({ ...response.data.status, ...(response.data.plan ? { plan: response.data.plan } : {}) });
+          importStatus(response.data.status);
+          setPlanChart(response.data.plan ?? { version: '2.22', teeth: {}, globals: {} });
           this.lastSavedAt.set(response.data.updatedAt ?? null);
         } else {
           // Reset through the upstream engine so a route reused for another patient
           // never displays the previous patient's clinical chart.
           importStatus({ version: '2.22', teeth: {}, globals: {} });
+          setPlanChart({ version: '2.22', teeth: {}, globals: {} });
           this.lastSavedAt.set(null);
         }
       } finally {
