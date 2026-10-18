@@ -72,7 +72,7 @@
 
 .detail-page .field-error {
   margin: 8px 0 0;
-  color: var(--color-danger, var(--text-danger));
+  color: var(--color-danger);
   font-size: 13px;
   line-height: 1.45;
 }
