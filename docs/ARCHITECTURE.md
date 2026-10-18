@@ -1,6 +1,6 @@
 # Dentaleus architecture
 
-**Status:** this document describes the current refactor branch plus explicit future boundaries. It is not a claim that every clinical module is production-ready.
+**Status:** current source-level architecture baseline for `main`. This document describes the checked-in structure and known boundaries; it is not a claim that every clinical module is complete or production-ready.
 
 ## Runtime boundaries
 
@@ -21,10 +21,10 @@ The backend currently uses Fastify, Better Auth, `pg`, and hand-written SQL migr
 ## Authentication and tenant scope
 
 - Better Auth owns sign-in, sessions, accounts, and verification records.
-- API routes must resolve the session from request cookies/headers, then verify organization and clinic membership server-side.
-- Patient, appointment, recall, treatment, and odontogram operations must validate that the target record belongs to the active organization and clinic.
+- API routes resolve the session from request cookies/headers, then check organization and clinic membership server-side through the shared clinic-access helper or an equivalent authenticated flow.
+- Patient, appointment, recall, treatment, and odontogram operations should validate that the target record belongs to the active organization and clinic. Source review shows clinic-scoped predicates in representative routes; endpoint-by-endpoint negative authorization tests remain a required owner verification step.
 - UI route guards and hidden controls are usability aids, not authorization boundaries.
-- Sensitive clinical changes need durable audit history. Cross-tenant negative tests are required before production use.
+- Odontogram and treatment writes include audit events; recall changes have recall-specific history. Verify unified audit coverage for all sensitive mutations before production use.
 
 ## Clinical data boundaries
 
@@ -64,8 +64,9 @@ Public booking must use a clinic-scoped public interface and expose only the min
 - PostgreSQL is the current persistence target and is accessed through `pg`.
 - SQL files in `backend/src/db/migrations` are the schema source; migration execution is serialized with a PostgreSQL advisory lock and records applied migration names.
 - Changes to schema must include forward migrations and relevant integration coverage.
-- Backup/restore and migration recovery need explicit production verification.
-- Do not use real patient data until authorization, tenant isolation, persistence, backup/restore, and clinical workflow acceptance tests have passed.
+- Backend dependencies are managed independently and no checked-in backend lockfile was found during this source review; make dependency installation reproducible as part of tooling hardening.
+- Backup/restore and migration recovery need explicit owner verification.
+- Do not use real patient data until authorization, tenant isolation, persistence, backup/restore, and clinical workflow acceptance checks have passed.
 
 ## Current feature state
 
@@ -73,4 +74,4 @@ Implemented initial flows include authentication/onboarding, tenant context, pat
 
 Generic workspace placeholders remain for areas such as today's work, clinical chart, team, reports, and settings. The full odontogram workflow, dated findings, signed notes, complete treatment planning, consent, billing, public Pages, automated communications, and end-to-end acceptance remain outstanding.
 
-See `docs/PHASED_IMPROVEMENT_PLAN.md` for phased work and explicit exit gates.
+See `docs/PHASED_IMPROVEMENT_PLAN.md` for the phased implementation plan, source-audit findings, and owner verification boundary.
