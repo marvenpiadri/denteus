@@ -68,7 +68,7 @@ export class SchedulerCalendarComponent implements OnInit {
   protected readonly store = inject(CalendarStore);
   private readonly platformId = inject(PLATFORM_ID);
 
-  /** Events to show. When empty and `demoData` is true, sample data is generated. */
+  /** Appointment events are supplied by the host application; this component creates no sample data. */
   readonly initialEvents = input<CalendarEvent[] | null>(null);
   readonly initialCategories = input<CalendarCategory[] | null>(null);
   /** localStorage key used to persist events / theme. Pass null to disable persistence. */
