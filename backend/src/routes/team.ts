@@ -152,7 +152,6 @@ export const teamRoutes: FastifyPluginAsync = async (app) => {
         await client.query('COMMIT');
       } catch (error) { await client.query('ROLLBACK'); throw error; }
       finally { client.release(); }
-      if (!result.rowCount) return reply.code(404).send({ error: { code: 'MEMBERSHIP_NOT_FOUND', message: 'Ce membre n’a pas accès à cette clinique.' } });
       return { data: updatedMember };
     },
   );
