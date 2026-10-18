@@ -331,7 +331,7 @@ export class AgendaPageComponent {
   }
 
   openCreateAtTime(selection: CalendarSlotSelection): void {
-    if (this.saving()) return;
+    if (this.saving() || this.changingStatusId()) return;
     this.openCreateForm();
     if (!selection.startsAt) return;
     this.startsAt = selection.startsAt;
