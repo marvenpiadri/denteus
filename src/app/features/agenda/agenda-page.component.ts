@@ -540,6 +540,7 @@ export class AgendaPageComponent {
   }
 
   onCalendarViewChanged(view: CalendarViewType): void {
+    if (view !== 'day' && this.calendarResourceView() !== 'all') this.calendarResourceView.set('all');
     if (view !== this.calendarView()) this.calendarView.set(view);
   }
 
