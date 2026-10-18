@@ -113,7 +113,9 @@
 
     @if (loading() && !appointments().length) {
       <div class="list-state" role="status"><span class="loading-indicator" aria-hidden="true"></span>Chargement de l’agenda…</div>
-    } @else if (!loading() && !appointments().length && !error()) {
+    } @else if (error() && !appointments().length) {
+      <div class="list-state" role="status">Les rendez-vous de cette journée ne sont pas disponibles. Utilisez « Réessayer » dans le message d’erreur ci-dessus pour recharger l’agenda.</div>
+    } @else if (!loading() && !appointments().length) {
       <div class="empty-state"><span class="empty-icon" aria-hidden="true">▦</span><h3>Aucun rendez-vous prévu</h3><p>Cette journée est libre. Créez un rendez-vous pour commencer à organiser la file du cabinet. Configurez les praticiens et fauteuils si vous souhaitez affecter les ressources.</p><button type="button" class="secondary-button" (click)="openCreateForm()" [disabled]="saving() || changingStatusId() !== null">Planifier un rendez-vous</button></div>
     } @else {
       <div class="appointment-items">
