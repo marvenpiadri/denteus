@@ -149,9 +149,9 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
 
       const from = Date.parse(request.query.from);
       const to = Date.parse(request.query.to);
-      if (!Number.isFinite(from) || !Number.isFinite(to) || to <= from || to - from > 31 * 24 * 60 * 60_000) {
+      if (!Number.isFinite(from) || !Number.isFinite(to) || to <= from || to - from > 366 * 24 * 60 * 60_000) {
         return reply.code(400).send({
-          error: { code: 'INVALID_SCHEDULE_RANGE', message: 'Choisissez une période valide de 31 jours maximum.' },
+          error: { code: 'INVALID_SCHEDULE_RANGE', message: 'Choisissez une période valide d’un an maximum.' },
         });
       }
 
@@ -171,7 +171,7 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
             AND a.starts_at < $4::timestamptz
             AND a.ends_at > $3::timestamptz
           ORDER BY a.starts_at ASC
-          LIMIT 500
+          LIMIT 5000
         `,
         [request.params.organizationId, request.params.clinicId, request.query.from, request.query.to],
       );
