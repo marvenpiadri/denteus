@@ -41,3 +41,20 @@
 @media (prefers-reduced-motion: reduce) {
   .appointment-item { transition: none; }
 }
+
+.waiting-room{display:grid;gap:14px;padding:18px;background:var(--surface-raised);border:1px solid var(--border-subtle);border-radius:var(--radius-card)}
+.waiting-room-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.waiting-room-heading h2{margin:0;font-size:19px;letter-spacing:-.35px}
+.waiting-room-heading p:not(.eyebrow){margin:7px 0 0;color:var(--text-secondary);font-size:13px;line-height:1.5}
+.waiting-room-count{display:grid;place-items:center;min-width:36px;height:36px;padding:0 9px;border-radius:11px;background:var(--surface-subtle);color:var(--text-primary);font-weight:750;font-variant-numeric:tabular-nums}
+.waiting-room-list{display:grid;gap:8px}
+.waiting-room-item{display:grid;grid-template-columns:84px minmax(0,1fr) auto;align-items:center;gap:14px;padding:12px;border:1px solid var(--border-subtle);border-radius:12px}
+.waiting-room-time{display:grid;gap:3px;font-variant-numeric:tabular-nums}
+.waiting-room-time strong{font-size:14px}
+.waiting-room-time span,.waiting-room-patient small{color:var(--text-secondary);font-size:12px}
+.waiting-room-patient{display:grid;gap:4px;min-width:0}
+.waiting-room-patient a{width:fit-content;color:var(--text-primary);font-weight:700;text-decoration:none}
+.waiting-room-patient a:hover{text-decoration:underline}
+.waiting-room-patient small{overflow-wrap:anywhere}
+.waiting-room-empty{margin:0;padding:14px;border:1px dashed var(--border-subtle);border-radius:10px;color:var(--text-secondary);font-size:13px}
+@media(max-width:640px){.waiting-room-item{grid-template-columns:64px minmax(0,1fr);gap:10px}.waiting-room-item .primary-button{grid-column:1/-1;width:100%}}
