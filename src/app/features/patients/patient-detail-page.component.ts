@@ -101,9 +101,28 @@ export class PatientDetailPageComponent {
     const activeClinicId = clinicId ?? clinic?.id;
     if (!organization || !activeClinicId || !patientId) return;
     const requestSequence = ++this.requestSequence;
+    // A route change must never carry one patient's tooth selection or open
+    // clinical-entry draft into another patient's record.
     this.patient.set(null);
+    this.treatments.set([]);
+    this.patientAppointments.set([]);
+    this.selectedTeeth.set([]);
+    this.showPrimaryTeeth.set(false);
+    this.showTreatmentForm.set(false);
+    this.treatmentTitle = '';
+    this.treatmentAppointmentId = '';
+    this.treatmentCategory = 'RESTORATIVE';
+    this.treatmentStatus = 'PLANNED';
+    this.treatmentSurface = 'WHOLE';
+    this.treatmentNotes = '';
+    this.treatmentsError.set('');
+    this.treatmentsSuccess.set('');
+    this.treatmentsLoading.set(false);
+    this.patientAppointmentsLoading.set(false);
     this.loading.set(true);
     this.error.set('');
+    this.success.set('');
+    this.editing.set(false);
     this.conflict.set(false);
     try {
       const patient = await this.api.get(organization, activeClinicId, patientId);
