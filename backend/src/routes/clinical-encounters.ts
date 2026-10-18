@@ -11,7 +11,7 @@ type NoteType = 'CHIEF_COMPLAINT' | 'EXAMINATION' | 'ASSESSMENT' | 'PROGRESS' | 
 interface CreateEncounterBody {
   appointmentId?: string | null;
   encounterType?: EncounterType;
-  responsibleDentistId?: string | null;
+  responsibleProviderId?: string | null;
   startedAt?: string;
   chiefComplaint?: string | null;
 }
@@ -26,7 +26,7 @@ const createEncounterSchema = {
   properties: {
     appointmentId: { anyOf: [{ type: 'string', minLength: 1, maxLength: 100 }, { type: 'null' }] },
     encounterType: { type: 'string', enum: encounterTypes },
-    responsibleDentistId: { anyOf: [{ type: 'string', minLength: 1, maxLength: 100 }, { type: 'null' }] },
+    responsibleProviderId: { anyOf: [{ type: 'string', minLength: 1, maxLength: 100 }, { type: 'null' }] },
     startedAt: { type: 'string', format: 'date-time' },
     chiefComplaint: { anyOf: [{ type: 'string', maxLength: 4000 }, { type: 'null' }] },
   },
@@ -62,6 +62,21 @@ async function findEncounter(organizationId: string, clinicId: string, patientId
 }
 
 export const clinicalEncounterRoutes: FastifyPluginAsync = async (app) => {
+  app.get<{ Params: { organizationId: string; clinicId: string } }>(
+    '/organizations/:organizationId/clinics/:clinicId/clinical-providers',
+    async (request, reply) => {
+      const access = await requireClinicAccess(request, reply, request.params.organizationId, request.params.clinicId);
+      if (!access) return;
+      if (!canReadOdontogram(access)) return denyInsufficientRole(reply);
+      const result = await pool.query(
+        `SELECT id, display_name AS "displayName", role FROM clinic_providers
+         WHERE organization_id=$1 AND clinic_id=$2 AND active=true AND role IN ('DENTIST','ORTHODONTIST')
+         ORDER BY display_name`,
+        [request.params.organizationId, request.params.clinicId],
+      );
+      return { data: result.rows, count: result.rowCount };
+    },
+  );
   app.get<{ Params: PatientParams }>(
     '/organizations/:organizationId/clinics/:clinicId/patients/:patientId/encounters',
     async (request, reply) => {
@@ -72,7 +87,7 @@ export const clinicalEncounterRoutes: FastifyPluginAsync = async (app) => {
 
       const result = await pool.query(
         `SELECT e.id, e.appointment_id AS "appointmentId", e.status, e.encounter_type AS "encounterType",
-                e.responsible_dentist_id AS "responsibleDentistId", dentist.name AS "responsibleDentistName",
+                e.responsible_provider_id AS "responsibleProviderId", provider.display_name AS "responsibleDentistName",
                 e.started_at AS "startedAt", e.ended_at AS "endedAt", e.chief_complaint AS "chiefComplaint",
                 e.created_by_id AS "createdById", creator.name AS "createdByName", e.signed_by_id AS "signedById",
                 e.signed_at AS "signedAt", e.version, e.created_at AS "createdAt", e.updated_at AS "updatedAt",
@@ -80,7 +95,7 @@ export const clinicalEncounterRoutes: FastifyPluginAsync = async (app) => {
                 (SELECT count(*)::int FROM clinical_procedures p WHERE p.encounter_id = e.id) AS "procedureCount",
                 (SELECT count(*)::int FROM clinical_media m WHERE m.encounter_id = e.id) AS "mediaCount"
          FROM clinical_encounters e
-         LEFT JOIN app_users dentist ON dentist.id = e.responsible_dentist_id
+         LEFT JOIN clinic_providers provider ON provider.organization_id = e.organization_id AND provider.clinic_id = e.clinic_id AND provider.id = e.responsible_provider_id
          LEFT JOIN app_users creator ON creator.id = e.created_by_id
          WHERE e.organization_id = $1 AND e.clinic_id = $2 AND e.patient_id = $3
          ORDER BY e.started_at DESC, e.created_at DESC LIMIT 250`,
@@ -107,27 +122,23 @@ export const clinicalEncounterRoutes: FastifyPluginAsync = async (app) => {
 
       const appointmentId = request.body.appointmentId ?? null;
       if (appointmentId) {
-        const appointment = await pool.query(
-          'SELECT 1 FROM appointments WHERE organization_id = $1 AND clinic_id = $2 AND patient_id = $3 AND id = $4',
+        const appointment = await pool.query<{ provider_id: string | null }>(
+          'SELECT provider_id FROM appointments WHERE organization_id = $1 AND clinic_id = $2 AND patient_id = $3 AND id = $4',
           [organizationId, clinicId, patientId, appointmentId],
         );
         if (!appointment.rowCount) {
           return reply.code(400).send({ error: { code: 'APPOINTMENT_PATIENT_MISMATCH', message: 'Appointment does not belong to this patient and clinic.' } });
         }
+        if (request.body.responsibleProviderId === undefined && appointment.rows[0].provider_id) request.body.responsibleProviderId = appointment.rows[0].provider_id;
       }
 
-      const dentistId = request.body.responsibleDentistId === undefined ? access.userId : request.body.responsibleDentistId;
-      if (dentistId) {
-        const dentist = await pool.query(
-          `SELECT 1 FROM organization_memberships om
-           WHERE om.organization_id = $1 AND om.user_id = $2
-             AND om.role IN ('ORGANIZATION_OWNER','ORGANIZATION_ADMIN','DENTIST','ORTHODONTIST')`,
-          [organizationId, dentistId],
-        );
-        if (!dentist.rowCount) {
-          return reply.code(400).send({ error: { code: 'INVALID_RESPONSIBLE_DENTIST', message: 'Responsible dentist must be an authorized clinician in this organization.' } });
-        }
-      }
+      const providerId = request.body.responsibleProviderId ?? null;
+      if (!providerId) return reply.code(400).send({ error: { code: 'RESPONSIBLE_PROVIDER_REQUIRED', message: 'Choose the treating dentist for this visit.' } });
+      const provider = await pool.query(
+        `SELECT 1 FROM clinic_providers WHERE organization_id = $1 AND clinic_id = $2 AND id = $3 AND active = true AND role IN ('DENTIST','ORTHODONTIST')`,
+        [organizationId, clinicId, providerId],
+      );
+      if (!provider.rowCount) return reply.code(400).send({ error: { code: 'INVALID_RESPONSIBLE_PROVIDER', message: 'Choose an active dentist or orthodontist from this clinic.' } });
 
       const encounterId = randomUUID();
       const client = await pool.connect();
@@ -135,14 +146,14 @@ export const clinicalEncounterRoutes: FastifyPluginAsync = async (app) => {
         await client.query('BEGIN');
         const result = await client.query(
           `INSERT INTO clinical_encounters
-             (id, organization_id, clinic_id, patient_id, appointment_id, encounter_type, responsible_dentist_id, started_at, chief_complaint, created_by_id, updated_by_id)
+             (id, organization_id, clinic_id, patient_id, appointment_id, encounter_type, responsible_provider_id, started_at, chief_complaint, created_by_id, updated_by_id)
            VALUES ($1, $2, $3, $4, $5, $6, $7, COALESCE($8::timestamptz, now()), $9, $10, $10)
            RETURNING id, appointment_id AS "appointmentId", status, encounter_type AS "encounterType",
-                     responsible_dentist_id AS "responsibleDentistId", started_at AS "startedAt",
+                     responsible_provider_id AS "responsibleProviderId", started_at AS "startedAt",
                      chief_complaint AS "chiefComplaint", created_by_id AS "createdById",
                      version, created_at AS "createdAt", updated_at AS "updatedAt"`,
           [encounterId, organizationId, clinicId, patientId, appointmentId, request.body.encounterType ?? 'CONSULTATION',
-            dentistId, request.body.startedAt ?? null, request.body.chiefComplaint?.trim() || null, access.userId],
+            providerId, request.body.startedAt ?? null, request.body.chiefComplaint?.trim() || null, access.userId],
         );
         await client.query(
           `INSERT INTO audit_events (id, organization_id, user_id, action, resource_type, resource_id, metadata)
@@ -170,13 +181,13 @@ export const clinicalEncounterRoutes: FastifyPluginAsync = async (app) => {
 
       const encounter = await pool.query(
         `SELECT e.id, e.appointment_id AS "appointmentId", e.status, e.encounter_type AS "encounterType",
-                e.responsible_dentist_id AS "responsibleDentistId", dentist.name AS "responsibleDentistName",
+                e.responsible_provider_id AS "responsibleProviderId", provider.display_name AS "responsibleDentistName",
                 e.started_at AS "startedAt", e.ended_at AS "endedAt", e.chief_complaint AS "chiefComplaint",
                 e.created_by_id AS "createdById", creator.name AS "createdByName",
                 e.signed_by_id AS "signedById", signer.name AS "signedByName", e.signed_at AS "signedAt",
                 e.version, e.created_at AS "createdAt", e.updated_at AS "updatedAt"
          FROM clinical_encounters e
-         LEFT JOIN app_users dentist ON dentist.id = e.responsible_dentist_id
+         LEFT JOIN clinic_providers provider ON provider.organization_id = e.organization_id AND provider.clinic_id = e.clinic_id AND provider.id = e.responsible_provider_id
          LEFT JOIN app_users creator ON creator.id = e.created_by_id
          LEFT JOIN app_users signer ON signer.id = e.signed_by_id
          WHERE e.organization_id = $1 AND e.clinic_id = $2 AND e.patient_id = $3 AND e.id = $4`,
