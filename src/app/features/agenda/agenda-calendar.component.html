@@ -13,7 +13,7 @@
         <button type="button" [class.is-selected]="viewMode() === 'provider'" [disabled]="!providers.length" (click)="setView('provider')">Praticiens</button>
         <button type="button" [class.is-selected]="viewMode() === 'operatory'" [disabled]="!operatories.length" (click)="setView('operatory')">Fauteuils</button>
       </div>
-      <span class="calendar-range">07:00–20:00</span>
+      <span class="calendar-range">{{ displayView() === 'day' ? '07:00–20:00' : dateLabel(date, displayView() === 'year' ? { year: 'numeric' } : displayView() === 'month' ? { month: 'long', year: 'numeric' } : { day: 'numeric', month: 'short' }) }}</span>
     </div>
   </header>
 
