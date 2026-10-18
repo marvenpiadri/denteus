@@ -39,9 +39,9 @@ Do not call Phase 1 complete until frontend and backend checks have successful, 
 ## Phase 2 — UI foundations and design consistency
 
 - Define a small shared set of tokens for surfaces, text, borders, spacing, radius, focus, elevation, status, and motion.
-- Establish reusable buttons, form fields, field errors, status labels, empty/loading/error states, dialogs, page headers, and responsive layouts.
+- Establish reusable buttons, form fields, field errors, status labels, empty/loading/error states, dialogs, page headers, and responsive layouts. **Shared button/control tokens and honest workspace states implemented; dialogs/loading-state normalization remains for follow-up.**
 - Audit light and dark theme coverage across every route—not just the agenda.
-- Use Angular Material/CDK selectively and restyle it to the Dentaleus visual language; do not introduce a second component system.
+- Use Angular Material/CDK selectively and restyle it to the Dentaleus visual language; do not introduce a second component system. **No new component library or Tailwind was added.**
 - Preserve accessible keyboard interactions, visible focus, reduced motion, and non-drag alternatives.
 - Exit gate: visual/interaction review of all existing routes at desktop and mobile widths; no regression in working behavior.
 
