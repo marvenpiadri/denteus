@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { TenantContextService } from '../../core/tenant/tenant-context.service';
 import { PatientApiService } from './patient-api.service';
-import type { CreatePatientInput, PatientListRecord } from './patient-api.service';
+import type { CreatePatientInput, PatientListRecord, PatientRecord } from './patient-api.service';
 
 @Component({
   selector: 'app-patient-list-page',
