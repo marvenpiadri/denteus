@@ -79,6 +79,7 @@ export class SchedulerCalendarComponent implements OnInit {
   readonly gateway = input<CalendarGateway | null>(null);
   readonly focusDate = input<string | null>(null);
   readonly showAllDay = input(true);
+  readonly loading = input(false);
 
   readonly eventsChange = output<CalendarEvent[]>();
   readonly themeChange = output<CalendarTheme>();
