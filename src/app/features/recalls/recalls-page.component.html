@@ -25,7 +25,7 @@
           <div><label for="recall-interval">Intervalle (mois)</label><input id="recall-interval" name="intervalMonths" type="number" [(ngModel)]="intervalMonths" min="1" max="120" required></div>
           <div class="wide-field"><label for="recall-note">Note administrative (facultatif)</label><textarea id="recall-note" name="note" [(ngModel)]="note" rows="2" maxlength="2000"></textarea></div>
         </div>
-        <div class="form-actions"><button type="button" class="secondary-button" (click)="showCreateForm.set(false)" [disabled]="saving()">Annuler</button><button type="submit" class="primary-button" [disabled]="recallForm.invalid || saving() || contactSaving() || loadingPatients() || !patients().length">{{ saving() ? 'Enregistrement…' : 'Créer le rappel' }}</button></div>
+        <div class="form-actions"><button type="button" class="secondary-button" (click)="showCreateForm.set(false)" [disabled]="saving() || contactSaving()">Annuler</button><button type="submit" class="primary-button" [disabled]="recallForm.invalid || saving() || contactSaving() || loadingPatients() || !patients().length">{{ saving() ? 'Enregistrement…' : 'Créer le rappel' }}</button></div>
       </form>
     </section>
   }
@@ -56,8 +56,8 @@
             }
             @if (recall.status === 'SCHEDULED') {
               <button type="button" class="status-action status-action--quiet" (click)="changeRecallStatus(recall, 'DUE')" [disabled]="saving() || contactSaving()">À recontacter</button>
-              <button type="button" class="status-action" (click)="changeRecallStatus(recall, 'COMPLETED')" [disabled]="saving()">Effectué</button>
-              <button type="button" class="status-action status-action--quiet" (click)="changeRecallStatus(recall, 'INACTIVE')" [disabled]="saving()">Désactiver</button>
+              <button type="button" class="status-action" (click)="changeRecallStatus(recall, 'COMPLETED')" [disabled]="saving() || contactSaving()">Effectué</button>
+              <button type="button" class="status-action status-action--quiet" (click)="changeRecallStatus(recall, 'INACTIVE')" [disabled]="saving() || contactSaving()">Désactiver</button>
             }
             @if (recall.status === 'DECLINED' || recall.status === 'INACTIVE') {
               <button type="button" class="status-action" (click)="changeRecallStatus(recall, 'DUE')" [disabled]="saving() || contactSaving()">Réactiver</button>
