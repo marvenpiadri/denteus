@@ -132,6 +132,13 @@ export const patientTreatmentRoutes: FastifyPluginAsync = async (app) => {
       );
       if (!patient.rowCount) return reply.code(404).send({ error: { code: 'PATIENT_NOT_FOUND', message: 'Patient introuvable dans cette clinique.' } });
 
+      const title = request.body.title.trim();
+      if (!title) {
+        return reply.code(400).send({
+          error: { code: 'INVALID_TREATMENT_TITLE', message: 'Le titre du soin est obligatoire.' },
+        });
+      }
+
       const status = request.body.status ?? 'PLANNED';
       const toothSites = request.body.toothSites ?? [];
       if (!categories.includes(request.body.category) || !statuses.includes(status)) {
@@ -166,7 +173,7 @@ export const patientTreatmentRoutes: FastifyPluginAsync = async (app) => {
             (id, organization_id, clinic_id, patient_id, appointment_id, title, category, status, notes, performed_at, performed_by_id, recorded_by_id)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::timestamptz, $11, $12)`,
           [treatmentId, request.params.organizationId, request.params.clinicId, request.params.patientId,
-            request.body.appointmentId ?? null, request.body.title.trim(), request.body.category, status,
+            request.body.appointmentId ?? null, title, request.body.category, status,
             request.body.notes?.trim() || null, performedAt, status === 'COMPLETED' ? access.userId : null, access.userId],
         );
         for (const site of toothSites) {
