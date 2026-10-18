@@ -25,7 +25,8 @@ export class ClinicalShellComponent implements OnInit {
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
       const savedTheme = localStorage.getItem('dentaleus-theme');
-      const theme = savedTheme === 'dark' ? 'dark' : 'light';
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = savedTheme === 'dark' || (!savedTheme && prefersDark) ? 'dark' : 'light';
       this.theme.set(theme);
       document.documentElement.setAttribute('data-theme', theme);
       // Clear any previously rendered tenant data before resolving this session's access.
