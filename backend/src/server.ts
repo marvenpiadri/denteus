@@ -11,7 +11,6 @@ import { onboardingRoutes } from './routes/onboarding.js';
 import { appointmentRoutes } from './routes/appointments.js';
 import { recallRoutes } from './routes/recalls.js';
 import { schedulingResourceRoutes } from './routes/scheduling-resources.js';
-import { patientTreatmentRoutes } from './routes/patient-treatments.js';
 import { clinicalEncounterRoutes } from './routes/clinical-encounters.js';
 
 const clientOrigins = (process.env['CLIENT_ORIGINS'] ?? 'http://localhost:3000')
@@ -115,7 +114,6 @@ await app.register(odontogramRoutes, { prefix: '/api/v1' });
 await app.register(appointmentRoutes, { prefix: '/api/v1' });
 await app.register(recallRoutes, { prefix: '/api/v1' });
 await app.register(schedulingResourceRoutes, { prefix: '/api/v1' });
-await app.register(patientTreatmentRoutes, { prefix: '/api/v1' });
 await app.register(clinicalEncounterRoutes, { prefix: '/api/v1' });
 
 app.setNotFoundHandler(async (_request, reply) => reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Route not found.' } }));
