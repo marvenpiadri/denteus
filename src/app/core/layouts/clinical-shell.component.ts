@@ -26,11 +26,8 @@ export class ClinicalShellComponent implements OnInit {
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
       this.isMobileViewport.set(window.matchMedia('(max-width: 860px)').matches);
-      const savedTheme = localStorage.getItem('dentaleus-theme');
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const theme = savedTheme === 'dark' || (!savedTheme && prefersDark) ? 'dark' : 'light';
+      const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
       this.theme.set(theme);
-      document.documentElement.setAttribute('data-theme', theme);
       // Clear any previously rendered tenant data before resolving this session's access.
       this.tenantContext.organizations.set([]);
       void this.tenantContext.load(true);
