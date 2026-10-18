@@ -17,6 +17,9 @@ interface CreateEncounterBody {
 }
 interface CreateNoteBody { noteType?: NoteType; content: string; }
 interface AmendNoteBody { reason: string; amendedContent: string; }
+interface CreateFindingBody { findingType: 'OBSERVATION' | 'DIAGNOSIS' | 'SYMPTOM' | 'RISK' | 'OTHER'; description: string; severity?: 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL' | null; toothNo?: number | null; surface?: string | null; findingCode?: string | null; }
+interface CreateProcedureBody { title: string; category: 'EXAM' | 'HYGIENE' | 'RESTORATIVE' | 'ENDODONTICS' | 'EXTRACTION' | 'PROSTHODONTICS' | 'ORTHODONTICS' | 'PERIODONTICS' | 'IMPLANT' | 'OTHER'; notes?: string | null; toothSites?: Array<{ toothNo: number; surface: string }>; }
+interface ProcedureParams extends EncounterParams { procedureId: string; }
 
 const encounterTypes: EncounterType[] = ['CONSULTATION', 'EMERGENCY', 'FOLLOW_UP', 'PROCEDURE', 'OTHER'];
 const noteTypes: NoteType[] = ['CHIEF_COMPLAINT', 'EXAMINATION', 'ASSESSMENT', 'PROGRESS', 'DISCHARGE', 'OTHER'];
@@ -36,6 +39,32 @@ const createNoteSchema = {
   properties: {
     noteType: { type: 'string', enum: noteTypes },
     content: { type: 'string', minLength: 1, maxLength: 20000 },
+  },
+} as const;
+const toothNumbers = [11,12,13,14,15,16,17,18,21,22,23,24,25,26,27,28,31,32,33,34,35,36,37,38,41,42,43,44,45,46,47,48,51,52,53,54,55,61,62,63,64,65,71,72,73,74,75,81,82,83,84,85];
+const toothSurfaces = ['WHOLE','OCCLUSAL','INCISAL','MESIAL','DISTAL','BUCCAL','LINGUAL','PALATAL','CERVICAL'];
+const procedureCategories = ['EXAM','HYGIENE','RESTORATIVE','ENDODONTICS','EXTRACTION','PROSTHODONTICS','ORTHODONTICS','PERIODONTICS','IMPLANT','OTHER'];
+const createFindingSchema = {
+  type: 'object', additionalProperties: false, required: ['findingType', 'description'],
+  properties: {
+    findingType: { type: 'string', enum: ['OBSERVATION','DIAGNOSIS','SYMPTOM','RISK','OTHER'] },
+    description: { type: 'string', minLength: 1, maxLength: 10000 },
+    findingCode: { anyOf: [{ type: 'string', maxLength: 100 }, { type: 'null' }] },
+    severity: { anyOf: [{ type: 'string', enum: ['LOW','MODERATE','HIGH','CRITICAL'] }, { type: 'null' }] },
+    toothNo: { anyOf: [{ type: 'integer', enum: toothNumbers }, { type: 'null' }] },
+    surface: { anyOf: [{ type: 'string', enum: toothSurfaces }, { type: 'null' }] },
+  },
+} as const;
+const createProcedureSchema = {
+  type: 'object', additionalProperties: false, required: ['title','category'],
+  properties: {
+    title: { type: 'string', minLength: 1, maxLength: 200 },
+    category: { type: 'string', enum: procedureCategories },
+    notes: { anyOf: [{ type: 'string', maxLength: 10000 }, { type: 'null' }] },
+    toothSites: { type: 'array', maxItems: 32, items: {
+      type: 'object', additionalProperties: false, required: ['toothNo','surface'],
+      properties: { toothNo: { type: 'integer', enum: toothNumbers }, surface: { type: 'string', enum: toothSurfaces } },
+    } },
   },
 } as const;
 const amendNoteSchema = {
@@ -212,6 +241,100 @@ export const clinicalEncounterRoutes: FastifyPluginAsync = async (app) => {
         pool.query('SELECT p.user_id AS "userId", u.name, p.role, p.added_by_id AS "addedById", p.created_at AS "createdAt" FROM clinical_encounter_participants p JOIN app_users u ON u.id=p.user_id WHERE p.organization_id=$1 AND p.clinic_id=$2 AND p.patient_id=$3 AND p.encounter_id=$4 ORDER BY p.created_at', [organizationId, clinicId, patientId, encounterId]),
       ]);
       return { data: { ...encounter.rows[0], notes: notes.rows, findings: findings.rows, procedures: procedures.rows, media: media.rows, followUps: followUps.rows, participants: participants.rows } };
+    },
+  );
+
+  app.post<{ Params: EncounterParams; Body: CreateFindingBody }>(
+    '/organizations/:organizationId/clinics/:clinicId/patients/:patientId/encounters/:encounterId/findings',
+    { schema: { body: createFindingSchema } },
+    async (request, reply) => {
+      const { organizationId, clinicId, patientId, encounterId } = request.params;
+      const access = await requireClinicAccess(request, reply, organizationId, clinicId);
+      if (!access) return;
+      if (!canWriteOdontogram(access)) return denyInsufficientRole(reply);
+      const description = request.body.description.trim();
+      if (!description) return reply.code(400).send({ error: { code: 'EMPTY_FINDING', message: 'A clinical finding description is required.' } });
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const encounter = await client.query('SELECT status FROM clinical_encounters WHERE organization_id=$1 AND clinic_id=$2 AND patient_id=$3 AND id=$4 FOR UPDATE', [organizationId, clinicId, patientId, encounterId]);
+        if (!encounter.rowCount) { await client.query('ROLLBACK'); return reply.code(404).send({ error: { code: 'ENCOUNTER_NOT_FOUND', message: 'Clinical encounter not found.' } }); }
+        if (['SIGNED','CANCELLED'].includes(encounter.rows[0].status)) { await client.query('ROLLBACK'); return reply.code(409).send({ error: { code: 'ENCOUNTER_CLOSED', message: 'This encounter no longer accepts findings.' } }); }
+        if (request.body.surface && !request.body.toothNo) { await client.query('ROLLBACK'); return reply.code(400).send({ error: { code: 'TOOTH_REQUIRED', message: 'Choose a tooth before recording a surface.' } }); }
+        const result = await client.query(
+          `INSERT INTO clinical_findings (id, organization_id, clinic_id, patient_id, encounter_id, finding_code, finding_type, description, severity, tooth_no, surface, recorded_by_id)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+           RETURNING id, finding_code AS "findingCode", finding_type AS "findingType", description, severity, tooth_no AS "toothNo", surface, recorded_by_id AS "recordedById", created_at AS "createdAt"`,
+          [randomUUID(), organizationId, clinicId, patientId, encounterId, request.body.findingCode?.trim() || null, request.body.findingType, description, request.body.severity ?? null, request.body.toothNo ?? null, request.body.surface ?? null, access.userId],
+        );
+        await client.query(`INSERT INTO audit_events (id, organization_id, user_id, action, resource_type, resource_id, metadata) VALUES ($1,$2,$3,'CLINICAL_FINDING_CREATED','CLINICAL_FINDING',$4,$5::jsonb)`, [randomUUID(), organizationId, access.userId, result.rows[0].id, JSON.stringify({ clinicId, patientId, encounterId, toothNo: request.body.toothNo ?? null })]);
+        await client.query('COMMIT');
+        return reply.code(201).send({ data: result.rows[0] });
+      } catch (error) { await client.query('ROLLBACK'); throw error; }
+      finally { client.release(); }
+    },
+  );
+
+  app.post<{ Params: EncounterParams; Body: CreateProcedureBody }>(
+    '/organizations/:organizationId/clinics/:clinicId/patients/:patientId/encounters/:encounterId/procedures',
+    { schema: { body: createProcedureSchema } },
+    async (request, reply) => {
+      const { organizationId, clinicId, patientId, encounterId } = request.params;
+      const access = await requireClinicAccess(request, reply, organizationId, clinicId);
+      if (!access) return;
+      if (!canWriteOdontogram(access)) return denyInsufficientRole(reply);
+      const title = request.body.title.trim();
+      if (!title) return reply.code(400).send({ error: { code: 'EMPTY_PROCEDURE', message: 'An act title is required.' } });
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const encounter = await client.query('SELECT status FROM clinical_encounters WHERE organization_id=$1 AND clinic_id=$2 AND patient_id=$3 AND id=$4 FOR UPDATE', [organizationId, clinicId, patientId, encounterId]);
+        if (!encounter.rowCount) { await client.query('ROLLBACK'); return reply.code(404).send({ error: { code: 'ENCOUNTER_NOT_FOUND', message: 'Clinical encounter not found.' } }); }
+        if (['SIGNED','CANCELLED'].includes(encounter.rows[0].status)) { await client.query('ROLLBACK'); return reply.code(409).send({ error: { code: 'ENCOUNTER_CLOSED', message: 'This encounter no longer accepts acts.' } }); }
+        const procedureId = randomUUID();
+        await client.query(
+          `INSERT INTO clinical_procedures (id, organization_id, clinic_id, patient_id, encounter_id, title, category, status, notes, recorded_by_id)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,'PLANNED',$8,$9)`,
+          [procedureId, organizationId, clinicId, patientId, encounterId, title, request.body.category, request.body.notes?.trim() || null, access.userId],
+        );
+        for (const site of request.body.toothSites ?? []) {
+          await client.query('INSERT INTO clinical_procedure_sites (organization_id, clinic_id, patient_id, encounter_id, procedure_id, tooth_no, surface) VALUES ($1,$2,$3,$4,$5,$6,$7)', [organizationId, clinicId, patientId, encounterId, procedureId, site.toothNo, site.surface]);
+        }
+        await client.query(`INSERT INTO audit_events (id, organization_id, user_id, action, resource_type, resource_id, metadata) VALUES ($1,$2,$3,'CLINICAL_PROCEDURE_PLANNED','CLINICAL_PROCEDURE',$4,$5::jsonb)`, [randomUUID(), organizationId, access.userId, procedureId, JSON.stringify({ clinicId, patientId, encounterId, toothSites: request.body.toothSites ?? [] })]);
+        await client.query('COMMIT');
+        return reply.code(201).send({ data: { id: procedureId, title, category: request.body.category, status: 'PLANNED' } });
+      } catch (error) { await client.query('ROLLBACK'); throw error; }
+      finally { client.release(); }
+    },
+  );
+
+  app.post<{ Params: ProcedureParams }>(
+    '/organizations/:organizationId/clinics/:clinicId/patients/:patientId/encounters/:encounterId/procedures/:procedureId/complete',
+    async (request, reply) => {
+      const { organizationId, clinicId, patientId, encounterId, procedureId } = request.params;
+      const access = await requireClinicAccess(request, reply, organizationId, clinicId);
+      if (!access) return;
+      if (!canWriteOdontogram(access)) return denyInsufficientRole(reply);
+      const provider = await pool.query(`SELECT 1 FROM clinic_providers WHERE organization_id=$1 AND clinic_id=$2 AND user_id=$3 AND active=true AND role IN ('DENTIST','ORTHODONTIST')`, [organizationId, clinicId, access.userId]);
+      if (!provider.rowCount) return reply.code(403).send({ error: { code: 'CLINICIAN_REQUIRED', message: 'Only an active dentist or orthodontist can mark an act as completed.' } });
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const encounter = await client.query('SELECT status FROM clinical_encounters WHERE organization_id=$1 AND clinic_id=$2 AND patient_id=$3 AND id=$4 FOR UPDATE', [organizationId, clinicId, patientId, encounterId]);
+        if (!encounter.rowCount) { await client.query('ROLLBACK'); return reply.code(404).send({ error: { code: 'ENCOUNTER_NOT_FOUND', message: 'Clinical encounter not found.' } }); }
+        if (['SIGNED','CANCELLED'].includes(encounter.rows[0].status)) { await client.query('ROLLBACK'); return reply.code(409).send({ error: { code: 'ENCOUNTER_CLOSED', message: 'This encounter is closed.' } }); }
+        const updated = await client.query(
+          `UPDATE clinical_procedures SET status='COMPLETED', performed_at=now(), performed_by_id=$6, updated_at=now()
+           WHERE organization_id=$1 AND clinic_id=$2 AND patient_id=$3 AND encounter_id=$4 AND id=$5 AND status IN ('PLANNED','IN_PROGRESS')
+           RETURNING id, title, category, status, performed_at AS "performedAt", performed_by_id AS "performedById"`,
+          [organizationId, clinicId, patientId, encounterId, procedureId, access.userId],
+        );
+        if (!updated.rowCount) { await client.query('ROLLBACK'); return reply.code(409).send({ error: { code: 'PROCEDURE_NOT_COMPLETABLE', message: 'This act is already completed, cancelled, or unavailable.' } }); }
+        await client.query(`INSERT INTO audit_events (id, organization_id, user_id, action, resource_type, resource_id, metadata) VALUES ($1,$2,$3,'CLINICAL_PROCEDURE_COMPLETED','CLINICAL_PROCEDURE',$4,$5::jsonb)`, [randomUUID(), organizationId, access.userId, procedureId, JSON.stringify({ clinicId, patientId, encounterId })]);
+        await client.query('COMMIT');
+        return { data: updated.rows[0] };
+      } catch (error) { await client.query('ROLLBACK'); throw error; }
+      finally { client.release(); }
     },
   );
 
