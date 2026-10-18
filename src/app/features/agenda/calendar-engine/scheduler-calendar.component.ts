@@ -68,7 +68,6 @@ export class SchedulerCalendarComponent implements OnInit {
   /** Events to show. When empty and `demoData` is true, sample data is generated. */
   readonly initialEvents = input<CalendarEvent[] | null>(null);
   readonly initialCategories = input<CalendarCategory[] | null>(null);
-  readonly demoData = input(false);
   /** localStorage key used to persist events / theme. Pass null to disable persistence. */
   readonly storageKey = input<string | null>(null);
   readonly defaultView = input<CalendarViewType>('week');
@@ -174,7 +173,7 @@ export class SchedulerCalendarComponent implements OnInit {
       const focus = store.focusDate();
       const now = store.now();
       const sameDay = focus.getTime() === store.today().getTime();
-      const minutes = sameDay ? (Math.floor((now.getHours() * 60 + now.getMinutes()) / 30) + 1) * 30 : 9 * 60;
+      const minutes = this.externalManagement() ? 9 * 60 : sameDay ? (Math.floor((now.getHours() * 60 + now.getMinutes()) / 30) + 1) * 30 : 9 * 60;
       start = withMinutes(focus, Math.min(minutes, 23 * 60));
       end = addMinutes(start, 60);
     }
