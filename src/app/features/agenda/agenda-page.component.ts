@@ -65,7 +65,7 @@ export class AgendaPageComponent {
         allDay: false,
         calendarId: appointment.status,
         location: appointment.operatoryName || undefined,
-        notes: appointment.reason || undefined,
+        notes: [appointment.reason, appointment.providerName, appointment.operatoryName, appointment.patientNumber].filter(Boolean).join(' · ') || undefined,
         subtitle: [appointment.reason, appointment.providerName].filter(Boolean).join(' · ') || this.statusLabel(appointment.status),
         resources: { provider: appointment.providerId || 'unassigned', operatory: appointment.operatoryId || 'unassigned' },
         badge: { icon: meta.icon, label: meta.label },
