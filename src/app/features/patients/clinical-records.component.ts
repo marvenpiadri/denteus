@@ -4,7 +4,7 @@ import { ChangeDetectionStrategy, Component, effect, inject, input, signal } fro
 import { FormsModule } from '@angular/forms';
 import { TenantContextService } from '../../core/tenant/tenant-context.service';
 import { ClinicalRecordsApiService } from './clinical-records-api.service';
-import type { ClinicalNote, ClinicProvider, Encounter, EncounterSummary, EncounterType, FindingType, NoteType, ProcedureCategory } from './clinical-records-api.service';
+import type { ClinicalNote, ClinicProvider, ClinicalMediaType, Encounter, EncounterSummary, EncounterType, FindingType, NoteType, ProcedureCategory } from './clinical-records-api.service';
 
 @Component({selector:'app-clinical-records',imports:[FormsModule,DecimalPipe],changeDetection:ChangeDetectionStrategy.OnPush,templateUrl:'./clinical-records.component.html',styleUrl:'./clinical-records.component.css'})
 export class ClinicalRecordsComponent {
@@ -48,7 +48,7 @@ export class ClinicalRecordsComponent {
   if(this.mediaUploading())return;
   if(file.size===0||file.size>8*1024*1024){this.error.set('Le fichier doit peser entre 1 octet et 8 Mio.');input.value='';return;}
   let mimeType=file.type.toLowerCase();
-  if(!mimeType&&/\\.dcm$/i.test(file.name))mimeType='application/dicom';
+  if(!mimeType&&file.name.toLowerCase().endsWith('.dcm'))mimeType='application/dicom';
   const supported=['image/jpeg','image/png','image/webp','application/pdf','application/dicom'];
   if(!supported.includes(mimeType)){this.error.set('Formats acceptés : JPEG, PNG, WebP, PDF et DICOM.');input.value='';return;}
   const categoryTypes:Record<ClinicalMediaType,string[]>={XRAY:['image/jpeg','image/png','image/webp','application/dicom'],PHOTO:['image/jpeg','image/png','image/webp'],DOCUMENT:['application/pdf'],DICOM:['application/dicom']};
