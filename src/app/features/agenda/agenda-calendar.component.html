@@ -2,7 +2,7 @@
   <header class="calendar-heading">
     <div>
       <h2 id="calendar-heading">Planning de la journée</h2>
-      <p>Les rendez-vous sont positionnés selon leur heure de début et leur durée. Les conflits de patient, praticien et fauteuil affectés sont vérifiés par le serveur lors de l’enregistrement.</p>
+      <p>Les rendez-vous sont positionnés selon leur heure de début et leur durée. Les conflits de patient, praticien et fauteuil sont vérifiés par le serveur. Faites glisser un rendez-vous pour déplacer son horaire ou changer de ressource.</p>
     </div>
     <div class="calendar-controls">
       <div class="view-switch" role="group" aria-label="Vue du planning">
@@ -31,7 +31,7 @@
           }
         </div>
         @for (column of columns(); track column.key) {
-          <div class="resource-lane" [attr.aria-label]="'Planning : ' + column.label">
+          <div class="resource-lane" [attr.aria-label]="'Planning : ' + column.label" cdkDropList [id]="dropListId(column)" [cdkDropListData]="appointmentsForColumn(column)" [cdkDropListConnectedTo]="dropListIds()" [cdkDropListSortingDisabled]="true" (cdkDropListDropped)="onAppointmentDrop($event, column)">
             @for (hour of hours; track hour) {
               <button type="button" class="lane-hour-action" [style.top.px]="(hour - 7) * 60" (click)="selectSlot(hour, column)" [disabled]="loading" [attr.aria-label]="'Préremplir un rendez-vous à ' + hour.toString().padStart(2, '0') + ':00 pour ' + column.label"><span>+</span></button>
             }
@@ -39,6 +39,10 @@
               <button
                 type="button"
                 class="calendar-appointment"
+                cdkDrag
+                [cdkDragData]="item.appointment"
+                [cdkDragDisabled]="loading || item.appointment.status === 'COMPLETED' || item.appointment.status === 'CANCELLED' || item.appointment.status === 'NO_SHOW'"
+                [attr.aria-roledescription]="'Rendez-vous déplaçable'"
                 [class.is-cancelled]="item.appointment.status === 'CANCELLED' || item.appointment.status === 'NO_SHOW'"
                 [class.is-active]="item.appointment.status === 'ARRIVED' || item.appointment.status === 'IN_PROGRESS'"
                 [class.is-completed]="item.appointment.status === 'COMPLETED'"
