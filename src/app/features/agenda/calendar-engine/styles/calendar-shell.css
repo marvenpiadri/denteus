@@ -135,3 +135,8 @@
     background: var(--cal-backdrop);
   }
 }
+
+.calendar-loading{position:absolute;z-index:25;inset:0;display:flex;align-items:center;justify-content:center;gap:12px;background:color-mix(in srgb,var(--cal-bg) 78%,transparent);backdrop-filter:blur(2px);color:var(--cal-text-2);font-size:13px;font-weight:650}
+.calendar-loading-spinner{width:18px;height:18px;border:2px solid var(--cal-border);border-top-color:var(--cal-accent);border-radius:50%;animation:cal-spin .7s linear infinite}
+@keyframes cal-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.calendar-loading-spinner{animation:none}}
