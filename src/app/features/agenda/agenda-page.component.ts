@@ -36,6 +36,8 @@ export class AgendaPageComponent {
   });
   readonly appointments = signal<AppointmentRecord[]>([]);
   readonly patients = signal<PatientRecord[]>([]);
+  readonly waitingRoomAppointments = computed(() => this.dayAppointments().filter((appointment) => appointment.status === 'ARRIVED'));
+  readonly inTreatmentAppointments = computed(() => this.dayAppointments().filter((appointment) => appointment.status === 'IN_PROGRESS'));
   readonly providers = signal<ClinicProvider[]>([]);
   readonly operatories = signal<ClinicOperatory[]>([]);
   readonly loadingResources = signal(false);
