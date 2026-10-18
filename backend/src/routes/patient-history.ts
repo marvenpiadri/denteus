@@ -26,7 +26,10 @@ export const patientHistoryRoutes:FastifyPluginAsync=async(app)=>{
     if(!patient.rowCount)return reply.code(404).send({error:{code:'PATIENT_NOT_FOUND',message:'Patient not found.'}});
     const result=await pool.query(
       `SELECT h.id,h.entry_type AS "entryType",h.content,h.recorded_by_id AS "recordedById",
-              u.name AS "recordedByName",h.created_at AS "createdAt"
+              u.name AS "recordedByName",h.created_at AS "createdAt",
+              COALESCE((SELECT jsonb_agg(jsonb_build_object('id',a.id,'reason',a.reason,'correctedContent',a.corrected_content,'amendedById',a.amended_by_id,'amendedByName',au.name,'createdAt',a.created_at) ORDER BY a.created_at,a.id)
+                FROM patient_clinical_history_amendments a LEFT JOIN app_users au ON au.id=a.amended_by_id
+                WHERE a.organization_id=h.organization_id AND a.clinic_id=h.clinic_id AND a.patient_id=h.patient_id AND a.history_entry_id=h.id),'[]'::jsonb) AS amendments
        FROM patient_clinical_history_entries h
        JOIN app_users u ON u.id=h.recorded_by_id
        WHERE h.organization_id=$1 AND h.clinic_id=$2 AND h.patient_id=$3
