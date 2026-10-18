@@ -37,7 +37,9 @@ test('appointment access excludes accounting-only roles', () => {
 test('calendar schedule ranges support month grids and a full year without unbounded queries', () => {
   assert.equal(isValidScheduleRange('2026-10-01T00:00:00.000Z', '2026-11-12T00:00:00.000Z'), true);
   assert.equal(isValidScheduleRange('2026-01-01T00:00:00.000Z', '2027-01-01T00:00:00.000Z'), true);
+  assert.equal(isValidScheduleRange('2024-01-01T00:00:00.000Z', '2025-01-01T00:00:00.000Z'), true);
   assert.equal(isValidScheduleRange('2026-11-12T00:00:00.000Z', '2026-10-01T00:00:00.000Z'), false);
   assert.equal(isValidScheduleRange('2026-01-01T00:00:00.000Z', '2027-01-02T00:00:00.000Z'), false);
+  assert.equal(isValidScheduleRange('2024-01-01T00:00:00.000Z', '2025-01-02T00:00:00.000Z'), false);
   assert.equal(isValidScheduleRange('not-a-date', 'also-not-a-date'), false);
 });
