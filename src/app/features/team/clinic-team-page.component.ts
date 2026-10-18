@@ -146,7 +146,7 @@ export class ClinicTeamPageComponent {
       await this.load();
     } catch (error) {
       this.error.set(error instanceof HttpErrorResponse && error.status === 409
-        ? 'Ce rôle est géré au niveau de l’organisation et ne peut pas être modifié ici.'
+        ? 'Cette modification est protégée : conservez au moins un administrateur et gérez les rôles organisationnels à leur niveau.'
         : 'Le rôle n’a pas pu être modifié.');
     } finally { this.saving.set(false); }
   }
@@ -161,7 +161,7 @@ export class ClinicTeamPageComponent {
       await this.load();
     } catch (error) {
       this.error.set(error instanceof HttpErrorResponse && error.status === 409
-        ? 'Les administrateurs de l’organisation doivent être gérés au niveau de l’organisation.'
+        ? 'Cette action est protégée : conservez au moins un administrateur et gérez les rôles organisationnels à leur niveau.'
         : 'L’accès n’a pas pu être retiré.');
     } finally { this.saving.set(false); }
   }
