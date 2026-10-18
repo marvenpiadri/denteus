@@ -9,9 +9,10 @@ test('a new odontogram accepts only a null expected revision', () => {
 });
 
 test('an existing odontogram requires the exact current revision timestamp', () => {
-  const current = new Date('2026-10-18T10:00:00.000Z');
-  assert.equal(hasOdontogramRevisionConflict(current, '2026-10-18T10:00:00.000Z'), false);
-  assert.equal(hasOdontogramRevisionConflict(current, '2026-10-18T10:00:01.000Z'), true);
+  const current = '2026-10-18T10:00:00.123456Z';
+  assert.equal(hasOdontogramRevisionConflict(current, '2026-10-18T10:00:00.123456Z'), false);
+  assert.equal(hasOdontogramRevisionConflict(current, '2026-10-18T10:00:00.123457Z'), true);
+  assert.equal(hasOdontogramRevisionConflict(current, '2026-10-18T10:00:00.123Z'), true);
   assert.equal(hasOdontogramRevisionConflict(current, null), true);
   assert.equal(hasOdontogramRevisionConflict(current, undefined), true);
   assert.equal(hasOdontogramRevisionConflict(current, 'not-a-date'), true);
