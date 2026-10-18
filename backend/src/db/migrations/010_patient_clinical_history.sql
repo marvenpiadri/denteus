@@ -7,8 +7,8 @@ CREATE TABLE patient_clinical_history_entries (
   content text NOT NULL CHECK (length(btrim(content)) BETWEEN 1 AND 8000),
   recorded_by_id text NOT NULL REFERENCES app_users(id) ON DELETE RESTRICT,
   created_at timestamptz NOT NULL DEFAULT now(),
-  FOREIGN KEY (organization_id, clinic_id, patient_id)
-    REFERENCES patient_clinics(organization_id, clinic_id, patient_id) ON DELETE CASCADE
+  FOREIGN KEY (organization_id, patient_id, clinic_id)
+    REFERENCES patient_clinics(organization_id, patient_id, clinic_id) ON DELETE CASCADE
 );
 CREATE INDEX patient_clinical_history_patient_idx
   ON patient_clinical_history_entries(organization_id, clinic_id, patient_id, created_at DESC);
