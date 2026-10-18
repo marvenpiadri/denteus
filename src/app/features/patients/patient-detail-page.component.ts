@@ -10,8 +10,9 @@ import { PatientApiService } from './patient-api.service';
 import type { PatientRecord, UpdatePatientInput } from './patient-api.service';
 import { PatientOdontogramComponent } from './patient-odontogram.component';
 import { ClinicalRecordsComponent } from './clinical-records.component';
+import { PatientClinicalHistoryComponent } from './patient-clinical-history.component';
 
-@Component({selector:'app-patient-detail-page',imports:[FormsModule,DatePipe,RouterLink,PatientOdontogramComponent,ClinicalRecordsComponent],changeDetection:ChangeDetectionStrategy.OnPush,templateUrl:'./patient-detail-page.component.html',styleUrl:'./patient-detail-page.component.css'})
+@Component({selector:'app-patient-detail-page',imports:[FormsModule,DatePipe,RouterLink,PatientOdontogramComponent,ClinicalRecordsComponent,PatientClinicalHistoryComponent],changeDetection:ChangeDetectionStrategy.OnPush,templateUrl:'./patient-detail-page.component.html',styleUrl:'./patient-detail-page.component.css'})
 export class PatientDetailPageComponent {
  readonly tenant=inject(TenantContextService); private readonly api=inject(PatientApiService); private readonly platformId=inject(PLATFORM_ID); private readonly route=inject(ActivatedRoute);
  readonly patientId=toSignal(this.route.paramMap.pipe(map(p=>p.get('patientId'))),{initialValue:null});
