@@ -735,24 +735,6 @@ export class AgendaPageComponent {
     }
   }
 
-  moveDate(direction: number): void {
-    const current = this.selectedDate();
-    if (!current) return;
-    const view = this.calendarView();
-    if (view === 'week') this.selectedDate.set(addCalendarDays(current, direction * 7));
-    else if (view === 'month') this.selectedDate.set(this.shiftMonth(current, direction));
-    else if (view === 'year') this.selectedDate.set(this.shiftYear(current, direction));
-    else this.selectedDate.set(addCalendarDays(current, direction));
-  }
-
-  changeCalendarView(view: 'day' | 'week' | 'month' | 'year'): void {
-    this.calendarView.set(view);
-  }
-
-  onCalendarDateSelected(date: string): void {
-    this.selectedDate.set(date);
-  }
-
   private appointmentRange(date: string, view: 'day' | 'week' | 'month' | 'year'): { from: string; to: string } {
     if (view === 'week') {
       const offset = (new Date(date + 'T12:00:00').getDay() + 6) % 7;
@@ -772,20 +754,5 @@ export class AgendaPageComponent {
     return { from: date, to: addCalendarDays(date, 1) };
   }
 
-  private shiftMonth(date: string, months: number): string {
-    const source = new Date(date + 'T12:00:00');
-    const day = source.getDate();
-    source.setDate(1);
-    source.setMonth(source.getMonth() + months);
-    source.setDate(Math.min(day, new Date(source.getFullYear(), source.getMonth() + 1, 0).getDate()));
-    return source.getFullYear() + '-' + String(source.getMonth() + 1).padStart(2, '0') + '-' + String(source.getDate()).padStart(2, '0');
-  }
 
-  private shiftYear(date: string, years: number): string {
-    const source = new Date(date + 'T12:00:00');
-    const month = source.getMonth();
-    source.setFullYear(source.getFullYear() + years);
-    if (source.getMonth() !== month) source.setDate(0);
-    return source.getFullYear() + '-' + String(source.getMonth() + 1).padStart(2, '0') + '-' + String(source.getDate()).padStart(2, '0');
-  }
 }
