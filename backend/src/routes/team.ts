@@ -129,11 +129,11 @@ export const teamRoutes: FastifyPluginAsync = async (app) => {
         }
       }
       const client = await pool.connect();
-      let result;
+      let updatedMember: { userId: string; role: string } | undefined;
       try {
         await client.query('BEGIN');
         await client.query('SELECT pg_advisory_xact_lock(hashtext($1), hashtext($2))', [organizationId, clinicId]);
-        result = await client.query(
+        const result = await client.query<{ userId: string; role: string }>(
           `UPDATE clinic_memberships SET role = $4
            WHERE organization_id = $1 AND clinic_id = $2 AND user_id = $3
            RETURNING user_id AS "userId", role`,
@@ -143,6 +143,7 @@ export const teamRoutes: FastifyPluginAsync = async (app) => {
           await client.query('ROLLBACK');
           return reply.code(404).send({ error: { code: 'MEMBERSHIP_NOT_FOUND', message: 'Ce membre n’a pas accès à cette clinique.' } });
         }
+        updatedMember = result.rows[0];
         await client.query(
           `INSERT INTO audit_events (id, organization_id, user_id, action, resource_type, resource_id, metadata)
            VALUES ($1, $2, $3, 'CLINIC_MEMBER_ROLE_UPDATED', 'CLINIC_MEMBERSHIP', $4, $5::jsonb)`,
@@ -152,7 +153,7 @@ export const teamRoutes: FastifyPluginAsync = async (app) => {
       } catch (error) { await client.query('ROLLBACK'); throw error; }
       finally { client.release(); }
       if (!result.rowCount) return reply.code(404).send({ error: { code: 'MEMBERSHIP_NOT_FOUND', message: 'Ce membre n’a pas accès à cette clinique.' } });
-      return { data: result.rows[0] };
+      return { data: updatedMember };
     },
   );
 
