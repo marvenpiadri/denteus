@@ -8,7 +8,7 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { CalendarCategory, CalendarEvent, CalendarTheme, CalendarViewType, EventDraft } from './models/calendar.models';
+import { CalendarCategory, CalendarEvent, CalendarGateway, CalendarTheme, CalendarViewType, EventDraft, LaneConfig } from './models/calendar.models';
 import { CalendarSidebarComponent } from './components/calendar-sidebar/calendar-sidebar.component';
 import { CalendarToolbarComponent } from './components/calendar-toolbar/calendar-toolbar.component';
 import { EventEditorComponent } from './components/event-editor/event-editor.component';
@@ -75,9 +75,14 @@ export class SchedulerCalendarComponent implements OnInit {
   readonly weekStartsOn = input<0 | 1>(1);
   readonly locale = input('en-US');
   readonly theme = input<CalendarTheme | 'auto'>('auto');
+  readonly externalManagement = input(false);
+  readonly lanes = input<LaneConfig | null>(null);
+  readonly gateway = input<CalendarGateway | null>(null);
 
   readonly eventsChange = output<CalendarEvent[]>();
   readonly themeChange = output<CalendarTheme>();
+  readonly createRequested = output<EventDraft>();
+  readonly eventSelected = output<CalendarEvent>();
 
   protected readonly editor = signal<EditorState | null>(null);
   protected readonly sidebarOpen = signal(false);
@@ -98,6 +103,14 @@ export class SchedulerCalendarComponent implements OnInit {
       const theme = this.store.theme();
       if (this.ready) this.themeChange.emit(theme);
     });
+
+    effect(() => {
+      const incoming = this.initialEvents();
+      if (this.ready && incoming !== null) this.store.events.set(incoming);
+    });
+
+    effect(() => this.store.lanes.set(this.lanes()));
+    effect(() => this.store.gateway.set(this.gateway()));
   }
 
   ngOnInit(): void {
@@ -141,6 +154,10 @@ export class SchedulerCalendarComponent implements OnInit {
       start = withMinutes(focus, Math.min(minutes, 23 * 60));
       end = addMinutes(start, 60);
     }
+    if (this.externalManagement()) {
+      this.createRequested.emit({ start, end, allDay, ...(draft?.resources ? { resources: draft.resources } : {}) });
+      return;
+    }
     this.editor.set({
       mode: 'create',
       draft: {
@@ -155,6 +172,10 @@ export class SchedulerCalendarComponent implements OnInit {
   }
 
   protected openEdit(event: CalendarEvent): void {
+    if (this.externalManagement()) {
+      this.eventSelected.emit(event);
+      return;
+    }
     this.editor.set({ mode: 'edit', draft: event });
   }
 
@@ -167,6 +188,7 @@ export class SchedulerCalendarComponent implements OnInit {
   }
 
   protected onRemove(id: string): void {
+    if (this.externalManagement()) return;
     this.store.removeEvent(id);
     this.editor.set(null);
   }
