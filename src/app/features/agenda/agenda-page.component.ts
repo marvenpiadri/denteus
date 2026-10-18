@@ -638,7 +638,7 @@ export class AgendaPageComponent {
     }
   }
 
-  availableTransitions(status: AppointmentStatus): AppointmentStatus[] {
+  availableTransitions(status: AppointmentStatus, startsAt?: string): AppointmentStatus[] {
     const transitions: Record<AppointmentStatus, Exclude<AppointmentStatus, 'SCHEDULED'>[]> = {
       SCHEDULED: ['CONFIRMED', 'ARRIVED', 'CANCELLED', 'NO_SHOW'],
       CONFIRMED: ['ARRIVED', 'CANCELLED', 'NO_SHOW'],
@@ -648,7 +648,14 @@ export class AgendaPageComponent {
       CANCELLED: ['SCHEDULED'],
       NO_SHOW: ['SCHEDULED'],
     };
-    return transitions[status];
+    const available = transitions[status];
+    if (!startsAt || !available.includes('ARRIVED')) return available;
+    const clinic = this.tenant.activeClinic();
+    const timeZone = clinic?.timezone || 'Africa/Casablanca';
+    const appointmentDate = toClinicDateTimeInput(startsAt, timeZone).slice(0, 10);
+    return appointmentDate === todayInTimeZone(timeZone)
+      ? available
+      : available.filter((next) => next !== 'ARRIVED');
   }
 
   statusLabel(status: AppointmentStatus): string {
