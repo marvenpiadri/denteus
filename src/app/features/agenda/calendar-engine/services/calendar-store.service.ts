@@ -45,7 +45,22 @@ export class CalendarStore {
 
   /** Ticks every 30 s so "today" and the now-line stay correct. */
   readonly now = signal(new Date());
-  readonly today = computed(() => startOfDay(this.now()));
+  readonly timeZone = signal<string | null>(null);
+  readonly today = computed(() => {
+    const now = this.now();
+    const zone = this.timeZone();
+    if (!zone) return startOfDay(now);
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: zone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(now);
+    const year = Number(parts.find((part) => part.type === 'year')?.value);
+    const month = Number(parts.find((part) => part.type === 'month')?.value);
+    const day = Number(parts.find((part) => part.type === 'day')?.value);
+    return new Date(year, month - 1, day);
+  });
 
   readonly categoryMap = computed(() => new Map(this.categories().map((c) => [c.id, c])));
 
