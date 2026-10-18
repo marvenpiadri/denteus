@@ -51,7 +51,8 @@ export class ClinicalRecordsComponent {
   if(!mimeType&&/\\.dcm$/i.test(file.name))mimeType='application/dicom';
   const supported=['image/jpeg','image/png','image/webp','application/pdf','application/dicom'];
   if(!supported.includes(mimeType)){this.error.set('Formats acceptés : JPEG, PNG, WebP, PDF et DICOM.');input.value='';return;}
-  if((this.mediaType==='DICOM')!==(mimeType==='application/dicom')||(this.mediaType==='XRAY'&&!['image/jpeg','image/png','image/webp','application/dicom'].includes(mimeType))){
+  const categoryTypes:Record<ClinicalMediaType,string[]>={XRAY:['image/jpeg','image/png','image/webp','application/dicom'],PHOTO:['image/jpeg','image/png','image/webp'],DOCUMENT:['application/pdf'],DICOM:['application/dicom']};
+  if(!categoryTypes[this.mediaType].includes(mimeType)){
    this.error.set('Le type de fichier ne correspond pas à la catégorie sélectionnée.');input.value='';return;
   }
   this.mediaUploading.set(true);this.error.set('');this.success.set('');
@@ -70,9 +71,9 @@ export class ClinicalRecordsComponent {
   const clinic=this.tenant.activeClinic(),visit=this.selected();if(!clinic||!visit)return;
   try{
    const blob=await this.api.downloadMedia(clinic.organizationId,clinic.id,this.patientId(),visit.id,media.id);
-   const url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download=media.originalFilename||'document-clinique';anchor.rel='noopener';anchor.click();URL.revokeObjectURL(url);
+   const url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download=media.originalFilename||'document-clinique';anchor.rel='noopener';anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   }catch{this.error.set('Ce document ne peut pas être téléchargé. Vérifiez vos droits et réessayez.');}
  }
- label(value:string){return ({DRAFT:'Brouillon',SIGNED:'Signée',CONSULTATION:'Consultation',EMERGENCY:'Urgence',FOLLOW_UP:'Suivi',PROCEDURE:'Séance de soins',CHIEF_COMPLAINT:'Motif',EXAMINATION:'Examen',ASSESSMENT:'Évaluation',PROGRESS:'Note de séance',DISCHARGE:'Conclusion',OTHER:'Autre',OBSERVATION:'Observation',DIAGNOSIS:'Diagnostic',SYMPTOM:'Symptôme',RISK:'Risque',EXAM:'Examen',HYGIENE:'Hygiène',RESTORATIVE:'Restaurateur',ENDODONTICS:'Endodontie',EXTRACTION:'Extraction',PROSTHODONTICS:'Prothèse',ORTHODONTICS:'Orthodontie',PERIODONTICS:'Parodontologie',IMPLANT:'Implantologie',PLANNED:'Prévu',IN_PROGRESS:'En cours',COMPLETED:'Réalisé',CANCELLED:'Annulé'} as Record<string,string>)[value]??value;}
+ label(value:string){return ({DRAFT:'Brouillon',SIGNED:'Signée',CONSULTATION:'Consultation',EMERGENCY:'Urgence',FOLLOW_UP:'Suivi',PROCEDURE:'Séance de soins',CHIEF_COMPLAINT:'Motif',EXAMINATION:'Examen',ASSESSMENT:'Évaluation',PROGRESS:'Note de séance',DISCHARGE:'Conclusion',OTHER:'Autre',XRAY:'Radiographie',PHOTO:'Photo clinique',DOCUMENT:'Document',DICOM:'DICOM',OBSERVATION:'Observation',DIAGNOSIS:'Diagnostic',SYMPTOM:'Symptôme',RISK:'Risque',EXAM:'Examen',HYGIENE:'Hygiène',RESTORATIVE:'Restaurateur',ENDODONTICS:'Endodontie',EXTRACTION:'Extraction',PROSTHODONTICS:'Prothèse',ORTHODONTICS:'Orthodontie',PERIODONTICS:'Parodontologie',IMPLANT:'Implantologie',PLANNED:'Prévu',IN_PROGRESS:'En cours',COMPLETED:'Réalisé',CANCELLED:'Annulé'} as Record<string,string>)[value]??value;}
  date(value:string|null|undefined,withTime=true){if(!value)return '—';return new Intl.DateTimeFormat('fr-FR',{timeZone:this.tenant.activeClinic()?.timezone||'Africa/Casablanca',dateStyle:'medium',...(withTime?{timeStyle:'short'}:{})}).format(new Date(value));}
 }
