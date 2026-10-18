@@ -1,12 +1,14 @@
 <section class="patients-page" aria-labelledby="patients-title">
   <header class="page-heading">
     <div><p class="eyebrow">DOSSIERS CLINIQUES</p><h1 id="patients-title">Patients</h1><p class="page-description">Retrouvez et gérez les dossiers de la clinique active.</p></div>
-    <button class="primary-button" type="button" (click)="toggleCreateForm()" [disabled]="!tenant.activeClinic()">
+    <button class="primary-button" type="button" (click)="toggleCreateForm()" [disabled]="!tenant.activeClinic() || saving()">
       {{ showCreateForm() ? 'Fermer le formulaire' : '+ Nouveau patient' }}
     </button>
   </header>
 
-  @if (!tenant.activeClinic() && !tenant.loading()) {
+  @if (!tenant.activeClinic() && tenant.loading()) {
+    <div class="list-state" role="status">Chargement de votre espace clinique…</div>
+  } @else if (!tenant.activeClinic()) {
     <div class="empty-state"><span class="empty-icon" aria-hidden="true">⌂</span><h2>Aucune clinique sélectionnée</h2><p>Créez une clinique ou vérifiez que votre compte dispose d’un accès.</p><a routerLink="/onboarding/clinic">Configurer une clinique</a></div>
   } @else {
     <section class="patient-tools" aria-label="Recherche de patients">

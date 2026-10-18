@@ -42,8 +42,13 @@ export interface CreatePatientInput {
   email?: string;
 }
 
+export type PatientListRecord = Pick<
+  PatientRecord,
+  'id' | 'patientNumber' | 'firstName' | 'lastName' | 'phone' | 'email' | 'city' | 'createdAt'
+>;
+
 interface PatientListResponse {
-  data: PatientRecord[];
+  data: PatientListRecord[];
   count: number;
 }
 

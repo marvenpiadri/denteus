@@ -1,8 +1,8 @@
 # Dentaleus phased improvement plan
 
-**Working branch:** `refactor/clinical-product-foundation`  
-**Pull request:** [#2 — route-driven clinical workspace](https://github.com/marvenpiadri/denteus/pull/2)  
-**Merge status:** PR #2 was merged into `main` at the owner's explicit request. Phase 1 remains open because build/test verification and the full security audit are not complete.  
+**Delivery mode:** direct commits to `main`, as requested; do not create pull requests for this work.  
+**Current baseline:** `b73a683b48f69dfac9495dfcd12668452ab58f86` (`fix(clinical): handle clinic loading and reject blank treatment titles`).  
+**Verification status (2026-10-18):** frontend/backend GitHub Actions jobs are failing before any steps run (`runner_id: 0`, empty runner name, empty step list). This does not establish a source-code test failure, but it also does not verify builds or tests. No successful local build is available in this environment. Treat all runtime behavior as unverified until checks actually execute.  
 **UI constraints:** no Tailwind. Reuse Angular/CDK/Material already installed where appropriate, with Dentaleus-owned tokens and light/dark styling. Avoid new dependencies unless an existing dependency cannot meet a demonstrated requirement.
 
 ## Phase 1 — Audit and stabilize (current)
@@ -96,3 +96,50 @@ Do not call Phase 1 complete until frontend and backend checks have successful, 
 3. Do not add Tailwind, seed fictional production data, or claim tests passed without evidence.
 4. Every non-trivial logic change gets a focused test.
 5. Stop at each phase exit gate; report what changed, what was verified, and what remains blocked before proceeding.
+
+
+## Current delivery ledger (2026-10-18)
+
+This ledger supersedes any older branch/PR status above the phased checklists. It records actual implementation boundaries, not a promise that a route or visual placeholder is a finished feature.
+
+### Working flows to preserve
+
+- Authentication, clinic onboarding and clinic-context selection.
+- Patient list/detail and demographic edits, including optimistic-concurrency conflict handling.
+- Day agenda and appointment operations currently implemented by the existing API.
+- Patient recalls and contact/status history.
+- Initial treatment-history records with FDI tooth/surface references, status transitions and audit history.
+- Cross-clinic stale-state guards and loading/error/empty states added to patient, agenda and recall flows.
+
+### Product modules not yet delivered
+
+- **Today dashboard:** real appointment/recall/patient summaries and actionable exceptions; currently navigation actions only.
+- **Clinical chart:** canonical odontogram state, dated findings, signed/append-only notes, treatment planning, consent and clinical audit review. Existing treatment history is not a complete odontogram.
+- **Scheduling:** week/month views, provider/resource filters, resize, provider working intervals, breaks, leave and holidays; robust server-side conflict and timezone tests.
+- **Team/access:** persisted membership administration and role management UI, with authorization tests for each sensitive operation.
+- **Clinic settings:** persisted profile, timezone, opening hours and clinic-level preferences.
+- **Reports:** period-defined, permission-scoped calculations from persisted records, with clear empty/error states.
+- **Operational readiness:** reproducible frontend/backend install and checks, tenant-isolation tests, migration tests, browser acceptance tests, backup/restore procedure and deployment verification.
+
+### Execution order and acceptance gates
+
+1. **Unblock verification/tooling.** Identify why Actions cannot provision a runner; make dependency installation deterministic (including backend lockfile strategy); establish frontend build/unit tests and backend typecheck/build/integration tests that can actually run. Never mark a check green without a completed run.
+2. **Security and data integrity.** Audit every route for authenticated session, role, organization/clinic/patient ownership, safe status transitions, transaction boundaries, audit events and cross-tenant foreign keys. Add negative tests for unauthenticated, forbidden, wrong-clinic and stale-write requests.
+3. **Finish patient clinical records.** Define one canonical odontogram data model and migrations; separate tooth condition, findings, plans, treatment history and signed notes. Add immutable authorship/timestamps and audited corrections; test FDI/surface validation and concurrency.
+4. **Finish scheduling.** Add timezone-aware provider availability and overlap rules on the server first, then accessible week/month UI, filters, resize and non-drag alternatives. Add tests for daylight-saving boundaries, breaks, leave and conflicts.
+5. **Implement team, settings and reports** only against persisted API contracts, with permission checks and tests; no mock metrics or fake members.
+6. **Complete Today dashboard and UX.** Use real APIs and explicit loading/error/empty states; audit desktop/mobile, keyboard, focus, reduced motion and light/dark themes.
+7. **Release gate.** Run migrations against a clean PostgreSQL database, backend integration/security tests, frontend unit/build checks and browser acceptance tests. Verify deployment routing between Angular SSR and Fastify, then smoke-test authenticated and public boundaries. No production-readiness claim before these gates pass.
+
+### Change log
+
+- `pending verification`: connect the official `ZoliQua/Angular-Advanced-Odontogram` v2.6.0 Angular SVG component to the patient record, persist its state through the clinic-scoped odontogram API, show revision history, and load the package stylesheet. The dependency was already declared; no additional library was added. Build/browser verification remains pending because Actions runners are unavailable.
+
+- `b73a683b48f69dfac9495dfcd12668452ab58f86`: distinguish clinic-context loading from no active clinic; prevent closing the patient form while saving; reject blank treatment titles server-side.
+- `7699a543b78316ea525b68dcfad02a2e94a08430`: align Today-page copy with the actions that currently exist.
+- `c30d0dd4b05d18390796bf73e09ecc3cf74f6a9c`: restore the missing `PatientRecord` type import used by patient initials.
+- `bcb13cbedfcc8dfc53c3db7342985319adccc598`: validate FDI tooth numbers in odontogram plan changes.
+- `c25e9d24f521197f5535d9e0ef49ab8b086d3801`: allowlist patient-record roles and deny unknown roles, with a regression test.
+- `c984c7aaca7c6233371a258b02c9552f9f0a225e`: persist append-only odontogram snapshots per version in a new migration.
+- `c46e803136de4784cdac66a33f1e2019683a89e2`: add a permission-checked odontogram revision-history endpoint.
+- `ae70e2a67fc5a2632861ed9f363a657fa6b9a78e`: cover odontogram revision tenant isolation in the PostgreSQL integration test.

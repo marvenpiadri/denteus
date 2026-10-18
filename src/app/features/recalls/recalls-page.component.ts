@@ -47,18 +47,46 @@ export class RecallsPageComponent {
   contactOutcome = 'NO_ANSWER';
   contactNote = '';
   private requestSequence = 0;
+  private clinicSequence = 0;
+  private activeClinicId = '';
 
   constructor() {
     effect(() => {
       const clinic = this.tenant.activeClinic();
+      const clinicId = clinic?.id ?? '';
       const status = this.filterStatus();
       const query = this.query();
+      if (clinicId !== this.activeClinicId) {
+        this.activeClinicId = clinicId;
+        this.clinicSequence++;
+        this.requestSequence++;
+        this.recalls.set([]);
+        this.patients.set([]);
+        this.loading.set(false);
+        this.loadingPatients.set(false);
+        this.saving.set(false);
+        this.contactSaving.set(false);
+        this.error.set('');
+        this.formError.set('');
+        this.success.set('');
+        this.contactError.set('');
+        this.contactRecallId.set(null);
+        this.showCreateForm.set(false);
+        this.patientId = '';
+        this.note = '';
+      }
       if (isPlatformBrowser(this.platformId) && clinic) void this.loadRecalls(clinic.organizationId, clinic.id, status, query);
     });
     effect(() => {
       const clinic = this.tenant.activeClinic();
       if (isPlatformBrowser(this.platformId) && clinic) void this.loadPatients(clinic.organizationId, clinic.id);
     });
+  }
+
+  retryRecalls(): void {
+    const clinic = this.tenant.activeClinic();
+    if (!clinic || this.loading()) return;
+    void this.loadRecalls(clinic.organizationId, clinic.id, this.filterStatus(), this.query());
   }
 
   async loadRecalls(org: string, clinicId: string, status: string, query: string): Promise<void> {
@@ -81,18 +109,20 @@ export class RecallsPageComponent {
   }
 
   async loadPatients(org: string, clinicId: string): Promise<void> {
+    const clinicSequence = this.clinicSequence;
     this.loadingPatients.set(true);
     try {
       const response = await this.patientsApi.list(org, clinicId);
-      if (this.tenant.activeClinic()?.id === clinicId) this.patients.set(response.data);
+      if (clinicSequence === this.clinicSequence && this.tenant.activeClinic()?.id === clinicId) this.patients.set(response.data);
     } catch {
-      if (this.tenant.activeClinic()?.id === clinicId) this.patients.set([]);
+      if (clinicSequence === this.clinicSequence && this.tenant.activeClinic()?.id === clinicId) this.patients.set([]);
     } finally {
-      if (this.tenant.activeClinic()?.id === clinicId) this.loadingPatients.set(false);
+      if (clinicSequence === this.clinicSequence && this.tenant.activeClinic()?.id === clinicId) this.loadingPatients.set(false);
     }
   }
 
   openCreate(): void {
+    if (this.saving() || this.contactSaving() || !this.tenant.activeClinic()) return;
     this.formError.set('');
     this.patientId = '';
     this.recallType = 'Contrôle périodique';
@@ -104,7 +134,8 @@ export class RecallsPageComponent {
 
   async createRecall(): Promise<void> {
     const clinic = this.tenant.activeClinic();
-    if (!clinic || this.saving()) return;
+    if (!clinic || this.saving() || this.contactSaving()) return;
+    const clinicSequence = this.clinicSequence;
     this.saving.set(true);
     this.formError.set('');
     this.success.set('');
@@ -116,17 +147,22 @@ export class RecallsPageComponent {
         intervalMonths: Number(this.intervalMonths),
         ...(this.note.trim() ? { note: this.note.trim() } : {}),
       });
+      if (clinicSequence !== this.clinicSequence || this.tenant.activeClinic()?.id !== clinic.id) return;
       this.showCreateForm.set(false);
       this.success.set('Le rappel a été enregistré.');
       await this.loadRecalls(clinic.organizationId, clinic.id, this.filterStatus(), this.query());
     } catch (error) {
+      if (clinicSequence !== this.clinicSequence || this.tenant.activeClinic()?.id !== clinic.id) return;
       this.formError.set(error instanceof HttpErrorResponse && error.status === 404
         ? 'Ce patient n’est pas accessible dans la clinique active.'
         : 'Le rappel n’a pas été enregistré. Vérifiez les champs et réessayez.');
-    } finally { this.saving.set(false); }
+    } finally {
+      if (clinicSequence === this.clinicSequence) this.saving.set(false);
+    }
   }
 
   openContact(recall: PatientRecall): void {
+    if (this.saving() || this.contactSaving()) return;
     this.contactRecallId.set(recall.id);
     this.contactError.set('');
     this.contactMethod = recall.preferredContactMethod && recall.preferredContactMethod !== 'UNKNOWN' ? recall.preferredContactMethod : 'PHONE';
@@ -136,7 +172,8 @@ export class RecallsPageComponent {
 
   async saveContact(recall: PatientRecall): Promise<void> {
     const clinic = this.tenant.activeClinic();
-    if (!clinic || this.contactSaving()) return;
+    if (!clinic || this.contactSaving() || this.saving()) return;
+    const clinicSequence = this.clinicSequence;
     this.contactSaving.set(true);
     this.contactError.set('');
     try {
@@ -145,28 +182,37 @@ export class RecallsPageComponent {
         outcome: this.contactOutcome,
         ...(this.contactNote.trim() ? { note: this.contactNote.trim() } : {}),
       });
+      if (clinicSequence !== this.clinicSequence || this.tenant.activeClinic()?.id !== clinic.id) return;
       this.contactRecallId.set(null);
       this.success.set('La tentative de contact a été ajoutée à l’historique.');
       await this.loadRecalls(clinic.organizationId, clinic.id, this.filterStatus(), this.query());
     } catch {
+      if (clinicSequence !== this.clinicSequence || this.tenant.activeClinic()?.id !== clinic.id) return;
       this.contactError.set('La tentative n’a pas été enregistrée. Réessayez.');
-    } finally { this.contactSaving.set(false); }
+    } finally {
+      if (clinicSequence === this.clinicSequence) this.contactSaving.set(false);
+    }
   }
 
   async changeRecallStatus(recall: PatientRecall, status: RecallStatus): Promise<void> {
     const clinic = this.tenant.activeClinic();
-    if (!clinic || this.saving()) return;
+    if (!clinic || this.saving() || this.contactSaving()) return;
     if ((status === 'DECLINED' || status === 'INACTIVE') && !globalThis.confirm('Confirmer ce changement de statut du rappel ?')) return;
+    const clinicSequence = this.clinicSequence;
     this.saving.set(true);
     this.error.set('');
     this.success.set('');
     try {
       await this.recallsApi.changeStatus(clinic.organizationId, clinic.id, recall.id, status);
+      if (clinicSequence !== this.clinicSequence || this.tenant.activeClinic()?.id !== clinic.id) return;
       this.success.set('Le statut du rappel a été mis à jour.');
       await this.loadRecalls(clinic.organizationId, clinic.id, this.filterStatus(), this.query());
     } catch {
+      if (clinicSequence !== this.clinicSequence || this.tenant.activeClinic()?.id !== clinic.id) return;
       this.error.set('Le statut du rappel n’a pas été modifié. Réessayez.');
-    } finally { this.saving.set(false); }
+    } finally {
+      if (clinicSequence === this.clinicSequence) this.saving.set(false);
+    }
   }
 
   statusLabel(status: RecallStatus): string {

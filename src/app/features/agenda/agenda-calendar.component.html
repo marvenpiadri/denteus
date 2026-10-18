@@ -1,8 +1,11 @@
 <section class="calendar-card" aria-labelledby="calendar-heading">
+  @if (showHeading) {
   <header class="calendar-heading">
     <div>
       <h2 id="calendar-heading">{{ displayView() === 'day' ? 'Planning de la journée' : displayView() === 'week' ? 'Planning de la semaine' : displayView() === 'month' ? 'Planning du mois' : 'Vue annuelle' }}</h2>
       <p>Les rendez-vous sont positionnés selon leur heure de début et leur durée. Les conflits de patient, praticien et fauteuil sont vérifiés par le serveur. Faites glisser un rendez-vous pour déplacer son horaire ou changer de ressource.</p>
+      <h2 id="calendar-heading">{{ heading }}</h2>
+      <p>{{ description }}</p>
     </div>
     <div class="calendar-controls">
       <div class="view-switch" role="group" aria-label="Vue du planning">
@@ -16,6 +19,7 @@
       <span class="calendar-range">{{ displayView() === 'day' ? '07:00–20:00' : dateLabel(date, displayView() === 'year' ? { year: 'numeric' } : displayView() === 'month' ? { month: 'long', year: 'numeric' } : { day: 'numeric', month: 'short' }) }}</span>
     </div>
   </header>
+  }
 
   <div class="calendar-scroll" [attr.aria-busy]="loading">
     @if (displayView() === 'day') {
@@ -45,7 +49,7 @@
                 class="calendar-appointment"
                 cdkDrag
                 [cdkDragData]="item.appointment"
-                [cdkDragDisabled]="loading || item.appointment.status === 'COMPLETED' || item.appointment.status === 'CANCELLED' || item.appointment.status === 'NO_SHOW'"
+                [cdkDragDisabled]="!allowRescheduling || loading || item.appointment.status === 'COMPLETED' || item.appointment.status === 'CANCELLED' || item.appointment.status === 'NO_SHOW'"
                 [attr.aria-roledescription]="'Rendez-vous déplaçable'"
                 [class.is-cancelled]="item.appointment.status === 'CANCELLED' || item.appointment.status === 'NO_SHOW'"
                 [class.is-active]="item.appointment.status === 'ARRIVED' || item.appointment.status === 'IN_PROGRESS'"

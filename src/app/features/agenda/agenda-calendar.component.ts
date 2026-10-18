@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, signal } from '@angular/core';
 import { CdkDrag, CdkDropList } from '@angular/cdk/drag-drop';
 import type { CdkDragDrop } from '@angular/cdk/drag-drop';
 import type { AppointmentRecord } from './appointment-api.service';
@@ -28,22 +28,35 @@ export interface CalendarSlotSelection {
   templateUrl: './agenda-calendar.component.html',
   styleUrl: './agenda-calendar.component.css',
 })
-export class AgendaCalendarComponent {
+export class AgendaCalendarComponent implements OnChanges {
   @Input() appointments: AppointmentRecord[] = [];
   @Input() providers: ClinicProvider[] = [];
   @Input() operatories: ClinicOperatory[] = [];
   @Input() date = '';
   @Input() timeZone = 'Africa/Casablanca';
   @Input() loading = false;
+  /** Presentation inputs keep the calendar reusable outside the agenda page. */
+  @Input() heading = 'Planning de la journée';
+  @Input() description = 'Les horaires sont affichés dans le fuseau de la clinique active.';
+  @Input() showHeading = true;
+  @Input() allowRescheduling = true;
+  @Input() initialResourceMode: CalendarResourceMode = 'day';
   @Output() slotSelected = new EventEmitter<CalendarSlotSelection>();
   @Output() appointmentSelected = new EventEmitter<AppointmentRecord>();
   @Output() appointmentDropped = new EventEmitter<CalendarAppointmentDrop>();
   @Output() viewChanged = new EventEmitter<CalendarDisplayView>();
   @Output() calendarDayPicked = new EventEmitter<string>();
   readonly displayView = signal<CalendarDisplayView>('day');
+  @Output() resourceModeChange = new EventEmitter<CalendarResourceMode>();
 
   readonly viewMode = signal<CalendarResourceMode>('day');
   readonly hours = Array.from({ length: 13 }, (_, index) => index + 7);
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['initialResourceMode'] && this.initialResourceMode) {
+      this.setView(this.initialResourceMode, false);
+    }
+  }
 
   get resourceCount(): number {
     if (this.viewMode() === 'provider') return this.providers.length + 1;
@@ -65,7 +78,7 @@ export class AgendaCalendarComponent {
 
   onAppointmentDrop(event: CdkDragDrop<AppointmentRecord[]>, column: CalendarResourceColumn): void {
     const appointment = event.item.data as AppointmentRecord;
-    if (!appointment || ['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(appointment.status) || this.loading) return;
+    if (!appointment || ['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(appointment.status) || this.loading || !this.allowRescheduling) return;
     const lane = event.container.element.nativeElement;
     const laneRect = lane.getBoundingClientRect();
     const pointerOffset = event.dropPoint.y - laneRect.top - 14;
@@ -240,6 +253,7 @@ export class AgendaCalendarComponent {
   }
 
   setView(mode: CalendarResourceMode | CalendarDisplayView): void {
+  setView(mode: CalendarResourceMode, emit = true): void {
     if (mode === 'provider' && !this.providers.length) return;
     if (mode === 'operatory' && !this.operatories.length) return;
     if (mode === 'day' || mode === 'week' || mode === 'month' || mode === 'year') {
@@ -249,6 +263,7 @@ export class AgendaCalendarComponent {
       return;
     }
     this.viewMode.set(mode);
+    if (emit) this.resourceModeChange.emit(mode);
   }
 
   dateForOffset(days: number): string {

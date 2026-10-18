@@ -78,7 +78,7 @@ export class AppointmentApiService {
     return response.data;
   }
 
-  async changeStatus(organizationId: string, clinicId: string, appointmentId: string, status: Exclude<AppointmentStatus, 'SCHEDULED'>): Promise<void> {
+  async changeStatus(organizationId: string, clinicId: string, appointmentId: string, status: AppointmentStatus): Promise<void> {
     await firstValueFrom(this.http.patch(
       `${this.collectionUrl(organizationId, clinicId)}/${encodeURIComponent(appointmentId)}/status`,
       { status },

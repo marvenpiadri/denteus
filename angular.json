@@ -28,6 +28,7 @@
               }
             ],
             "styles": [
+              "node_modules/angular-advanced-odontogram/styles.css",
               "src/styles.css"
             ],
             "server": "src/main.server.ts",
@@ -56,7 +57,9 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true,
-              "externalDependencies": ["@google/genai"]
+              "externalDependencies": [
+                "@google/genai"
+              ]
             }
           },
           "defaultConfiguration": "production"

@@ -86,6 +86,26 @@ test('tenant constraints isolate clinics and odontogram data persists across con
       [`odonto-${suffix}`, orgA, clinicA, patientId, JSON.stringify({ '11': 'healthy' })],
     );
     await writer.query(
+      `INSERT INTO odontogram_revisions (
+        id, organization_id, clinic_id, patient_id, odontogram_id, version_no, snapshot, recorded_by_id
+      ) VALUES ($1, $2, $3, $4, $5, 1, $6::jsonb, $7)`,
+      [`odonto-revision-${suffix}`, orgA, clinicA, patientId, `odonto-${suffix}`, JSON.stringify({ status: { '11': 'healthy' }, plan: null, planChanges: [], extra: {} }), userId],
+    );
+
+    await writer.query('SAVEPOINT expected_odontogram_revision_scope_failure');
+    await assert.rejects(
+      writer.query(
+        `INSERT INTO odontogram_revisions (
+          id, organization_id, clinic_id, patient_id, odontogram_id, version_no, snapshot, recorded_by_id
+        ) VALUES ($1, $2, $3, $4, $5, 2, $6::jsonb, $7)`,
+        [`bad-odonto-revision-${suffix}`, orgA, clinicA2, patientId, `odonto-${suffix}`, JSON.stringify({ status: {} }), userId],
+      ),
+      (error: unknown) => (error as { code?: string }).code === '23503',
+      'an odontogram revision cannot be attached to a different clinic',
+    );
+    await writer.query('ROLLBACK TO SAVEPOINT expected_odontogram_revision_scope_failure');
+    await writer.query('RELEASE SAVEPOINT expected_odontogram_revision_scope_failure');
+    await writer.query(
       `INSERT INTO clinic_providers (id, organization_id, clinic_id, display_name, role)
        VALUES ($1, $2, $3, $4, 'DENTIST')`,
       [providerId, orgA, clinicA, 'Integration Dentist'],

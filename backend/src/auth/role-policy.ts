@@ -6,8 +6,19 @@ export interface ClinicRoleAccess {
 
 const organizationWideRoles = new Set(['ORGANIZATION_OWNER', 'ORGANIZATION_ADMIN']);
 
+const patientManagers = new Set([
+  'ORGANIZATION_OWNER',
+  'ORGANIZATION_ADMIN',
+  'CLINIC_ADMIN',
+  'DENTIST',
+  'ORTHODONTIST',
+  'HYGIENIST',
+  'ASSISTANT',
+  'RECEPTIONIST',
+]);
+
 export function canManagePatients(access: ClinicRoleAccess): boolean {
-  return access.effectiveRole !== 'ACCOUNTANT';
+  return patientManagers.has(access.effectiveRole);
 }
 
 export function canReadOdontogram(access: ClinicRoleAccess): boolean {

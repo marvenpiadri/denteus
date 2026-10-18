@@ -9,6 +9,7 @@ import { PatientListPageComponent } from './features/patients/patient-list-page.
 import { PatientDetailPageComponent } from './features/patients/patient-detail-page.component';
 import { AgendaPageComponent } from './features/agenda/agenda-page.component';
 import { RecallsPageComponent } from './features/recalls/recalls-page.component';
+import { ClinicSettingsPageComponent } from './features/settings/clinic-settings-page.component';
 
 export const routes: Routes = [
   {
@@ -48,7 +49,7 @@ export const routes: Routes = [
         title: 'Aujourd’hui | Dentaleus',
         data: {
           title: 'Aujourd’hui',
-          description: 'Le point de départ de la journée clinique : priorités, arrivées et tâches à suivre.',
+          description: 'Accédez rapidement aux dossiers patients, aux rendez-vous et aux rappels de la clinique active.',
         },
       },
       {
@@ -100,7 +101,7 @@ export const routes: Routes = [
       },
       {
         path: 'settings',
-        component: WorkspacePageComponent,
+        component: ClinicSettingsPageComponent,
         title: 'Paramètres | Dentaleus',
         data: {
           title: 'Paramètres du cabinet',

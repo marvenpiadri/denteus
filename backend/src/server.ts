@@ -11,7 +11,9 @@ import { onboardingRoutes } from './routes/onboarding.js';
 import { appointmentRoutes } from './routes/appointments.js';
 import { recallRoutes } from './routes/recalls.js';
 import { schedulingResourceRoutes } from './routes/scheduling-resources.js';
-import { patientTreatmentRoutes } from './routes/patient-treatments.js';
+import { clinicalEncounterRoutes } from './routes/clinical-encounters.js';
+import { patientHistoryRoutes } from './routes/patient-history.js';
+import { clinicSettingsRoutes } from './routes/clinic-settings.js';
 
 const clientOrigins = (process.env['CLIENT_ORIGINS'] ?? 'http://localhost:3000')
   .split(',')
@@ -76,8 +78,6 @@ app.route({
     try {
       const url = new URL(request.url, authBaseUrl);
       const headers = fromNodeHeaders(request.headers);
-      // The incoming content-length describes Fastify's raw request body, not
-      // the JSON string we create here. Let Fetch calculate the forwarded length.
       headers.delete('content-length');
       headers.delete('transfer-encoding');
       const method = request.method.toUpperCase();
@@ -87,7 +87,6 @@ app.route({
         headers,
         ...(hasBody ? { body: JSON.stringify(request.body) } : {}),
       });
-
       const response = await auth.handler(authRequest);
       reply.status(response.status);
       response.headers.forEach((value, key) => reply.header(key, value));
@@ -95,37 +94,18 @@ app.route({
     } catch (error) {
       request.log.error({ err: error }, 'Authentication handler failed');
       return reply.code(500).send({
-        error: {
-          code: 'AUTH_FAILURE',
-          message: 'The authentication request could not be completed.',
-        },
+        error: { code: 'AUTH_FAILURE', message: 'The authentication request could not be completed.' },
       });
     }
   },
 });
 
 app.get('/api/v1/session', async (request, reply) => {
-  const result = await auth.api.getSession({
-    headers: fromNodeHeaders(request.headers),
-  });
-
-  if (!result) {
-    return reply.code(401).send({
-      error: { code: 'UNAUTHENTICATED', message: 'Authentication is required.' },
-    });
-  }
-
+  const result = await auth.api.getSession({ headers: fromNodeHeaders(request.headers) });
+  if (!result) return reply.code(401).send({ error: { code: 'UNAUTHENTICATED', message: 'Authentication is required.' } });
   return {
-    user: {
-      id: result.user.id,
-      name: result.user.name,
-      email: result.user.email,
-      emailVerified: result.user.emailVerified,
-      image: result.user.image,
-    },
-    session: {
-      expiresAt: result.session.expiresAt,
-    },
+    user: { id: result.user.id, name: result.user.name, email: result.user.email, emailVerified: result.user.emailVerified, image: result.user.image },
+    session: { expiresAt: result.session.expiresAt },
   };
 });
 
@@ -136,25 +116,19 @@ await app.register(odontogramRoutes, { prefix: '/api/v1' });
 await app.register(appointmentRoutes, { prefix: '/api/v1' });
 await app.register(recallRoutes, { prefix: '/api/v1' });
 await app.register(schedulingResourceRoutes, { prefix: '/api/v1' });
-await app.register(patientTreatmentRoutes, { prefix: '/api/v1' });
+await app.register(clinicalEncounterRoutes, { prefix: '/api/v1' });
+await app.register(patientHistoryRoutes, { prefix: '/api/v1' });
+await app.register(clinicSettingsRoutes, { prefix: '/api/v1' });
 
-app.setNotFoundHandler(async (_request, reply) => {
-  return reply.code(404).send({
-    error: { code: 'NOT_FOUND', message: 'Route not found.' },
-  });
-});
-
+app.setNotFoundHandler(async (_request, reply) => reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Route not found.' } }));
 app.setErrorHandler((error, request, reply) => {
   request.log.error({ err: error }, 'Unhandled API error');
-  return reply.code(error.statusCode && error.statusCode < 500 ? error.statusCode : 500)
-    .send({
-      error: {
-        code: error.statusCode && error.statusCode < 500 ? 'REQUEST_ERROR' : 'INTERNAL_ERROR',
-        message: error.statusCode && error.statusCode < 500
-          ? error.message
-          : 'An unexpected server error occurred.',
-      },
-    });
+  return reply.code(error.statusCode && error.statusCode < 500 ? error.statusCode : 500).send({
+    error: {
+      code: error.statusCode && error.statusCode < 500 ? 'REQUEST_ERROR' : 'INTERNAL_ERROR',
+      message: error.statusCode && error.statusCode < 500 ? error.message : 'An unexpected server error occurred.',
+    },
+  });
 });
 
 const port = Number(process.env['API_PORT'] ?? 4100);
@@ -162,23 +136,11 @@ const host = process.env['API_HOST'] ?? '0.0.0.0';
 
 async function shutdown(signal: string): Promise<void> {
   app.log.info({ signal }, 'Shutting down Dentaleus API');
-  try {
-    await app.close();
-    await pool.end();
-    process.exit(0);
-  } catch (error) {
-    app.log.error({ err: error }, 'Graceful shutdown failed');
-    process.exit(1);
-  }
+  try { await app.close(); await pool.end(); process.exit(0); }
+  catch (error) { app.log.error({ err: error }, 'Graceful shutdown failed'); process.exit(1); }
 }
-
 process.once('SIGINT', () => void shutdown('SIGINT'));
 process.once('SIGTERM', () => void shutdown('SIGTERM'));
 
-try {
-  await app.listen({ port, host });
-} catch (error) {
-  app.log.error({ err: error }, 'Unable to start Dentaleus API');
-  await pool.end();
-  process.exit(1);
-}
+try { await app.listen({ port, host }); }
+catch (error) { app.log.error({ err: error }, 'Unable to start Dentaleus API'); await pool.end(); process.exit(1); }

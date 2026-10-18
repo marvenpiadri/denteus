@@ -7,6 +7,7 @@ import {
   requireClinicAccess,
 } from '../auth/authorization.js';
 import { pool } from '../db/pool.js';
+import { isValidFdiTooth } from '../domain/patient-treatment-policy.js';
 
 interface OdontogramParams {
   organizationId: string;
@@ -114,6 +115,45 @@ export const odontogramRoutes: FastifyPluginAsync = async (app) => {
     },
   );
 
+  app.get<{ Params: OdontogramParams }>(
+    '/organizations/:organizationId/clinics/:clinicId/patients/:patientId/odontogram/revisions',
+    async (request, reply) => {
+      const access = await requireClinicAccess(request, reply, request.params.organizationId, request.params.clinicId);
+      if (!access) return;
+      if (!canReadOdontogram(access)) return denyInsufficientRole(reply);
+
+      const result = await pool.query(
+        `
+          SELECT
+            revision.version_no AS "versionNo",
+            revision.snapshot,
+            revision.recorded_by_id AS "recordedById",
+            actor.name AS "recordedByName",
+            revision.created_at AS "createdAt"
+          FROM odontogram_revisions revision
+          LEFT JOIN app_users actor ON actor.id = revision.recorded_by_id
+          WHERE revision.organization_id = $1
+            AND revision.clinic_id = $2
+            AND revision.patient_id = $3
+          ORDER BY revision.version_no DESC
+          LIMIT 100
+        `,
+        [request.params.organizationId, request.params.clinicId, request.params.patientId],
+      );
+
+      if (!result.rows.length) {
+        const patient = await pool.query(
+          'SELECT 1 FROM patient_clinics WHERE organization_id = $1 AND clinic_id = $2 AND patient_id = $3',
+          [request.params.organizationId, request.params.clinicId, request.params.patientId],
+        );
+        if (!patient.rowCount) {
+          return reply.code(404).send({ error: { code: 'PATIENT_NOT_FOUND', message: 'Patient not found.' } });
+        }
+      }
+
+      return { data: result.rows, count: result.rows.length };
+    },
+  );
   app.put<{ Params: OdontogramParams; Body: SaveOdontogramBody }>(
     '/organizations/:organizationId/clinics/:clinicId/patients/:patientId/odontogram',
     { schema: { body: odontogramBodySchema } },
@@ -143,6 +183,18 @@ export const odontogramRoutes: FastifyPluginAsync = async (app) => {
       if (!linkedPatient.rowCount) {
         return reply.code(404).send({
           error: { code: 'PATIENT_NOT_FOUND', message: 'Patient not found.' },
+        });
+      }
+
+      const invalidPlanChange = (request.body.planChanges ?? []).find(
+        (change) => !isValidFdiTooth(change.toothNo),
+      );
+      if (invalidPlanChange) {
+        return reply.code(400).send({
+          error: {
+            code: 'INVALID_FDI_TOOTH',
+            message: 'Chaque modification du plan doit référencer une dent FDI valide.',
+          },
         });
       }
 
@@ -196,6 +248,16 @@ export const odontogramRoutes: FastifyPluginAsync = async (app) => {
           ],
         );
 
+        const revisionResult = await client.query<{ version_no: number }> (
+          'SELECT COALESCE(MAX(version_no), 0) + 1 AS version_no FROM odontogram_revisions WHERE odontogram_id = $1',
+          [result.rows[0].id],
+        );
+        const revisionNo = Number(revisionResult.rows[0].version_no);
+
+        await client.query(
+          'INSERT INTO odontogram_revisions (id, organization_id, clinic_id, patient_id, odontogram_id, version_no, snapshot, recorded_by_id) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8)',
+          [randomUUID(), request.params.organizationId, request.params.clinicId, request.params.patientId, result.rows[0].id, revisionNo, JSON.stringify({ status: result.rows[0].status, plan: result.rows[0].plan, planChanges: result.rows[0].planChanges, extra: result.rows[0].extra }), access.userId],
+        );
         await client.query(
           `
             INSERT INTO audit_events (
@@ -211,6 +273,7 @@ export const odontogramRoutes: FastifyPluginAsync = async (app) => {
             JSON.stringify({
               clinicId: request.params.clinicId,
               patientId: request.params.patientId,
+              revisionNo,
             }),
           ],
         );

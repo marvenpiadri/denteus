@@ -15,9 +15,12 @@ function access(effectiveRole: string) {
   };
 }
 
-test('accountants cannot manage patient records', () => {
+test('only explicitly permitted clinic roles can manage patient records', () => {
+  for (const role of ['ORGANIZATION_OWNER', 'ORGANIZATION_ADMIN', 'CLINIC_ADMIN', 'DENTIST', 'ORTHODONTIST', 'HYGIENIST', 'ASSISTANT', 'RECEPTIONIST']) {
+    assert.equal(canManagePatients(access(role)), true, role);
+  }
   assert.equal(canManagePatients(access('ACCOUNTANT')), false);
-  assert.equal(canManagePatients(access('RECEPTIONIST')), true);
+  assert.equal(canManagePatients(access('UNKNOWN')), false);
 });
 
 test('receptionists cannot read or write clinical odontograms', () => {

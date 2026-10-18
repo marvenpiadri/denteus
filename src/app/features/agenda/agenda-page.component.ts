@@ -35,6 +35,7 @@ export class AgendaPageComponent {
     return this.appointments().filter((appointment) => toClinicDateTimeInput(appointment.startsAt, zone).slice(0, 10) === this.selectedDate());
   });
   readonly appointments = signal<AppointmentRecord[]>([]);
+  readonly waitingRoomAppointments = computed(() => this.appointments().filter((appointment) => appointment.status === 'ARRIVED'));
   readonly patients = signal<PatientRecord[]>([]);
   readonly waitingRoomAppointments = computed(() => this.dayAppointments().filter((appointment) => appointment.status === 'ARRIVED'));
   readonly inTreatmentAppointments = computed(() => this.dayAppointments().filter((appointment) => appointment.status === 'IN_PROGRESS'));
@@ -94,7 +95,55 @@ export class AgendaPageComponent {
   constructor() {
     effect(() => {
       const clinic = this.tenant.activeClinic();
-      if (!clinic) return;
+      if (!clinic) {
+        if (!this.activeClinicId) return;
+        this.activeClinicId = '';
+        this.appointmentLoadSequence++;
+        this.resourceLoadSequence++;
+        this.patientOptionsLoadSequence++;
+        this.appointmentMutationSequence++;
+        this.resourceMutationSequence++;
+        this.statusMutationSequence++;
+        this.appointments.set([]);
+        this.patients.set([]);
+        this.providers.set([]);
+        this.operatories.set([]);
+        this.selectedDate.set('');
+        this.loading.set(false);
+        this.loadingPatients.set(false);
+        this.loadingResources.set(false);
+        this.saving.set(false);
+        this.resourceSaving.set(false);
+        this.changingStatusId.set(null);
+        this.reschedulingId.set(null);
+        this.pendingStatusChange.set(null);
+        this.showCreateForm.set(false);
+        this.showResourceSetup.set(false);
+        this.error.set('');
+        this.formError.set('');
+        this.patientsError.set('');
+        this.rescheduleError.set('');
+        this.resourceError.set('');
+        this.success.set('');
+        this.patientId = '';
+        this.startsAt = '';
+        this.endsAt = '';
+        this.reason = '';
+        this.providerId = '';
+        this.operatoryId = '';
+        this.providerName = '';
+        this.providerRole = 'DENTIST';
+        this.operatoryName = '';
+        this.chairNumber = '';
+        this.hoursProviderId = '';
+        this.rescheduleStartsAt = '';
+        this.rescheduleEndsAt = '';
+        this.rescheduleProviderId = '';
+        this.rescheduleOperatoryId = '';
+        this.patientOptionsClinicId = '';
+        this.resourceOptionsClinicId = '';
+        return;
+      }
       if (!this.activeClinicId) {
         this.activeClinicId = clinic.id;
         return;
@@ -383,7 +432,8 @@ export class AgendaPageComponent {
         startsAt,
         endsAt,
         ...(this.reason.trim() ? { reason: this.reason.trim() } : {}),
-        ...(this.providerId && this.operatoryId ? { providerId: this.providerId, operatoryId: this.operatoryId } : {}),
+        ...(this.providerId ? { providerId: this.providerId } : {}),
+        ...(this.operatoryId ? { operatoryId: this.operatoryId } : {}),
       });
       if (this.tenant.activeClinic()?.id !== clinic.id) return;
       this.showCreateForm.set(false);
@@ -407,15 +457,15 @@ export class AgendaPageComponent {
     }
   }
 
-  availableTransitions(status: AppointmentStatus): Exclude<AppointmentStatus, 'SCHEDULED'>[] {
+  availableTransitions(status: AppointmentStatus): AppointmentStatus[] {
     const transitions: Record<AppointmentStatus, Exclude<AppointmentStatus, 'SCHEDULED'>[]> = {
       SCHEDULED: ['CONFIRMED', 'ARRIVED', 'CANCELLED', 'NO_SHOW'],
       CONFIRMED: ['ARRIVED', 'CANCELLED', 'NO_SHOW'],
       ARRIVED: ['IN_PROGRESS', 'CANCELLED'],
       IN_PROGRESS: ['COMPLETED'],
       COMPLETED: [],
-      CANCELLED: [],
-      NO_SHOW: [],
+      CANCELLED: ['SCHEDULED'],
+      NO_SHOW: ['SCHEDULED'],
     };
     return transitions[status];
   }
@@ -526,7 +576,7 @@ export class AgendaPageComponent {
     }
   }
 
-  requestStatusChange(appointment: AppointmentRecord, status: Exclude<AppointmentStatus, 'SCHEDULED'>): void {
+  requestStatusChange(appointment: AppointmentRecord, status: AppointmentStatus): void {
     if (this.saving() || this.changingStatusId()) return;
     if (status === 'CANCELLED' || status === 'NO_SHOW') {
       this.pendingStatusChange.set({ appointmentId: appointment.id, status });
@@ -557,7 +607,7 @@ export class AgendaPageComponent {
     this.patientOptionsClinicId = clinic.id;
   }
 
-  async changeStatus(appointment: AppointmentRecord, status: Exclude<AppointmentStatus, 'SCHEDULED'>): Promise<void> {
+  async changeStatus(appointment: AppointmentRecord, status: AppointmentStatus): Promise<void> {
     const clinic = this.tenant.activeClinic();
     if (!clinic || this.saving() || this.changingStatusId()) return;
     const mutationSequence = ++this.statusMutationSequence;
@@ -572,7 +622,7 @@ export class AgendaPageComponent {
     } catch (error) {
       if (this.tenant.activeClinic()?.id !== clinic.id) return;
       this.error.set(error instanceof HttpErrorResponse && error.status === 409
-        ? 'Le statut a changé ou cette transition n’est plus autorisée. Rechargez l’agenda.'
+        ? error.error?.error?.message || 'Le statut a changé ou cette transition n’est plus autorisée. Rechargez l’agenda.'
         : 'Le statut n’a pas été modifié. Réessayez.');
     } finally {
       if (mutationSequence === this.statusMutationSequence) this.changingStatusId.set(null);

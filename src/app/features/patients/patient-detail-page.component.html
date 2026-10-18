@@ -49,73 +49,9 @@
         </dl>
       </section>
     }
-    <section class="clinical-history-card" aria-labelledby="treatment-history-title">
-      <header class="clinical-history-heading">
-        <div><p class="eyebrow">SUIVI CLINIQUE</p><h2 id="treatment-history-title">Soins et historique dentaire</h2><p>Chaque soin est relié aux dents et surfaces concernées, au statut et au membre de l’équipe qui l’a enregistré.</p></div>
-        <button class="primary-button" type="button" (click)="showTreatmentForm.set(!showTreatmentForm())" [disabled]="treatmentsSaving()">{{ showTreatmentForm() ? 'Fermer' : '+ Enregistrer un soin' }}</button>
-      </header>
+    <app-patient-clinical-history [patientId]="record.id" />
+    <app-patient-odontogram [patientId]="record.id" />
 
-      @if (treatmentsSuccess()) { <div class="success-message" role="status">{{ treatmentsSuccess() }}</div> }
-      @if (treatmentsError()) { <div class="error-message" role="alert">{{ treatmentsError() }} <button type="button" (click)="retryTreatments()">Réessayer l’historique</button></div> }
-      <app-tooth-selector [selectedTeeth]="selectedTeeth()" (selectedTeethChange)="selectedTeeth.set($event)" [treatedTeeth]="treatedTeeth()" [showPrimary]="showPrimaryTeeth()" (showPrimaryChange)="showPrimaryTeeth.set($event)" />
-      @if (selectedTeeth().length) { <p class="tooth-history-filter">Historique filtré sur les dents : {{ selectedTeeth().join(', ') }} <button type="button" (click)="selectedTeeth.set([])">Afficher toutes les dents</button></p> }
-
-      @if (showTreatmentForm()) {
-        <form class="treatment-entry-form" (ngSubmit)="saveTreatment()">
-          <div class="form-grid">
-            <div class="wide-field"><label for="treatment-title">Soin / acte réalisé ou prévu *</label><input id="treatment-title" name="treatmentTitle" [(ngModel)]="treatmentTitle" required maxlength="200" placeholder="Ex. Restauration composite"></div>
-            <div><label for="treatment-category">Catégorie *</label><select id="treatment-category" name="treatmentCategory" [(ngModel)]="treatmentCategory">@for (category of treatmentCategories; track category.value) { <option [value]="category.value">{{ category.label }}</option> }</select></div>
-            <div class="wide-field"><label for="treatment-appointment">Rendez-vous associé (facultatif)</label><select id="treatment-appointment" name="treatmentAppointmentId" [(ngModel)]="treatmentAppointmentId" [disabled]="patientAppointmentsLoading()"><option value="">{{ patientAppointmentsLoading() ? 'Chargement des rendez-vous…' : patientAppointmentsError() ? 'Rendez-vous indisponibles' : 'Aucun rendez-vous associé' }}</option>@for (appointment of availableTreatmentAppointments(); track appointment.id) { <option [value]="appointment.id">{{ appointmentOptionLabel(appointment) }}</option> }</select><small>Le soin sera relié à la visite sélectionnée dans l’historique du patient.</small>@if (patientAppointmentsError()) { <p class="field-error" role="alert">{{ patientAppointmentsError() }} <button type="button" (click)="retryPatientAppointments()" [disabled]="patientAppointmentsLoading()">Réessayer</button></p> }</div>
-            <div><label for="treatment-status">Statut *</label><select id="treatment-status" name="treatmentStatus" [(ngModel)]="treatmentStatus"><option value="PLANNED">Prévu</option><option value="ACCEPTED">Accepté</option><option value="COMPLETED">Réalisé</option><option value="DECLINED">Refusé</option></select><small>Un soin marqué « Réalisé » sera daté et attribué à votre compte.</small></div>
-            <div><label for="treatment-surface">Surface dentaire</label><select id="treatment-surface" name="treatmentSurface" [(ngModel)]="treatmentSurface">@for (surface of toothSurfaces; track surface.value) { <option [value]="surface.value">{{ surface.label }}</option> }</select><small>La surface sélectionnée s’applique à chaque dent choisie ci-dessous.</small></div>
-            <div class="wide-field"><label for="treatment-notes">Note clinique (facultatif)</label><textarea id="treatment-notes" name="treatmentNotes" [(ngModel)]="treatmentNotes" rows="3" maxlength="10000" placeholder="Note factuelle sur le soin, sans remplacer un dossier clinique complet."></textarea></div>
-          </div>
-          <div class="form-actions"><button class="secondary-button" type="button" (click)="showTreatmentForm.set(false)" [disabled]="treatmentsSaving()">Annuler</button><button class="primary-button" type="submit" [disabled]="!treatmentTitle.trim() || treatmentsSaving()">{{ treatmentsSaving() ? 'Enregistrement…' : 'Enregistrer le soin' }}</button></div>
-        </form>
-      }
-
-      @if (treatmentsLoading()) {
-        <div class="treatment-empty" role="status">Chargement de l’historique des soins…</div>
-      } @else if (treatmentsError()) {
-        <div class="treatment-empty" role="alert">Les informations cliniques ne sont pas disponibles pour cette session.</div>
-      } @else if (!treatments().length && !treatmentsError()) {
-        <div class="treatment-empty"><strong>Aucun soin enregistré pour ce patient</strong><p>Ajoutez un soin prévu ou réalisé et sélectionnez les dents concernées pour commencer son historique dentaire.</p></div>
-      } @else if (!filteredTreatments().length) {
-        <div class="treatment-empty"><strong>Aucun soin associé aux dents sélectionnées</strong><p>Essayez d’autres dents ou affichez l’historique complet.</p><button class="secondary-button" type="button" (click)="selectedTeeth.set([])">Afficher tout l’historique</button></div>
-      } @else {
-        <div class="treatment-timeline">
-          @for (treatment of filteredTreatments(); track treatment.id) {
-            <article class="treatment-record">
-              <div class="treatment-record-header">
-                <div><h3>{{ treatment.title }}</h3><p>{{ treatmentCategoryLabel(treatment.category) }} · {{ treatment.status === 'COMPLETED' ? 'Réalisé le ' + formatTreatmentDate(treatment.performedAt) : 'Enregistré le ' + formatTreatmentDate(treatment.createdAt) }}</p></div>
-                <span class="treatment-status" [attr.data-status]="treatment.status">{{ treatmentStatusLabel(treatment.status) }}</span>
-              </div>
-              @if (treatment.appointmentId && treatment.appointmentStartsAt) { <p class="treatment-visit-link">Rendez-vous associé · {{ formatTreatmentDate(treatment.appointmentStartsAt) }}@if (treatment.appointmentReason) { · {{ treatment.appointmentReason }} }</p> }
-              @if (treatment.toothSites.length) {
-                <div class="treatment-teeth"><span>Dents concernées</span>@for (site of treatment.toothSites; track site.toothNo + ':' + site.surface) { <span class="tooth-chip">FDI {{ site.toothNo }} · {{ surfaceLabel(site.surface) }}</span> }</div>
-              } @else { <p class="treatment-no-teeth">Aucune dent associée à ce soin.</p> }
-              @if (treatment.notes) { <p class="treatment-note">{{ treatment.notes }}</p> }
-              <div class="treatment-attribution">
-                @if (treatment.status === 'COMPLETED') { <span>Réalisé par {{ treatment.performedByName || 'membre non disponible' }}</span> }
-                <span>Enregistré par {{ treatment.recordedByName || 'membre non disponible' }}</span>
-              </div>
-              @if (treatment.events.length > 1) {
-                <details class="treatment-events"><summary>Historique des modifications ({{ treatment.events.length }})</summary>
-                  @for (event of treatment.events; track event.createdAt + event.action) {
-                    <p>{{ formatTreatmentDate(event.createdAt) }} · {{ event.actorName || 'Membre non disponible' }} · {{ event.action === 'CREATED' ? 'Soin créé' : 'Statut : ' + treatmentStatusLabel(event.fromStatus || 'PLANNED') + ' → ' + treatmentStatusLabel(event.toStatus) }}</p>
-                  }
-                </details>
-              }
-              @if (availableTreatmentTransitions(treatment.status).length) {
-                <div class="treatment-actions"><span>Changer le statut :</span>
-                  @for (status of availableTreatmentTransitions(treatment.status); track status) { <button type="button" class="status-action" (click)="changeTreatmentStatus(treatment, status)" [disabled]="treatmentsSaving()">{{ treatmentStatusLabel(status) }}</button> }
-                </div>
-              }
-            </article>
-          }
-        </div>
-      }
-      <p class="clinical-history-footnote">Cet historique consigne les soins et dents associés. Il ne remplace pas les observations cliniques datées, le consentement, les radiographies ni la validation du praticien.</p>
-    </section>
+    <app-clinical-records [patientId]="record.id" />
   }
 </section>
