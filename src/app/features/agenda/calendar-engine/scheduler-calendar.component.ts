@@ -1,7 +1,9 @@
+import { isPlatformBrowser } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  PLATFORM_ID,
   effect,
   inject,
   input,
@@ -64,6 +66,7 @@ interface StoredState {
 })
 export class SchedulerCalendarComponent implements OnInit {
   protected readonly store = inject(CalendarStore);
+  private readonly platformId = inject(PLATFORM_ID);
 
   /** Events to show. When empty and `demoData` is true, sample data is generated. */
   readonly initialEvents = input<CalendarEvent[] | null>(null);
@@ -126,11 +129,11 @@ export class SchedulerCalendarComponent implements OnInit {
     });
     effect(() => {
       const date = this.store.focusDate();
-      if (this.ready) this.dateChanged.emit(this.dateKey(date));
+      if (this.ready && isPlatformBrowser(this.platformId)) this.dateChanged.emit(this.dateKey(date));
     });
     effect(() => {
       const view = this.store.view();
-      if (this.ready) this.viewChanged.emit(view);
+      if (this.ready && isPlatformBrowser(this.platformId)) this.viewChanged.emit(view);
     });
   }
 
@@ -157,8 +160,10 @@ export class SchedulerCalendarComponent implements OnInit {
     if (this.focusDate()) store.goToDate(new Date(this.focusDate()! + 'T12:00:00'));
     this.ready = true;
     this.themeChange.emit(store.theme());
-    this.dateChanged.emit(this.dateKey(store.focusDate()));
-    this.viewChanged.emit(store.view());
+    if (isPlatformBrowser(this.platformId)) {
+      this.dateChanged.emit(this.dateKey(store.focusDate()));
+      this.viewChanged.emit(store.view());
+    }
   }
 
   /* ---------------------------------- editor ---------------------------------- */
