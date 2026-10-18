@@ -2,7 +2,7 @@
 
 **Working branch:** `refactor/clinical-product-foundation`  
 **Pull request:** [#2 — route-driven clinical workspace](https://github.com/marvenpiadri/denteus/pull/2)  
-**Rule:** keep `main` untouched; keep the PR in draft; do not merge without explicit approval.  
+**Merge status:** PR #2 was merged into `main` at the owner's explicit request. Phase 1 remains open because build/test verification and the full security audit are not complete.  
 **UI constraints:** no Tailwind. Reuse Angular/CDK/Material already installed where appropriate, with Dentaleus-owned tokens and light/dark styling. Avoid new dependencies unless an existing dependency cannot meet a demonstrated requirement.
 
 ## Phase 1 — Audit and stabilize (current)
@@ -15,17 +15,17 @@
 - The patient treatment history with FDI tooth/surface links is a first iteration, not a full clinical odontogram or complete medical record. Do not treat these records as a replacement for the odontogram's canonical clinical state.
 - Build and test outcomes have not yet been verified successfully. The backend and frontend GitHub Actions checks were queued after the syntax fix at the time of this audit; queued is not passing. CI quota issues were previously reported, so a failed or missing run must not be represented as a passing test.
 - `docs/ARCHITECTURE.md` describes a different/incomplete architecture (temporary in-memory odontogram, `src/server/backend`, Prisma target) than the current checked-in `backend/` Fastify/PostgreSQL implementation. Reconcile it before relying on it as the source of truth.
-- The frontend workflow uses `npm install` while the repository's committed lockfile is `bun.lock`; make package-manager and lockfile strategy consistent before production checks.
+- The frontend workflow was updated to use Bun with `bun install --frozen-lockfile`, matching the committed `bun.lock`. The backend retains its own npm workflow; backend lockfile strategy still needs review.
 - The backend treatment route had a malformed `ToothSurface` TypeScript union that prevents compilation. Corrected in commit `1dd983e` on this feature branch. Build/tests still need to run to discover further issues.
 - Graphify was requested but this environment has no Graphify workspace selected/available. Repository inspection used the GitHub source tree and files directly instead.
 
 ### Phase 1 checklist
 
-- [x] Confirm target branch and draft PR; leave `main` untouched.
+- [x] Work on the agreed feature branch and merge PR #2 into `main` after the owner explicitly authorized it.
 - [x] Inventory frontend, backend, database migrations, tests, and workflows.
 - [x] Identify product gaps and documentation contradictions.
 - [x] Fix the confirmed malformed TypeScript type in patient treatment routes.
-- [ ] Run frontend build and tests.
+- [ ] Run frontend build and tests (GitHub Actions failed before any steps were reported; no successful result is available).
 - [ ] Run backend typecheck, build, migration tests, and policy/integration tests against PostgreSQL.
 - [ ] Inspect authentication, authorization, tenant isolation, mutation audit logging, and cross-tenant foreign keys route by route.
 - [x] Reconcile architecture documentation with the actual Fastify/PostgreSQL repository layout.
@@ -91,7 +91,7 @@ Do not call Phase 1 complete until frontend and backend checks have successful, 
 
 ## Working rules
 
-1. Work only on `refactor/clinical-product-foundation` unless explicitly instructed otherwise.
+1. PR #2 has been merged to `main`; continue subsequent work from the current `main` head unless a new feature branch is explicitly requested.
 2. Make small, phase-scoped commits and preserve working behavior.
 3. Do not add Tailwind, seed fictional production data, or claim tests passed without evidence.
 4. Every non-trivial logic change gets a focused test.
