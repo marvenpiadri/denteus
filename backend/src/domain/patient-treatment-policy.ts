@@ -1,5 +1,5 @@
 export type TreatmentStatus = 'PLANNED' | 'ACCEPTED' | 'COMPLETED' | 'DECLINED';
-export type ToothSurface = 'WHOLE' | 'OCCLUSAL' | 'MESIAL' | 'DISTAL' | 'BUCCAL' | 'LINGUAL' | 'PALATAL' | 'CERVICAL';
+export type ToothSurface = 'WHOLE' | 'OCCLUSAL' | 'INCISAL' | 'MESIAL' | 'DISTAL' | 'BUCCAL' | 'LINGUAL' | 'PALATAL' | 'CERVICAL';
 
 const validFdiTeeth = new Set([
   11,12,13,14,15,16,17,18,21,22,23,24,25,26,27,28,
