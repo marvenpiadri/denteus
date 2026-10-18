@@ -16,8 +16,8 @@ const transitions: Record<AppointmentStatus, readonly AppointmentStatus[]> = {
   ARRIVED: ['IN_PROGRESS', 'CANCELLED'],
   IN_PROGRESS: ['COMPLETED'],
   COMPLETED: [],
-  CANCELLED: [],
-  NO_SHOW: [],
+  CANCELLED: ['SCHEDULED'],
+  NO_SHOW: ['SCHEDULED'],
 };
 
 const appointmentManagers = new Set([
