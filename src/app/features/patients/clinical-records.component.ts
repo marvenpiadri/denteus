@@ -11,12 +11,13 @@ export class ClinicalRecordsComponent {
  readonly patientId=input.required<string>();
  private readonly tenant=inject(TenantContextService); private readonly api=inject(ClinicalRecordsApiService);
  readonly visits=signal<EncounterSummary[]>([]); readonly selected=signal<Encounter|null>(null); readonly providers=signal<ClinicProvider[]>([]);
- readonly loading=signal(false); readonly detailLoading=signal(false); readonly saving=signal(false);
+ readonly loading=signal(false); readonly detailLoading=signal(false); readonly saving=signal(false); readonly mediaUploading=signal(false);
  readonly error=signal(''); readonly success=signal(''); readonly showVisitForm=signal(false); readonly showNoteForm=signal(false);
  readonly amendmentId=signal<string|null>(null); readonly showFollowUpForm=signal(false); readonly confirmingEncounterSign=signal(false); readonly amendment=signal({reason:'',content:''}); readonly recordAmendmentTarget=signal<{kind:'finding'|'procedure';id:string}|null>(null); readonly recordAmendmentDraft=signal({reason:'',content:''}); readonly showFindingForm=signal(false); readonly showProcedureForm=signal(false);
- visitType:EncounterType='CONSULTATION'; responsibleProviderId=''; complaint=''; noteType:NoteType='PROGRESS'; noteContent=''; findingType:FindingType='OBSERVATION'; findingDescription=''; findingSeverity:''|'LOW'|'MODERATE'|'HIGH'|'CRITICAL'=''; findingToothNo:number|null=null; findingSurface='WHOLE'; procedureTitle=''; procedureCategory:ProcedureCategory='RESTORATIVE'; procedureNotes=''; procedureToothNo:number|null=null; procedureSurface='WHOLE';
+ mediaType:ClinicalMediaType='XRAY'; mediaDescription=''; visitType:EncounterType='CONSULTATION'; responsibleProviderId=''; complaint=''; noteType:NoteType='PROGRESS'; noteContent=''; findingType:FindingType='OBSERVATION'; findingDescription=''; findingSeverity:''|'LOW'|'MODERATE'|'HIGH'|'CRITICAL'=''; findingToothNo:number|null=null; findingSurface='WHOLE'; procedureTitle=''; procedureCategory:ProcedureCategory='RESTORATIVE'; procedureNotes=''; procedureToothNo:number|null=null; procedureSurface='WHOLE';
  readonly visitTypes:Array<{value:EncounterType;label:string}>=[{value:'CONSULTATION',label:'Consultation'},{value:'EMERGENCY',label:'Urgence'},{value:'FOLLOW_UP',label:'Suivi'},{value:'PROCEDURE',label:'Séance de soins'},{value:'OTHER',label:'Autre'}];
  readonly procedureCategories:Array<{value:ProcedureCategory;label:string}>=[{value:'EXAM',label:'Examen'},{value:'HYGIENE',label:'Hygiène'},{value:'RESTORATIVE',label:'Restaurateur'},{value:'ENDODONTICS',label:'Endodontie'},{value:'EXTRACTION',label:'Extraction'},{value:'PROSTHODONTICS',label:'Prothèse'},{value:'ORTHODONTICS',label:'Orthodontie'},{value:'PERIODONTICS',label:'Parodontologie'},{value:'IMPLANT',label:'Implantologie'},{value:'OTHER',label:'Autre'}];
+ readonly mediaTypes:Array<{value:ClinicalMediaType;label:string}>=[{value:'XRAY',label:'Radiographie'},{value:'PHOTO',label:'Photo clinique'},{value:'DOCUMENT',label:'Document PDF'},{value:'DICOM',label:'DICOM'}];
  readonly noteTypes:Array<{value:NoteType;label:string}>=[{value:'CHIEF_COMPLAINT',label:'Motif'},{value:'EXAMINATION',label:'Examen'},{value:'ASSESSMENT',label:'Évaluation'},{value:'PROGRESS',label:'Note de séance'},{value:'DISCHARGE',label:'Conclusion'},{value:'OTHER',label:'Autre'}];
  readonly toothNumbers=[11,12,13,14,15,16,17,18,21,22,23,24,25,26,27,28,31,32,33,34,35,36,37,38,41,42,43,44,45,46,47,48,51,52,53,54,55,61,62,63,64,65,71,72,73,74,75,81,82,83,84,85];
  readonly surfaces=[{value:'WHOLE',label:'Dent entière'},{value:'OCCLUSAL',label:'Occlusale'},{value:'INCISAL',label:'Incisale'},{value:'MESIAL',label:'Mésiale'},{value:'DISTAL',label:'Distale'},{value:'BUCCAL',label:'Vestibulaire'},{value:'LINGUAL',label:'Linguale'},{value:'PALATAL',label:'Palatine'},{value:'CERVICAL',label:'Cervicale'}];
@@ -41,6 +42,37 @@ export class ClinicalRecordsComponent {
  beginAmendment(note:ClinicalNote){this.amendmentId.set(note.id);this.amendment.set({reason:'',content:note.content});}
  setReason(reason:string){this.amendment.update(v=>({...v,reason}));} setContent(content:string){this.amendment.update(v=>({...v,content}));}
  async saveAmendment(note:ClinicalNote){const c=this.tenant.activeClinic(),v=this.selected(),a=this.amendment();if(!c||!v||!a.reason.trim()||!a.content.trim()||this.saving())return;this.saving.set(true);this.error.set('');try{await this.api.amend(c.organizationId,c.id,this.patientId(),v.id,note.id,{reason:a.reason.trim(),amendedContent:a.content.trim()});this.amendmentId.set(null);await this.open(v.id);this.success.set('Amendement ajouté. La note signée d’origine reste intacte.');}catch{this.error.set('Amendement non enregistré; la note d’origine reste intacte.');}finally{this.saving.set(false);}}
+ async uploadMedia(event:Event):Promise<void>{
+  const input=event.target as HTMLInputElement, file=input.files?.[0], clinic=this.tenant.activeClinic(), visit=this.selected();
+  if(!file||!clinic||!visit){input.value='';return;}
+  if(this.mediaUploading())return;
+  if(file.size===0||file.size>8*1024*1024){this.error.set('Le fichier doit peser entre 1 octet et 8 Mio.');input.value='';return;}
+  let mimeType=file.type.toLowerCase();
+  if(!mimeType&&/\\.dcm$/i.test(file.name))mimeType='application/dicom';
+  const supported=['image/jpeg','image/png','image/webp','application/pdf','application/dicom'];
+  if(!supported.includes(mimeType)){this.error.set('Formats acceptés : JPEG, PNG, WebP, PDF et DICOM.');input.value='';return;}
+  if((this.mediaType==='DICOM')!==(mimeType==='application/dicom')||(this.mediaType==='XRAY'&&!['image/jpeg','image/png','image/webp','application/dicom'].includes(mimeType))){
+   this.error.set('Le type de fichier ne correspond pas à la catégorie sélectionnée.');input.value='';return;
+  }
+  this.mediaUploading.set(true);this.error.set('');this.success.set('');
+  try{
+   const bytes=new Uint8Array(await file.arrayBuffer());let binary='';
+   for(let offset=0;offset<bytes.length;offset+=0x8000)binary+=String.fromCharCode(...bytes.subarray(offset,offset+0x8000));
+   await this.api.uploadMedia(clinic.organizationId,clinic.id,this.patientId(),visit.id,{
+    mediaType:this.mediaType,originalFilename:file.name,mimeType,contentBase64:btoa(binary),description:this.mediaDescription.trim()||null,
+   });
+   this.mediaDescription='';await this.open(visit.id);this.success.set('Document clinique ajouté au dossier privé.');
+  }catch(e){
+   this.error.set(e instanceof HttpErrorResponse&&e.status===409?'Cette visite est clôturée; aucun fichier n’a été ajouté.':e instanceof HttpErrorResponse&&e.status===413?'Le fichier dépasse la limite autorisée.':'Le fichier n’a pas été enregistré. Vérifiez son format puis réessayez.');
+  }finally{this.mediaUploading.set(false);input.value='';}
+ }
+ async downloadMedia(media:Encounter['media'][number]):Promise<void>{
+  const clinic=this.tenant.activeClinic(),visit=this.selected();if(!clinic||!visit)return;
+  try{
+   const blob=await this.api.downloadMedia(clinic.organizationId,clinic.id,this.patientId(),visit.id,media.id);
+   const url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download=media.originalFilename||'document-clinique';anchor.rel='noopener';anchor.click();URL.revokeObjectURL(url);
+  }catch{this.error.set('Ce document ne peut pas être téléchargé. Vérifiez vos droits et réessayez.');}
+ }
  label(value:string){return ({DRAFT:'Brouillon',SIGNED:'Signée',CONSULTATION:'Consultation',EMERGENCY:'Urgence',FOLLOW_UP:'Suivi',PROCEDURE:'Séance de soins',CHIEF_COMPLAINT:'Motif',EXAMINATION:'Examen',ASSESSMENT:'Évaluation',PROGRESS:'Note de séance',DISCHARGE:'Conclusion',OTHER:'Autre',OBSERVATION:'Observation',DIAGNOSIS:'Diagnostic',SYMPTOM:'Symptôme',RISK:'Risque',EXAM:'Examen',HYGIENE:'Hygiène',RESTORATIVE:'Restaurateur',ENDODONTICS:'Endodontie',EXTRACTION:'Extraction',PROSTHODONTICS:'Prothèse',ORTHODONTICS:'Orthodontie',PERIODONTICS:'Parodontologie',IMPLANT:'Implantologie',PLANNED:'Prévu',IN_PROGRESS:'En cours',COMPLETED:'Réalisé',CANCELLED:'Annulé'} as Record<string,string>)[value]??value;}
  date(value:string|null|undefined,withTime=true){if(!value)return '—';return new Intl.DateTimeFormat('fr-FR',{timeZone:this.tenant.activeClinic()?.timezone||'Africa/Casablanca',dateStyle:'medium',...(withTime?{timeStyle:'short'}:{})}).format(new Date(value));}
 }
