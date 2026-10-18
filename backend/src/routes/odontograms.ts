@@ -115,6 +115,45 @@ export const odontogramRoutes: FastifyPluginAsync = async (app) => {
     },
   );
 
+  app.get<{ Params: OdontogramParams }>(
+    '/organizations/:organizationId/clinics/:clinicId/patients/:patientId/odontogram/revisions',
+    async (request, reply) => {
+      const access = await requireClinicAccess(request, reply, request.params.organizationId, request.params.clinicId);
+      if (!access) return;
+      if (!canReadOdontogram(access)) return denyInsufficientRole(reply);
+
+      const result = await pool.query(
+        `
+          SELECT
+            revision.version_no AS "versionNo",
+            revision.snapshot,
+            revision.recorded_by_id AS "recordedById",
+            actor.name AS "recordedByName",
+            revision.created_at AS "createdAt"
+          FROM odontogram_revisions revision
+          LEFT JOIN app_users actor ON actor.id = revision.recorded_by_id
+          WHERE revision.organization_id = $1
+            AND revision.clinic_id = $2
+            AND revision.patient_id = $3
+          ORDER BY revision.version_no DESC
+          LIMIT 100
+        `,
+        [request.params.organizationId, request.params.clinicId, request.params.patientId],
+      );
+
+      if (!result.rows.length) {
+        const patient = await pool.query(
+          'SELECT 1 FROM patient_clinics WHERE organization_id = $1 AND clinic_id = $2 AND patient_id = $3',
+          [request.params.organizationId, request.params.clinicId, request.params.patientId],
+        );
+        if (!patient.rowCount) {
+          return reply.code(404).send({ error: { code: 'PATIENT_NOT_FOUND', message: 'Patient not found.' } });
+        }
+      }
+
+      return { data: result.rows, count: result.rows.length };
+    },
+  );
   app.put<{ Params: OdontogramParams; Body: SaveOdontogramBody }>(
     '/organizations/:organizationId/clinics/:clinicId/patients/:patientId/odontogram',
     { schema: { body: odontogramBodySchema } },
