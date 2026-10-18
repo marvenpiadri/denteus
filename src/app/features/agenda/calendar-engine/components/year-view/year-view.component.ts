@@ -92,6 +92,18 @@ export class YearViewComponent {
     });
   });
 
+  protected accessibleDayLabel(day: YearDay): string {
+    const date = new Intl.DateTimeFormat(this.store.locale(), {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }).format(day.date);
+    return day.count
+      ? `${date} · ${day.count} rendez-vous`
+      : `${date} · aucun rendez-vous`;
+  }
+
   protected openMonth(date: Date): void {
     this.store.goToDate(date, 'month');
   }
