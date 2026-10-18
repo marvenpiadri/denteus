@@ -249,3 +249,13 @@
   .month-weekdays { gap: 4px; }
   .month-weekdays span { padding: 4px 5px; font-size: 9px; }
 }
+
+.year-mini-grid .year-weekday {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary, var(--color-text-subtle));
+  font-size: 8px;
+  font-weight: 800;
+}
+.year-mini-grid button.outside-month { opacity: .32; }
