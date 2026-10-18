@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, PLATFORM_ID, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, OnInit, PLATFORM_ID, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { SessionService } from '../auth/session.service';
 import { TenantContextService } from '../tenant/tenant-context.service';
@@ -18,12 +18,14 @@ export class ClinicalShellComponent implements OnInit {
   private readonly platformId = inject(PLATFORM_ID);
 
   readonly mobileNavigationOpen = signal(false);
+  readonly isMobileViewport = signal(false);
   readonly theme = signal<'light' | 'dark'>('light');
   readonly signingOut = signal(false);
   readonly signOutError = signal('');
 
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
+      this.isMobileViewport.set(window.matchMedia('(max-width: 860px)').matches);
       const savedTheme = localStorage.getItem('dentaleus-theme');
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       const theme = savedTheme === 'dark' || (!savedTheme && prefersDark) ? 'dark' : 'light';
@@ -51,6 +53,19 @@ export class ClinicalShellComponent implements OnInit {
   get userInitial(): string {
     const name = this.sessions.user()?.name || this.sessions.user()?.email || 'D';
     return name.trim().charAt(0).toUpperCase() || 'D';
+  }
+
+  @HostListener('window:resize')
+  onViewportResize(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    const isMobile = window.matchMedia('(max-width: 860px)').matches;
+    this.isMobileViewport.set(isMobile);
+    if (!isMobile) this.mobileNavigationOpen.set(false);
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapeKey(): void {
+    if (this.mobileNavigationOpen()) this.closeMobileNavigation();
   }
 
   closeMobileNavigation(): void {
