@@ -423,7 +423,8 @@ export class AgendaPageComponent {
         startsAt,
         endsAt,
         ...(this.reason.trim() ? { reason: this.reason.trim() } : {}),
-        ...(this.providerId && this.operatoryId ? { providerId: this.providerId, operatoryId: this.operatoryId } : {}),
+        ...(this.providerId ? { providerId: this.providerId } : {}),
+        ...(this.operatoryId ? { operatoryId: this.operatoryId } : {}),
       });
       if (this.tenant.activeClinic()?.id !== clinic.id) return;
       this.showCreateForm.set(false);
