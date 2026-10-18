@@ -556,7 +556,12 @@ export class AgendaPageComponent {
 
   onCalendarEventSelected(event: CalendarEvent): void {
     const appointment = this.appointments().find((item) => item.id === event.id);
-    if (appointment) this.openReschedule(appointment);
+    if (!appointment) return;
+    if (!this.canReschedule(appointment.status)) {
+      this.success.set('Ce rendez-vous ne peut plus être déplacé.');
+      return;
+    }
+    this.openReschedule(appointment);
   }
 
   private calendarDateFromInput(value: string): Date {
