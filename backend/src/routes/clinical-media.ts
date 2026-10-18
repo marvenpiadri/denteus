@@ -11,6 +11,19 @@ interface MediaParams {
   encounterId: string;
   mediaId?: string;
 }
+const uploadSchema = {
+  type: 'object', additionalProperties: false,
+  required: ['mediaType', 'originalFilename', 'mimeType', 'contentBase64'],
+  properties: {
+    mediaType: { type: 'string', enum: ['XRAY', 'PHOTO', 'DOCUMENT', 'DICOM'] },
+    originalFilename: { type: 'string', minLength: 1, maxLength: 255 },
+    mimeType: { type: 'string', enum: [...allowedClinicalMimeTypes] },
+    contentBase64: { type: 'string', minLength: 1, maxLength: Math.ceil(maxClinicalMediaBytes * 4 / 3) + 8 },
+    description: { anyOf: [{ type: 'string', maxLength: 2000 }, { type: 'null' }] },
+    capturedAt: { anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }] },
+  },
+} as const;
+
 interface UploadBody {
   mediaType: ClinicalMediaType;
   originalFilename: string;
