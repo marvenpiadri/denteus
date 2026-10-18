@@ -77,7 +77,7 @@
       @if (treatmentsLoading()) {
         <div class="treatment-empty" role="status">Chargement de l’historique des soins…</div>
       } @else if (treatmentsError()) {
-        <div class="treatment-empty">Les informations cliniques ne sont pas disponibles pour cette session.</div>
+        <div class="treatment-empty" role="alert">Les informations cliniques ne sont pas disponibles pour cette session.</div>
       } @else if (!treatments().length && !treatmentsError()) {
         <div class="treatment-empty"><strong>Aucun soin enregistré pour ce patient</strong><p>Ajoutez un soin prévu ou réalisé et sélectionnez les dents concernées pour commencer son historique dentaire.</p></div>
       } @else if (!filteredTreatments().length) {
