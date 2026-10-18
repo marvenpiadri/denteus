@@ -34,6 +34,19 @@
       </div>
       <p class="data-note"><span aria-hidden="true">i</span> Les indicateurs de la journée apparaîtront ici lorsqu’ils seront reliés aux données métier réelles. Aucun chiffre de démonstration n’est affiché.</p>
     </section>
+  } @else if (isClinical) {
+    <section class="empty-state" aria-labelledby="empty-state-title">
+      <span class="empty-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M8 4.5c1.5-1 3-1 4 0 1-1 2.5-1 4 0 2 1.5 1 4.5 0 7-.8 2-1 5.5-2.5 5.5-.9 0-1.1-2.2-1.5-3.4-.4 1.2-.6 3.4-1.5 3.4C9 17 8.8 13.5 8 11.5 7 9 6 6 8 4.5Z"/><path d="M18.5 14.5v6m-3-3h6"/></svg>
+      </span>
+      <p class="availability-label">ESPACE CLINIQUE</p>
+      <h2 id="empty-state-title">Les soins se consultent depuis le dossier patient</h2>
+      <p>Ouvrez un patient pour accéder à son odontogramme actuel et à l’historique des soins enregistrés. Le module clinique dédié n’est pas encore disponible.</p>
+      <div class="available-actions" aria-label="Actions cliniques disponibles">
+        <a routerLink="/crm/patients">Ouvrir les patients <span aria-hidden="true">↗</span></a>
+        <a routerLink="/crm/agenda">Consulter l’agenda <span aria-hidden="true">↗</span></a>
+      </div>
+    </section>
   } @else if (isNotFound) {
     <section class="empty-state" aria-labelledby="empty-state-title">
       <span class="empty-icon" aria-hidden="true">

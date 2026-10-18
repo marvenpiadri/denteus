@@ -14,5 +14,6 @@ export class WorkspacePageComponent {
   readonly title = String(this.route.snapshot.data['title'] ?? 'Espace clinique');
   readonly description = String(this.route.snapshot.data['description'] ?? 'Espace de travail Dentaleus.');
   readonly isToday = this.title === 'Aujourd’hui';
+  readonly isClinical = this.title === 'Soins et odontogramme';
   readonly isNotFound = this.title === 'Page introuvable';
 }
