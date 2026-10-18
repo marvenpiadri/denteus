@@ -31,9 +31,10 @@ The shared conversation did not render in the available review environment, so i
 
 ## Current Dentaleus direction
 
-- Keep the clinic-local day view and add resource columns for practitioners and operatories.
+- Keep the clinic-local day view and resource columns for practitioners and operatories. The agenda page, standalone calendar component, appointment API, and scheduling-resource API remain separate so the calendar can be reused without owning persistence.
 - Persist every appointment through Fastify/PostgreSQL, with tenant-scoped authorization and server-side conflict checks.
 - Store provider working hours explicitly; do not invent a default schedule or imply availability if hours are missing.
 - Keep patient treatment history linked to FDI teeth and surfaces, with attributed records and status-transition history.
-- Do not import the Gemini sample's static clients, appointment seeds, theme storage as data persistence, Tailwind classes, or unrelated stack dependencies.
-- Remaining scheduling work includes drag/resize, week/month views, breaks/leave/holidays, multiple daily working intervals, stronger integration tests and end-to-end verification.
+- Do not import the Gemini sample's static clients, appointment seeds, theme storage as data persistence, Tailwind classes, or unrelated stack dependencies. Tailwind and its PostCSS plugin have been removed from the Denteus frontend dependencies/configuration; styling uses explicit CSS tokens and component styles. A clinic-shell theme switch applies light/dark palette overrides to the agenda and calendar.
+- The agenda now supports CDK drag-and-drop to move appointments in 15-minute increments and reassign them between practitioner/operatory lanes. The drop calls the tenant-scoped rescheduling API; the server remains authoritative for conflict validation and the UI reloads after success or failure. Terminal appointments cannot be dragged, and the existing edit flow remains available as a keyboard-friendly alternative. Dragging is not yet resize.
+- Remaining scheduling work includes resize, week/month views, breaks/leave/holidays, multiple daily working intervals, stronger integration tests and end-to-end verification. The drag-drop unit test has been added but has not been run in this environment.
