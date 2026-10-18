@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { FastifyPluginAsync, FastifyReply } from 'fastify';
 import { requireClinicAccess } from '../auth/authorization.js';
-import { canManageAppointments } from '../domain/appointment-policy.js';
+import { canManageAppointments, isValidWorkingHours } from '../domain/appointment-policy.js';
 import { pool } from '../db/pool.js';
 
 interface ClinicParams { organizationId: string; clinicId: string; }
@@ -199,8 +199,7 @@ const bulkWorkingHoursSchema = {
       if (!canManageAppointments(access.effectiveRole)) return deny(reply);
 
       const hours = request.body.hours;
-      const days = new Set(hours.map((hour) => hour.dayOfWeek));
-      if (days.size !== hours.length || hours.some((hour) => hour.endsAt <= hour.startsAt)) {
+      if (!isValidWorkingHours(hours)) {
         return reply.code(400).send({
           error: { code: 'INVALID_WORKING_HOURS', message: 'Chaque jour doit être unique et chaque heure de fin doit suivre son heure de début.' },
         });
