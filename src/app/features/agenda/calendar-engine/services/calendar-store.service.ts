@@ -72,6 +72,14 @@ export class CalendarStore {
         return new Intl.DateTimeFormat(locale, { month: 'long', day: 'numeric', year: 'numeric' }).format(d);
       case 'year':
         return `${d.getFullYear()}`;
+      case 'week': {
+        const start = this.weekStart();
+        const end = addDays(start, 6);
+        const sameMonth = start.getMonth() === end.getMonth();
+        const startLabel = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(start);
+        const endLabel = new Intl.DateTimeFormat(locale, { day: 'numeric', month: sameMonth ? undefined : 'short' }).format(end);
+        return `${startLabel} – ${endLabel} ${end.getFullYear()}`;
+      }
       default:
         return `${monthLabel(d, locale)} ${d.getFullYear()}`;
     }
