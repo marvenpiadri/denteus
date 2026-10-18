@@ -1,4 +1,4 @@
-export type ClinicalMediaType = 'XRAY' | 'PHOTO' | 'DOCUMENT' | 'DICOM';
+export type ClinicalMediaType = 'XRAY' | 'PHOTO' | 'DOCUMENT';
 export const maxClinicalMediaBytes = 8 * 1024 * 1024;
 export const allowedClinicalMimeTypes = new Set([
   'image/jpeg', 'image/png', 'image/webp', 'application/pdf', 'application/dicom',
@@ -8,7 +8,6 @@ const categoryTypes: Record<ClinicalMediaType, readonly string[]> = {
   XRAY: ['image/jpeg', 'image/png', 'image/webp', 'application/dicom'],
   PHOTO: ['image/jpeg', 'image/png', 'image/webp'],
   DOCUMENT: ['application/pdf'],
-  DICOM: ['application/dicom'],
 };
 
 export function isClinicalMediaCategoryCompatible(category: ClinicalMediaType, mimeType: string): boolean {
