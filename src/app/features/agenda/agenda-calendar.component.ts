@@ -322,6 +322,16 @@ export class AgendaCalendarComponent implements OnChanges {
 
   chooseDate(date: string): void { this.calendarDayPicked.emit(date); }
 
+  displayRangeLabel(): string {
+    if (this.displayView() === 'day') return '07:00–20:00';
+    if (this.displayView() === 'week') {
+      const days = this.weekDates();
+      return `${this.dateLabel(days[0] ?? this.date, { day: 'numeric', month: 'short' })} – ${this.dateLabel(days[6] ?? this.date, { day: 'numeric', month: 'short' })}`;
+    }
+    if (this.displayView() === 'month') return this.dateLabel(this.date, { month: 'long', year: 'numeric' });
+    return this.dateLabel(this.date, { year: 'numeric' });
+  }
+
   private dateString(date: Date): string {
     return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
   }
