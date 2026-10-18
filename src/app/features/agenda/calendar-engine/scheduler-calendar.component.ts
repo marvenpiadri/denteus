@@ -78,11 +78,13 @@ export class SchedulerCalendarComponent implements OnInit {
   readonly externalManagement = input(false);
   readonly lanes = input<LaneConfig | null>(null);
   readonly gateway = input<CalendarGateway | null>(null);
+  readonly focusDate = input<string | null>(null);
 
   readonly eventsChange = output<CalendarEvent[]>();
   readonly themeChange = output<CalendarTheme>();
   readonly createRequested = output<EventDraft>();
   readonly eventSelected = output<CalendarEvent>();
+  readonly dateChanged = output<string>();
 
   protected readonly editor = signal<EditorState | null>(null);
   protected readonly sidebarOpen = signal(false);
@@ -111,6 +113,14 @@ export class SchedulerCalendarComponent implements OnInit {
 
     effect(() => this.store.lanes.set(this.lanes()));
     effect(() => this.store.gateway.set(this.gateway()));
+    effect(() => {
+      const date = this.focusDate();
+      if (this.ready && date) this.store.goToDate(new Date(date + 'T12:00:00'));
+    });
+    effect(() => {
+      const date = this.store.focusDate();
+      if (this.ready) this.dateChanged.emit(this.dateKey(date));
+    });
   }
 
   ngOnInit(): void {
@@ -133,8 +143,10 @@ export class SchedulerCalendarComponent implements OnInit {
     const system = typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches;
     store.theme.set(forced !== 'auto' ? forced : (stored?.theme ?? (system ? 'dark' : 'light')));
 
+    if (this.focusDate()) store.goToDate(new Date(this.focusDate()! + 'T12:00:00'));
     this.ready = true;
     this.themeChange.emit(store.theme());
+    this.dateChanged.emit(this.dateKey(store.focusDate()));
   }
 
   /* ---------------------------------- editor ---------------------------------- */
@@ -216,6 +228,10 @@ export class SchedulerCalendarComponent implements OnInit {
   }
 
   /* ------------------------------- persistence -------------------------------- */
+
+  private dateKey(date: Date): string {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
 
   private persist(events: CalendarEvent[], categories: CalendarCategory[], theme: CalendarTheme): void {
     const key = this.storageKey();
