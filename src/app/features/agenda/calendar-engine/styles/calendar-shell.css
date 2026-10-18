@@ -16,15 +16,15 @@
   --cal-hover: var(--surface-hover, #f2f3f6);
   --cal-hover-strong: var(--surface-muted, #e8eaee);
   --cal-accent: var(--color-brand, #2563eb);
-  --cal-accent-text: #ffffff;
-  --cal-segment-bg: #eff0f3;
-  --cal-segment-active: #ffffff;
+  --cal-accent-text: var(--color-brand-contrast, #ffffff);
+  --cal-segment-bg: var(--surface-muted, #eff0f3);
+  --cal-segment-active: var(--surface-raised, #ffffff);
   --cal-danger: #dc2626;
   --cal-focus: var(--color-brand, #3b82f6);
   --cal-focus-ring: color-mix(in srgb, var(--color-brand, #3b82f6) 22%, transparent);
-  --cal-drop: rgba(59, 130, 246, 0.09);
-  --cal-now-faint: rgba(16, 19, 24, 0.22);
-  --cal-scroll: #d5d8de;
+  --cal-drop: color-mix(in srgb, var(--color-brand, #3b82f6) 9%, transparent);
+  --cal-now-faint: color-mix(in srgb, var(--text-primary, #101318) 22%, transparent);
+  --cal-scroll: var(--border-subtle, #d5d8de);
   --cal-backdrop: rgba(16, 19, 30, 0.38);
   --cal-shadow-pop: 0 18px 50px rgba(16, 24, 40, 0.22), 0 2px 10px rgba(16, 24, 40, 0.08);
 
@@ -41,6 +41,7 @@
   font-family: var(--cal-font);
   font-size: 14px;
   color: var(--cal-text);
+  color-scheme: inherit;
   -webkit-font-smoothing: antialiased;
 }
 
