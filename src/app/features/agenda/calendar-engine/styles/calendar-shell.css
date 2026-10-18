@@ -16,7 +16,7 @@
   --cal-hover: var(--surface-hover, #f2f3f6);
   --cal-hover-strong: var(--surface-muted, #e8eaee);
   --cal-accent: var(--color-brand, #2563eb);
-  --cal-accent-text: var(--color-brand-contrast, #ffffff);
+  --cal-accent-text: var(--text-on-brand, #ffffff);
   --cal-segment-bg: var(--surface-muted, #eff0f3);
   --cal-segment-active: var(--surface-raised, #ffffff);
   --cal-danger: #dc2626;
