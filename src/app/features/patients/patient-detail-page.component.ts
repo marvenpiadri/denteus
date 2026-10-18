@@ -92,9 +92,34 @@ export class PatientDetailPageComponent {
     effect(() => {
       const clinic = this.tenant.activeClinic();
       const patientId = this.patientId();
-      if (isPlatformBrowser(this.platformId) && clinic && patientId) {
+      if (!isPlatformBrowser(this.platformId)) return;
+      if (clinic && patientId) {
         void this.loadPatient(clinic.organizationId, clinic.id, patientId);
+        return;
       }
+
+      // Do not leave the previous clinic's patient record visible while the
+      // clinic context is unresolved or when this route has no patient ID.
+      this.requestSequence++;
+      this.treatmentLoadSequence++;
+      this.patientAppointmentsLoadSequence++;
+      this.patient.set(null);
+      this.treatments.set([]);
+      this.patientAppointments.set([]);
+      this.patientAppointmentsError.set('');
+      this.treatmentsError.set('');
+      this.treatmentsSuccess.set('');
+      this.error.set('');
+      this.success.set('');
+      this.loading.set(false);
+      this.treatmentsLoading.set(false);
+      this.patientAppointmentsLoading.set(false);
+      this.saving.set(false);
+      this.treatmentsSaving.set(false);
+      this.editing.set(false);
+      this.showTreatmentForm.set(false);
+      this.selectedTeeth.set([]);
+      this.showPrimaryTeeth.set(false);
     });
   }
 
