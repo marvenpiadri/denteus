@@ -15,7 +15,7 @@
                 type="button"
                 class="day"
                 [class.today]="day.today"
-                [attr.aria-label]="day.count ? day.count + ' events' : null"
+                [attr.aria-label]="accessibleDayLabel(day)"
                 (click)="openDay(day.date)"
               >
                 <span class="num">{{ day.label }}</span>
