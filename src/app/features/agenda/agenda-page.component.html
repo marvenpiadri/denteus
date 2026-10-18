@@ -10,8 +10,8 @@
   @if (success()) { <div class="success-message" role="status">{{ success() }}</div> }
   @if (error()) { <div class="error-message" role="alert">{{ error() }} <button type="button" (click)="refreshAppointments()">Réessayer</button></div> }
 
-  <section class="agenda-toolbar" aria-label="Choisir une journée">
-    <div class="date-navigation"><button type="button" class="icon-button" (click)="moveDate(-1)" [disabled]="saving() || changingStatusId() !== null" aria-label="Jour précédent">←</button><label for="agenda-date">{{ calendarView() === 'day' ? 'Journée' : calendarView() === 'week' ? 'Semaine' : calendarView() === 'month' ? 'Mois' : 'Année' }}</label><input id="agenda-date" type="date" [ngModel]="selectedDate()" (ngModelChange)="selectedDate.set($event)" [disabled]="saving() || changingStatusId() !== null"><button type="button" class="icon-button" (click)="moveDate(1)" [disabled]="saving() || changingStatusId() !== null" aria-label="Jour suivant">→</button></div>
+  <section class="agenda-toolbar" aria-label="Naviguer dans le calendrier">
+    <div class="date-navigation"><button type="button" class="icon-button" (click)="moveDate(-1)" [disabled]="saving() || changingStatusId() !== null" [attr.aria-label]="calendarView() === 'day' ? 'Jour précédent' : calendarView() === 'week' ? 'Semaine précédente' : calendarView() === 'month' ? 'Mois précédent' : 'Année précédente'">←</button><label for="agenda-date">{{ calendarView() === 'day' ? 'Journée' : calendarView() === 'week' ? 'Semaine' : calendarView() === 'month' ? 'Mois' : 'Année' }}</label><input id="agenda-date" type="date" [ngModel]="selectedDate()" (ngModelChange)="selectedDate.set($event)" [disabled]="saving() || changingStatusId() !== null"><button type="button" class="icon-button" (click)="moveDate(1)" [disabled]="saving() || changingStatusId() !== null" [attr.aria-label]="calendarView() === 'day' ? 'Jour suivant' : calendarView() === 'week' ? 'Semaine suivante' : calendarView() === 'month' ? 'Mois suivant' : 'Année suivante'">→</button></div>
     <span class="timezone-label">{{ tenant.activeClinic()?.timezone || 'Africa/Casablanca' }}</span>
   </section>
 
