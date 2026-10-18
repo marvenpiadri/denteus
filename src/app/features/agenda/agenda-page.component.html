@@ -110,6 +110,7 @@
     [gateway]="calendarGateway"
     [externalManagement]="true"
     [showAllDay]="false"
+    [loading]="loading() || saving()"
     [locale]="'fr-FR'"
     [theme]="'light'"
     (dateChanged)="onCalendarDateChanged($event)"
