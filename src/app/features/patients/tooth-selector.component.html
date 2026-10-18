@@ -1,7 +1,7 @@
 <section class="tooth-selector" aria-labelledby="tooth-selector-title">
   <header class="tooth-selector-heading">
     <div><h3 id="tooth-selector-title">Odontogramme · dents concernées</h3><p>Sélectionnez une ou plusieurs dents pour filtrer l’historique ou les relier au soin enregistré. Numérotation FDI.</p></div>
-    <button type="button" class="primary-toggle" (click)="togglePrimary()">{{ showPrimary ? 'Masquer les dents temporaires' : 'Afficher les dents temporaires' }}</button>
+    <button type="button" class="primary-toggle" [attr.aria-expanded]="showPrimary" (click)="togglePrimary()">{{ showPrimary ? 'Masquer les dents temporaires' : 'Afficher les dents temporaires' }}</button>
   </header>
   <div class="arch-label">Maxillaire · arcade supérieure</div>
   <div class="tooth-arch-scroll" role="region" tabindex="0" aria-label="Odontogramme, arcade supérieure permanente">
