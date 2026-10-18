@@ -391,10 +391,10 @@ export class AgendaPageComponent {
       this.success.set('Le rendez-vous a été déplacé.');
       await this.loadAppointments(clinic.organizationId, clinic.id, this.selectedDate(), timezone);
     } catch (error) {
+      await this.loadAppointments(clinic.organizationId, clinic.id, this.selectedDate(), timezone);
       this.error.set(error instanceof HttpErrorResponse && error.status === 409
         ? 'Ce déplacement crée un conflit de planning. Le rendez-vous a conservé son horaire initial.'
         : 'Le déplacement n’a pas été enregistré. Le rendez-vous a conservé son horaire initial.');
-      await this.loadAppointments(clinic.organizationId, clinic.id, this.selectedDate(), timezone);
     } finally {
       this.saving.set(false);
     }
