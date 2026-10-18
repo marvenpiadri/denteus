@@ -5,6 +5,7 @@ import {
   canTransitionAppointmentStatus,
   isValidAppointmentDuration,
   isValidScheduleRange,
+  isValidWorkingHours,
 } from './appointment-policy.js';
 
 test('appointment duration must be between five minutes and eight hours', () => {
@@ -42,4 +43,20 @@ test('calendar schedule ranges support month grids and a full year without unbou
   assert.equal(isValidScheduleRange('2026-01-01T00:00:00.000Z', '2027-01-02T00:00:00.000Z'), false);
   assert.equal(isValidScheduleRange('2024-01-01T00:00:00.000Z', '2025-01-02T00:00:00.000Z'), false);
   assert.equal(isValidScheduleRange('not-a-date', 'also-not-a-date'), false);
+});
+
+
+test('provider working hours are validated as one complete weekly schedule', () => {
+  assert.equal(isValidWorkingHours([
+    { dayOfWeek: 1, startsAt: '09:00', endsAt: '17:30' },
+    { dayOfWeek: 6, startsAt: '09:00', endsAt: '13:00' },
+  ]), true);
+  assert.equal(isValidWorkingHours([]), true);
+  assert.equal(isValidWorkingHours([
+    { dayOfWeek: 1, startsAt: '09:00', endsAt: '17:30' },
+    { dayOfWeek: 1, startsAt: '10:00', endsAt: '18:00' },
+  ]), false);
+  assert.equal(isValidWorkingHours([{ dayOfWeek: 7, startsAt: '09:00', endsAt: '17:00' }]), false);
+  assert.equal(isValidWorkingHours([{ dayOfWeek: 2, startsAt: '17:00', endsAt: '09:00' }]), false);
+  assert.equal(isValidWorkingHours([{ dayOfWeek: 3, startsAt: '9:00', endsAt: '17:00' }]), false);
 });
