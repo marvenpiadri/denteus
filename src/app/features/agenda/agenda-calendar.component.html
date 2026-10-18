@@ -94,8 +94,9 @@
         @for (month of yearMonths(); track month.month) {
           <section class="year-month"><h3>{{ month.label }}</h3>
             <div class="year-mini-grid">
-              @for (day of monthDatesFor(month.month); track day) {
-                <button type="button" [class.has-events]="appointmentsOn(day).length > 0" [class.is-selected]="day === date" (click)="chooseDate(day)">{{ dateLabel(day, { day: 'numeric' }) }}</button>
+              @for (weekday of ['L', 'M', 'M', 'J', 'V', 'S', 'D']; track $index) { <span class="year-weekday">{{ weekday }}</span> }
+              @for (day of monthDatesFor(month.month); track day.date) {
+                <button type="button" [class.has-events]="appointmentsOn(day.date).length > 0" [class.is-selected]="day.date === date" [class.outside-month]="!day.inMonth" (click)="chooseDate(day.date)">{{ dateLabel(day.date, { day: 'numeric' }) }}</button>
               }
             </div>
           </section>
