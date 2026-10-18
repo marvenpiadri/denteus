@@ -1,20 +1,52 @@
 <section class="page">
-  <div class="page-heading">
+  <header class="page-heading">
     <div>
-      <div class="section-label">ESPACE CLINIQUE</div>
+      <p class="section-label">{{ isToday ? 'VOTRE JOURNÉE' : 'ESPACE CLINIQUE' }}</p>
       <h1>{{ title }}</h1>
       <p>{{ description }}</p>
     </div>
-  </div>
+  </header>
 
-  <section class="empty-state" aria-labelledby="empty-state-title">
-    <div class="empty-icon" aria-hidden="true">⌁</div>
-    <h2 id="empty-state-title">Données du cabinet pas encore connectées</h2>
-    <p>Cette vue ne charge volontairement aucune donnée de démonstration. La session est vérifiée, mais cette fonction attend encore son API métier persistante et le contexte de clinique autorisé.</p>
-    <div class="next-step">
-      <span class="next-step-label">Prochaine étape</span>
-      <span>{{ nextStep }}</span>
-    </div>
-    <a routerLink="/crm/today" class="return-link">Retour à l’espace clinique <span aria-hidden="true">→</span></a>
-  </section>
+  @if (isToday) {
+    <section class="today-workspace" aria-labelledby="today-workspace-title">
+      <div class="today-intro">
+        <span class="today-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M7 3v4m10-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v13H4V6a1 1 0 0 1 1-1Z"/><path d="m9 14 2 2 4-4"/></svg>
+        </span>
+        <div>
+          <h2 id="today-workspace-title">Commencez par votre activité clinique</h2>
+          <p>Ouvrez un espace de travail pour consulter les dossiers et gérer les rendez-vous enregistrés dans la clinique active.</p>
+        </div>
+      </div>
+      <div class="workspace-actions">
+        <a class="workspace-action" routerLink="/crm/agenda">
+          <span class="action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg></span>
+          <span><strong>Ouvrir l’agenda</strong><small>Consulter et gérer les rendez-vous</small></span><span class="action-arrow" aria-hidden="true">↗</span>
+        </a>
+        <a class="workspace-action" routerLink="/crm/patients">
+          <span class="action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5v-1.3a5.5 5.5 0 0 1 11 0v1.3M16 5.5a3 3 0 0 1 0 5.8m2 3.2a4.5 4.5 0 0 1 2.5 4v1"/></svg></span>
+          <span><strong>Rechercher un patient</strong><small>Ouvrir un dossier existant ou en créer un</small></span><span class="action-arrow" aria-hidden="true">↗</span>
+        </a>
+        <a class="workspace-action" routerLink="/crm/recalls">
+          <span class="action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.2-4.8L4 8m0-4v4h4M4 13a8 8 0 0 0 14.2 4.8L20 16m0 4v-4h-4"/></svg></span>
+          <span><strong>Suivre les rappels</strong><small>Consulter les suivis patients enregistrés</small></span><span class="action-arrow" aria-hidden="true">↗</span>
+        </a>
+      </div>
+      <p class="data-note"><span aria-hidden="true">i</span> Les indicateurs de la journée apparaîtront ici lorsqu’ils seront reliés aux données métier réelles. Aucun chiffre de démonstration n’est affiché.</p>
+    </section>
+  } @else {
+    <section class="empty-state" aria-labelledby="empty-state-title">
+      <span class="empty-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="8.5"/></svg>
+      </span>
+      <p class="availability-label">FONCTIONNALITÉ EN COURS DE CONSTRUCTION</p>
+      <h2 id="empty-state-title">Ce module n’est pas encore disponible</h2>
+      <p>Cette section n’est pas encore reliée à un flux métier complet. Les dossiers et indicateurs seront affichés lorsqu’ils seront disponibles depuis les données autorisées de la clinique.</p>
+      <div class="available-actions" aria-label="Espaces disponibles">
+        <a routerLink="/crm/agenda">Agenda <span aria-hidden="true">↗</span></a>
+        <a routerLink="/crm/patients">Patients <span aria-hidden="true">↗</span></a>
+        <a routerLink="/crm/recalls">Rappels patients <span aria-hidden="true">↗</span></a>
+      </div>
+    </section>
+  }
 </section>
