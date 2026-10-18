@@ -114,18 +114,44 @@ export const teamRoutes: FastifyPluginAsync = async (app) => {
       if (['ORGANIZATION_OWNER', 'ORGANIZATION_ADMIN'].includes(target.rows[0].organization_role)) {
         return reply.code(409).send({ error: { code: 'ORGANIZATION_ROLE_PROTECTED', message: 'Les rôles attribués au niveau de l’organisation ne se modifient pas depuis une clinique.' } });
       }
-      const result = await pool.query(
-        `UPDATE clinic_memberships SET role = $4
-         WHERE organization_id = $1 AND clinic_id = $2 AND user_id = $3
-         RETURNING user_id AS "userId", role`,
-        [organizationId, clinicId, userId, request.body.role],
+      const currentMembership = await pool.query<{ role: string }>(
+        'SELECT role FROM clinic_memberships WHERE organization_id = $1 AND clinic_id = $2 AND user_id = $3',
+        [organizationId, clinicId, userId],
       );
+      if (!currentMembership.rowCount) return reply.code(404).send({ error: { code: 'MEMBERSHIP_NOT_FOUND', message: 'Ce membre n’a pas accès à cette clinique.' } });
+      if (currentMembership.rows[0].role === 'CLINIC_ADMIN' && request.body.role !== 'CLINIC_ADMIN') {
+        const admins = await pool.query<{ count: number }>(
+          "SELECT count(*)::integer AS count FROM clinic_memberships WHERE organization_id = $1 AND clinic_id = $2 AND role = 'CLINIC_ADMIN'",
+          [organizationId, clinicId],
+        );
+        if (admins.rows[0].count <= 1) {
+          return reply.code(409).send({ error: { code: 'LAST_CLINIC_ADMIN', message: 'La clinique doit conserver au moins un administrateur.' } });
+        }
+      }
+      const client = await pool.connect();
+      let result;
+      try {
+        await client.query('BEGIN');
+        await client.query('SELECT pg_advisory_xact_lock(hashtext($1), hashtext($2))', [organizationId, clinicId]);
+        result = await client.query(
+          `UPDATE clinic_memberships SET role = $4
+           WHERE organization_id = $1 AND clinic_id = $2 AND user_id = $3
+           RETURNING user_id AS "userId", role`,
+          [organizationId, clinicId, userId, request.body.role],
+        );
+        if (!result.rowCount) {
+          await client.query('ROLLBACK');
+          return reply.code(404).send({ error: { code: 'MEMBERSHIP_NOT_FOUND', message: 'Ce membre n’a pas accès à cette clinique.' } });
+        }
+        await client.query(
+          `INSERT INTO audit_events (id, organization_id, user_id, action, resource_type, resource_id, metadata)
+           VALUES ($1, $2, $3, 'CLINIC_MEMBER_ROLE_UPDATED', 'CLINIC_MEMBERSHIP', $4, $5::jsonb)`,
+          [randomUUID(), organizationId, access.userId, userId, JSON.stringify({ clinicId, role: request.body.role })],
+        );
+        await client.query('COMMIT');
+      } catch (error) { await client.query('ROLLBACK'); throw error; }
+      finally { client.release(); }
       if (!result.rowCount) return reply.code(404).send({ error: { code: 'MEMBERSHIP_NOT_FOUND', message: 'Ce membre n’a pas accès à cette clinique.' } });
-      await pool.query(
-        `INSERT INTO audit_events (id, organization_id, user_id, action, resource_type, resource_id, metadata)
-         VALUES ($1, $2, $3, 'CLINIC_MEMBER_ROLE_UPDATED', 'CLINIC_MEMBERSHIP', $4, $5::jsonb)`,
-        [randomUUID(), organizationId, access.userId, userId, JSON.stringify({ clinicId, role: request.body.role })],
-      );
       return { data: result.rows[0] };
     },
   );
@@ -147,9 +173,24 @@ export const teamRoutes: FastifyPluginAsync = async (app) => {
       if (['ORGANIZATION_OWNER', 'ORGANIZATION_ADMIN'].includes(target.rows[0].organization_role)) {
         return reply.code(409).send({ error: { code: 'ORGANIZATION_ROLE_PROTECTED', message: 'Un administrateur de l’organisation doit être géré au niveau de l’organisation.' } });
       }
+      const currentMembership = await pool.query<{ role: string }>(
+        'SELECT role FROM clinic_memberships WHERE organization_id = $1 AND clinic_id = $2 AND user_id = $3',
+        [organizationId, clinicId, userId],
+      );
+      if (!currentMembership.rowCount) return reply.code(404).send({ error: { code: 'MEMBERSHIP_NOT_FOUND', message: 'Ce membre n’a pas accès à cette clinique.' } });
+      if (currentMembership.rows[0].role === 'CLINIC_ADMIN') {
+        const admins = await pool.query<{ count: number }>(
+          "SELECT count(*)::integer AS count FROM clinic_memberships WHERE organization_id = $1 AND clinic_id = $2 AND role = 'CLINIC_ADMIN'",
+          [organizationId, clinicId],
+        );
+        if (admins.rows[0].count <= 1) {
+          return reply.code(409).send({ error: { code: 'LAST_CLINIC_ADMIN', message: 'La clinique doit conserver au moins un administrateur.' } });
+        }
+      }
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
+        await client.query('SELECT pg_advisory_xact_lock(hashtext($1), hashtext($2))', [organizationId, clinicId]);
         const removed = await client.query(
           'DELETE FROM clinic_memberships WHERE organization_id = $1 AND clinic_id = $2 AND user_id = $3 RETURNING user_id',
           [organizationId, clinicId, userId],
