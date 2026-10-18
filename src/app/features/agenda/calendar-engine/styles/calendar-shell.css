@@ -29,10 +29,10 @@
   --cal-shadow-pop: 0 18px 50px rgba(16, 24, 40, 0.22), 0 2px 10px rgba(16, 24, 40, 0.08);
 
   /* how event colours are derived from each calendar's base colour */
-  --cal-ev-bg-base: #ffffff;
+  --cal-ev-bg-base: var(--surface-raised, #ffffff);
   --cal-ev-bg-pct: 16%;
   --cal-ev-bg-strong-pct: 24%;
-  --cal-ev-fg-base: #000000;
+  --cal-ev-fg-base: var(--text-primary, #000000);
   --cal-ev-fg-pct: 80%;
 
   display: block;
@@ -68,10 +68,10 @@
   --cal-backdrop: rgba(3, 6, 18, 0.6);
   --cal-shadow-pop: 0 18px 50px rgba(0, 0, 0, 0.55), 0 2px 10px rgba(0, 0, 0, 0.3);
 
-  --cal-ev-bg-base: #0d1226;
+  --cal-ev-bg-base: var(--surface-raised, #0d1226);
   --cal-ev-bg-pct: 26%;
   --cal-ev-bg-strong-pct: 34%;
-  --cal-ev-fg-base: #ffffff;
+  --cal-ev-fg-base: var(--text-primary, #ffffff);
   --cal-ev-fg-pct: 62%;
 
   color-scheme: dark;
