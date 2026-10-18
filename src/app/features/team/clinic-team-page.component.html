@@ -18,7 +18,7 @@
   }
 
   <section class="members-card" aria-labelledby="members-title">
-    <div class="card-heading"><div><h2 id="members-title">Membres de l’organisation</h2><p>{{members().length}} compte(s) · {{members().filter(m => !!m.clinicRole).length}} avec accès à la clinique active</p></div><button type="button" class="refresh-button" (click)="load()" [disabled]="loading()">{{loading() ? 'Actualisation…' : 'Actualiser'}}</button></div>
+    <div class="card-heading"><div><h2 id="members-title">Membres de l’organisation</h2><p>{{members().length}} compte(s) · {{assignedCount}} avec accès à la clinique active</p></div><button type="button" class="refresh-button" (click)="load()" [disabled]="loading()">{{loading() ? 'Actualisation…' : 'Actualiser'}}</button></div>
     @if (loading() && !members().length) { <p class="empty-note" role="status">Chargement de l’équipe…</p> }
     @else if (!members().length) { <p class="empty-note">Aucun membre disponible pour cette organisation.</p> }
     @else {
@@ -28,9 +28,9 @@
             <td><div class="member-identity"><span class="avatar" aria-hidden="true">{{member.name.trim().charAt(0).toUpperCase() || 'M'}}</span><span><strong>{{member.name}}</strong><small>{{member.email}}</small></span></div></td>
             <td><span class="role-pill">{{roleLabel(member.organizationRole)}}</span></td>
             <td>
-              @if (member.clinicRole && canManage() && !['ORGANIZATION_OWNER','ORGANIZATION_ADMIN'].includes(member.organizationRole)) {
+              @if (member.clinicRole && canManage() && !isOrganizationAdmin(member.organizationRole)) {
                 <div class="role-editor"><select [name]="'role-' + member.userId" [(ngModel)]="roleDrafts[member.userId]" [attr.aria-label]="'Rôle clinique de ' + member.name">@for(role of roleOptions;track role.value){<option [value]="role.value">{{role.label}}</option>}</select><button type="button" (click)="saveRole(member)" [disabled]="saving() || roleDrafts[member.userId] === member.clinicRole">Enregistrer</button></div>
-              } @else { <span class="clinic-role" [class.unassigned]="!member.clinicRole">{{roleLabel(member.clinicRole || (['ORGANIZATION_OWNER','ORGANIZATION_ADMIN'].includes(member.organizationRole) ? member.organizationRole : null))}}</span> }
+              } @else { <span class="clinic-role" [class.unassigned]="!member.clinicRole">{{roleLabel(member.clinicRole || (isOrganizationAdmin(member.organizationRole) ? member.organizationRole : null))}}</span> }
             </td>
             @if(canManage()){<td>@if(member.clinicRole && !['ORGANIZATION_OWNER','ORGANIZATION_ADMIN'].includes(member.organizationRole)){<button class="remove-button" type="button" (click)="removeMember(member)" [disabled]="saving()">Retirer</button>} @else {<span class="muted">—</span>}</td>}
           </tr>
