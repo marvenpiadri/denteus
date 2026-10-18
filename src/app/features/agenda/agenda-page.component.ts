@@ -81,14 +81,14 @@ export class AgendaPageComponent {
     if (mode === 'provider') return {
       dimension: 'provider',
       lanes: [
-        { id: 'unassigned', label: 'Non affectés', sublabel: 'Sans praticien' },
+        { id: 'unassigned', label: 'Non affectés', sublabel: 'Sans praticien ni fauteuil' },
         ...this.providers().map((provider) => ({ id: provider.id, label: provider.displayName })),
       ],
     };
     return {
       dimension: 'operatory',
       lanes: [
-        { id: 'unassigned', label: 'Non affectés', sublabel: 'Sans fauteuil' },
+        { id: 'unassigned', label: 'Non affectés', sublabel: 'Sans praticien ni fauteuil' },
         ...this.operatories().map((operatory) => ({ id: operatory.id, label: operatory.name })),
       ],
     };
@@ -591,6 +591,21 @@ export class AgendaPageComponent {
     if (!clinic || !appointment) return { ok: false, code: 'not-found', message: 'Ce rendez-vous n’est plus disponible dans cette clinique.' };
     if (!this.canReschedule(appointment.status)) return { ok: false, code: 'forbidden', message: 'Le statut de ce rendez-vous ne permet plus de le déplacer.' };
     const zone = clinic.timezone || 'Africa/Casablanca';
+    const clearsAssignment = event.resources?.['provider'] === 'unassigned'
+      || event.resources?.['operatory'] === 'unassigned';
+    const providerId = clearsAssignment
+      ? null
+      : event.resources?.['provider'] ?? appointment.providerId;
+    const operatoryId = clearsAssignment
+      ? null
+      : event.resources?.['operatory'] ?? appointment.operatoryId;
+    if ((providerId && !operatoryId) || (!providerId && operatoryId)) {
+      return {
+        ok: false,
+        code: 'invalid',
+        message: 'Pour affecter ce rendez-vous, choisissez à la fois un praticien et un fauteuil dans le formulaire.',
+      };
+    }
     try {
       await this.appointmentsApi.reschedule(
         clinic.organizationId,
@@ -598,8 +613,8 @@ export class AgendaPageComponent {
         appointment.id,
         localDateTimeToIso(this.calendarDateTimeInput(event.start), zone),
         localDateTimeToIso(this.calendarDateTimeInput(event.end), zone),
-        event.resources?.['provider'] === 'unassigned' ? null : event.resources?.['provider'] ?? appointment.providerId,
-        event.resources?.['operatory'] === 'unassigned' ? null : event.resources?.['operatory'] ?? appointment.operatoryId,
+        providerId,
+        operatoryId,
       );
       if (this.tenant.activeClinic()?.id === clinic.id) {
         await this.loadAppointments(clinic.organizationId, clinic.id, this.selectedDate(), zone, this.calendarView(), true);
