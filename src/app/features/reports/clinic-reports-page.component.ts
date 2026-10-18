@@ -2,6 +2,8 @@ import { isPlatformBrowser } from '@angular/common';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { KeyValuePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { TenantContextService } from '../../core/tenant/tenant-context.service';
 import { firstValueFrom } from 'rxjs';
 
@@ -16,7 +18,7 @@ interface ReportResponse { data: ReportData; }
 
 @Component({
   selector: 'app-clinic-reports-page',
-  imports: [FormsModule],
+  imports: [FormsModule, KeyValuePipe, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './clinic-reports-page.component.html',
   styleUrl: './clinic-reports-page.component.css',
@@ -87,7 +89,8 @@ export class ClinicReportsPageComponent {
   }
 
   get maxDailyAppointments(): number {
-    return Math.max(1, ...this.report()?.trend.map((day) => day.total) ?? []);
+    const trend = this.report()?.trend ?? [];
+    return Math.max(1, ...trend.map((day) => day.total));
   }
 
   formatDay(day: string): string {
