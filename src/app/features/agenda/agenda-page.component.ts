@@ -425,7 +425,7 @@ export class AgendaPageComponent {
       this.success.set('Horaires du praticien enregistrés.');
     } catch {
       if (this.tenant.activeClinic()?.id !== clinic.id) return;
-      this.resourceError.set('Les horaires n’ont pas tous été enregistrés. Rechargez les ressources et vérifiez le planning.');
+      this.resourceError.set('Les horaires n’ont pas été enregistrés. Vérifiez les horaires puis réessayez.');
     } finally {
       if (mutationSequence === this.resourceMutationSequence) this.resourceSaving.set(false);
     }
