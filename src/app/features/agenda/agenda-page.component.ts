@@ -29,6 +29,11 @@ export class AgendaPageComponent {
   private readonly platformId = inject(PLATFORM_ID);
 
   readonly selectedDate = signal('');
+  readonly calendarView = signal<'day' | 'week' | 'month' | 'year'>('day');
+  readonly dayAppointments = computed(() => {
+    const zone = this.tenant.activeClinic()?.timezone || 'Africa/Casablanca';
+    return this.appointments().filter((appointment) => toClinicDateTimeInput(appointment.startsAt, zone).slice(0, 10) === this.selectedDate());
+  });
   readonly appointments = signal<AppointmentRecord[]>([]);
   readonly patients = signal<PatientRecord[]>([]);
   readonly providers = signal<ClinicProvider[]>([]);
