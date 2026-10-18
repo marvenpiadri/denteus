@@ -62,3 +62,24 @@ export function isValidScheduleRange(from: string, to: string, maxDays = 366): b
     && duration > 0
     && duration <= maxDays * 24 * 60 * 60_000;
 }
+
+
+export interface WorkingHourInput {
+  dayOfWeek: number;
+  startsAt: string;
+  endsAt: string;
+}
+
+export function isValidWorkingHours(hours: readonly WorkingHourInput[]): boolean {
+  if (hours.length > 7) return false;
+  const days = new Set<number>();
+  for (const hour of hours) {
+    if (!Number.isInteger(hour.dayOfWeek) || hour.dayOfWeek < 0 || hour.dayOfWeek > 6) return false;
+    if (days.has(hour.dayOfWeek)) return false;
+    if (!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(hour.startsAt)
+      || !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(hour.endsAt)
+      || hour.endsAt <= hour.startsAt) return false;
+    days.add(hour.dayOfWeek);
+  }
+  return true;
+}
