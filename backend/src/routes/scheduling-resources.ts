@@ -217,6 +217,9 @@ interface BulkWorkingHoursBody { hours: WorkingHoursBody[]; }
       let transactionOpen = false;
       try {
         await client.query('BEGIN');
+        await client.query('SELECT pg_advisory_xact_lock(hashtext($1), hashtext($2))', [
+          request.params.organizationId, request.params.clinicId,
+        ]);
         transactionOpen = true;
         const provider = await client.query(
           'SELECT id FROM clinic_providers WHERE organization_id = $1 AND clinic_id = $2 AND id = $3 AND active = true FOR UPDATE',
