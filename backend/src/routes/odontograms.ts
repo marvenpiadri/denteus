@@ -27,6 +27,7 @@ interface SaveOdontogramBody {
   plan?: Record<string, unknown> | null;
   planChanges?: PlanChange[];
   extra?: Record<string, unknown>;
+  expectedUpdatedAt?: string | null;
 }
 
 const odontogramBodySchema = {
@@ -51,6 +52,7 @@ const odontogramBodySchema = {
       },
     },
     extra: { type: 'object', maxProperties: 200 },
+    expectedUpdatedAt: { anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }] },
   },
 } as const;
 
@@ -204,6 +206,27 @@ export const odontogramRoutes: FastifyPluginAsync = async (app) => {
       try {
         await client.query('BEGIN');
         transactionOpen = true;
+
+        // Serialize writes for this patient's chart so concurrent first saves and edits
+        // cannot both pass the revision check.
+        const recordLockKey = [request.params.organizationId, request.params.clinicId, request.params.patientId].join(':');
+        await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [recordLockKey]);
+        const currentRecord = await client.query<{ updatedAt: string }>(
+          'SELECT updated_at AS "updatedAt" FROM odontogram_records WHERE organization_id = $1 AND clinic_id = $2 AND patient_id = $3 FOR UPDATE',
+          [request.params.organizationId, request.params.clinicId, request.params.patientId],
+        );
+        const currentUpdatedAt = currentRecord.rows[0]?.updatedAt;
+        const expectedUpdatedAt = request.body.expectedUpdatedAt ?? null;
+        const hasConflict = currentUpdatedAt
+          ? !expectedUpdatedAt || new Date(currentUpdatedAt).getTime() !== Date.parse(expectedUpdatedAt)
+          : expectedUpdatedAt !== null;
+        if (hasConflict) {
+          await client.query('ROLLBACK');
+          transactionOpen = false;
+          return reply.code(409).send({
+            error: { code: 'ODONTOGRAM_CHANGED', message: 'Cet odontogramme a été modifié dans une autre session. Rechargez le dossier avant de réessayer.' },
+          });
+        }
 
         const result = await client.query(
           `
