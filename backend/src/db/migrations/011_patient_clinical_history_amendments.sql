@@ -28,3 +28,14 @@ $$;
 CREATE TRIGGER patient_clinical_history_amendments_immutable
   BEFORE UPDATE OR DELETE ON patient_clinical_history_amendments
   FOR EACH ROW EXECUTE FUNCTION prevent_patient_history_amendment_mutation();
+
+CREATE FUNCTION prevent_patient_clinical_history_mutation()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'Patient clinical history is immutable; record a correction as an amendment'
+    USING ERRCODE = '55000';
+END;
+$$;
+CREATE TRIGGER patient_clinical_history_entries_immutable
+  BEFORE UPDATE OR DELETE ON patient_clinical_history_entries
+  FOR EACH ROW EXECUTE FUNCTION prevent_patient_clinical_history_mutation();
