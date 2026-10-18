@@ -79,6 +79,7 @@
       </div>
     } @else if (displayView() === 'month') {
       <div class="calendar-month-overview">
+        <div class="month-weekdays"><span>Lun</span><span>Mar</span><span>Mer</span><span>Jeu</span><span>Ven</span><span>Sam</span><span>Dim</span></div>
         @for (item of monthDates(); track item.date) {
           <button type="button" class="month-day" [class.outside-month]="!item.inMonth" [class.is-selected]="item.date === date" (click)="chooseDate(item.date)">
             <strong>{{ dateLabel(item.date, { day: 'numeric' }) }}</strong>
@@ -91,7 +92,7 @@
         @for (month of yearMonths(); track month.month) {
           <section class="year-month"><h3>{{ month.label }}</h3>
             <div class="year-mini-grid">
-              @for (day of monthDatesFor(month.month).slice(0, 35); track day) {
+              @for (day of monthDatesFor(month.month); track day) {
                 <button type="button" [class.has-events]="appointmentsOn(day).length > 0" [class.is-selected]="day === date" (click)="chooseDate(day)">{{ dateLabel(day, { day: 'numeric' }) }}</button>
               }
             </div>
