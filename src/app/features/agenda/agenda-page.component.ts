@@ -120,7 +120,7 @@ export class AgendaPageComponent {
       if (requestSequence !== this.appointmentLoadSequence || this.tenant.activeClinic()?.id !== clinicId || this.selectedDate() !== date) return;
       this.appointments.set(response.data);
     } catch (error) {
-      if (this.tenant.activeClinic()?.id !== clinicId || this.selectedDate() !== date) return;
+      if (requestSequence !== this.appointmentLoadSequence || this.tenant.activeClinic()?.id !== clinicId || this.selectedDate() !== date) return;
       this.appointments.set([]);
       this.error.set(error instanceof HttpErrorResponse && error.status === 401
         ? 'Votre session a expiré. Reconnectez-vous.'
@@ -144,7 +144,7 @@ export class AgendaPageComponent {
       if (!this.hoursProviderId || !result.providers.some((item) => item.id === this.hoursProviderId)) this.hoursProviderId = result.providers[0]?.id ?? '';
       this.syncHoursDraft();
     } catch {
-      if (this.tenant.activeClinic()?.id !== clinicId) return;
+      if (requestSequence !== this.resourceLoadSequence || this.tenant.activeClinic()?.id !== clinicId) return;
       this.providers.set([]);
       this.operatories.set([]);
       this.resourceError.set('Les ressources du planning ne peuvent pas être chargées.');
@@ -249,7 +249,7 @@ export class AgendaPageComponent {
       if (requestSequence !== this.patientOptionsLoadSequence || this.tenant.activeClinic()?.id !== clinicId) return;
       this.patients.set(response.data);
     } catch {
-      if (this.tenant.activeClinic()?.id !== clinicId) return;
+      if (requestSequence !== this.patientOptionsLoadSequence || this.tenant.activeClinic()?.id !== clinicId) return;
       this.patients.set([]);
       this.patientsError.set('La liste des patients ne peut pas être chargée. Vous devez pouvoir accéder aux dossiers pour planifier un rendez-vous.');
     } finally {
@@ -300,12 +300,14 @@ export class AgendaPageComponent {
         ...(this.reason.trim() ? { reason: this.reason.trim() } : {}),
         ...(this.providerId && this.operatoryId ? { providerId: this.providerId, operatoryId: this.operatoryId } : {}),
       });
+      if (this.tenant.activeClinic()?.id !== clinic.id) return;
       this.showCreateForm.set(false);
       this.success.set('Le rendez-vous a été enregistré.');
       const createdDate = toClinicDateTimeInput(created.startsAt, timezone).slice(0, 10);
       if (createdDate !== this.selectedDate()) this.selectedDate.set(createdDate);
       else await this.loadAppointments(clinic.organizationId, clinic.id, this.selectedDate(), timezone);
     } catch (error) {
+      if (this.tenant.activeClinic()?.id !== clinic.id) return;
       this.formError.set(error instanceof Error && !(error instanceof HttpErrorResponse)
         ? error.message
         : error instanceof HttpErrorResponse && error.status === 409
@@ -394,9 +396,11 @@ export class AgendaPageComponent {
         change.providerId !== undefined ? change.providerId : appointment.providerId,
         change.operatoryId !== undefined ? change.operatoryId : appointment.operatoryId,
       );
+      if (this.tenant.activeClinic()?.id !== clinic.id) return;
       this.success.set('Le rendez-vous a été déplacé.');
       await this.loadAppointments(clinic.organizationId, clinic.id, this.selectedDate(), timezone);
     } catch (error) {
+      if (this.tenant.activeClinic()?.id !== clinic.id) return;
       await this.loadAppointments(clinic.organizationId, clinic.id, this.selectedDate(), timezone);
       this.error.set(error instanceof HttpErrorResponse && error.status === 409
         ? 'Ce déplacement crée un conflit de planning. Le rendez-vous a conservé son horaire initial.'
@@ -416,12 +420,14 @@ export class AgendaPageComponent {
       const startsAt = localDateTimeToIso(this.rescheduleStartsAt, timezone);
       const endsAt = localDateTimeToIso(this.rescheduleEndsAt, timezone);
       await this.appointmentsApi.reschedule(clinic.organizationId, clinic.id, appointment.id, startsAt, endsAt, this.rescheduleProviderId || null, this.rescheduleOperatoryId || null);
+      if (this.tenant.activeClinic()?.id !== clinic.id) return;
       this.reschedulingId.set(null);
       this.success.set('Le rendez-vous a été déplacé.');
       const rescheduledDate = toClinicDateTimeInput(startsAt, timezone).slice(0, 10);
       if (rescheduledDate !== this.selectedDate()) this.selectedDate.set(rescheduledDate);
       else await this.loadAppointments(clinic.organizationId, clinic.id, this.selectedDate(), timezone);
     } catch (error) {
+      if (this.tenant.activeClinic()?.id !== clinic.id) return;
       this.rescheduleError.set(error instanceof Error && !(error instanceof HttpErrorResponse)
         ? error.message
         : error instanceof HttpErrorResponse && error.status === 409
@@ -470,9 +476,11 @@ export class AgendaPageComponent {
     this.success.set('');
     try {
       await this.appointmentsApi.changeStatus(clinic.organizationId, clinic.id, appointment.id, status);
+      if (this.tenant.activeClinic()?.id !== clinic.id) return;
       this.success.set(`Statut mis à jour : ${this.statusLabel(status).toLowerCase()}.`);
       await this.loadAppointments(clinic.organizationId, clinic.id, this.selectedDate(), clinic.timezone || 'Africa/Casablanca');
     } catch (error) {
+      if (this.tenant.activeClinic()?.id !== clinic.id) return;
       this.error.set(error instanceof HttpErrorResponse && error.status === 409
         ? 'Le statut a changé ou cette transition n’est plus autorisée. Rechargez l’agenda.'
         : 'Le statut n’a pas été modifié. Réessayez.');
