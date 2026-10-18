@@ -2,28 +2,27 @@
   <a class="skip-link" href="#main-content">Passer au contenu principal</a>
 
   @if (mobileNavigationOpen()) {
-    <button
-      class="navigation-backdrop"
-      type="button"
-      aria-label="Fermer le menu"
-      (click)="closeMobileNavigation()"></button>
+    <button class="navigation-backdrop" type="button" aria-label="Fermer le menu" (click)="closeMobileNavigation()"></button>
   }
 
   <aside class="sidebar" [class.sidebar--mobile-open]="mobileNavigationOpen()" aria-label="Navigation principale">
     <a class="brand" routerLink="/crm/today" (click)="closeMobileNavigation()" aria-label="Dentaleus — espace clinique">
-      <span class="brand-mark" aria-hidden="true">D</span>
-      <span class="brand-name">dentaleus</span>
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 36 36" fill="none"><path d="M8 10.5c2.2-3.5 6.3-4.1 10-1.7 3.7-2.4 7.8-1.8 10 1.7 2.6 4.2-1.8 9.3-3.1 14.8-.8 3.3-2 5.1-3.7 5.1-1.4 0-1.7-2.1-2-4.4-.2-1.4-.4-2.6-1.2-2.6s-1 1.2-1.2 2.6c-.3 2.3-.6 4.4-2 4.4-1.7 0-2.9-1.8-3.7-5.1C9.8 19.8 5.4 14.7 8 10.5Z" fill="currentColor"/></svg>
+      </span>
+      <span class="brand-copy"><span class="brand-name">dentaleus</span><span class="brand-caption">CLINICAL WORKSPACE</span></span>
     </a>
 
-    <div class="workspace-label">ESPACE CLINIQUE</div>
+    <div class="sidebar-section-label">VOTRE CABINET</div>
     <div class="clinic-context">
-      <span class="context-icon" aria-hidden="true">⌂</span>
+      <span class="context-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M3.5 20.5h17M5.5 20.5V8l6.5-4 6.5 4v12.5M9 11h1.5m3 0H15M9 14.5h1.5m3 0H15M10 20.5v-3h4v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
       <div class="clinic-context-copy">
         @if (tenantContext.loading()) {
-          <strong>Chargement des cliniques…</strong>
-          <small>Vérification des accès</small>
+          <strong>Chargement des cliniques…</strong><small>Vérification des accès</small>
         } @else if (tenantContext.clinics().length) {
-          <label for="active-clinic">Clinique active</label>
+          <label for="active-clinic">CLINIQUE ACTIVE</label>
           <select id="active-clinic" [value]="tenantContext.activeClinic()?.id ?? ''" (change)="selectClinic($any($event.target).value)">
             @for (clinic of tenantContext.clinics(); track clinic.id) {
               <option [value]="clinic.id">{{ clinic.name }} · {{ clinic.organizationName }}</option>
@@ -31,50 +30,58 @@
           </select>
         } @else {
           <strong>Aucune clinique disponible</strong>
-          <small><a routerLink="/onboarding/clinic">Créer une clinique</a></small>
+          <small><a routerLink="/onboarding/clinic">Configurer une clinique</a></small>
         }
         @if (tenantContext.error()) { <small class="clinic-error" role="alert">{{ tenantContext.error() }}</small> }
       </div>
     </div>
 
     <nav class="primary-navigation" aria-label="Modules cliniques">
-      <a routerLink="/crm/today" routerLinkActive="nav-link--active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMobileNavigation()">
-        <span class="nav-icon" aria-hidden="true">◷</span><span>Aujourd’hui</span>
-      </a>
-      <a routerLink="/crm/agenda" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
-        <span class="nav-icon" aria-hidden="true">▦</span><span>Agenda</span>
-      </a>
-      <a routerLink="/crm/patients" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
-        <span class="nav-icon" aria-hidden="true">♙</span><span>Patients</span>
-      </a>
-      <a routerLink="/crm/recalls" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
-        <span class="nav-icon" aria-hidden="true">↻</span><span>Rappels patients</span>
-      </a>
-      <a routerLink="/crm/clinical" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
-        <span class="nav-icon" aria-hidden="true">✚</span><span>Soins et odontogramme</span>
-      </a>
-      <a routerLink="/crm/team" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
-        <span class="nav-icon" aria-hidden="true">♧</span><span>Équipe et accès</span>
-      </a>
-      <a routerLink="/crm/reports" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
-        <span class="nav-icon" aria-hidden="true">▤</span><span>Rapports</span>
-      </a>
+      <div class="navigation-group">
+        <span class="navigation-group-label">ACTIVITÉ</span>
+        <a routerLink="/crm/today" routerLinkActive="nav-link--active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMobileNavigation()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M7.5 3v4M16.5 3v4M3.5 10h17M8 14h3m-3 3h6"/></svg><span>Aujourd’hui</span>
+        </a>
+        <a routerLink="/crm/agenda" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg><span>Agenda</span>
+        </a>
+      </div>
+      <div class="navigation-group">
+        <span class="navigation-group-label">PARCOURS PATIENT</span>
+        <a routerLink="/crm/patients" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5v-1.3a5.5 5.5 0 0 1 11 0v1.3M16 5.5a3 3 0 0 1 0 5.8m2 3.2a4.5 4.5 0 0 1 2.5 4v1"/></svg><span>Patients</span>
+        </a>
+        <a routerLink="/crm/recalls" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.2-4.8L4 8m0-4v4h4M4 13a8 8 0 0 0 14.2 4.8L20 16m0 4v-4h-4"/></svg><span>Rappels patients</span>
+        </a>
+        <a routerLink="/crm/clinical" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="8.5"/></svg><span>Soins & odontogramme</span>
+        </a>
+      </div>
+      <div class="navigation-group">
+        <span class="navigation-group-label">ORGANISATION</span>
+        <a routerLink="/crm/team" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.3"/><path d="M3 19v-1.5a6 6 0 0 1 12 0V19m1-5a4.5 4.5 0 0 1 5 4.5"/></svg><span>Équipe & accès</span>
+        </a>
+        <a routerLink="/crm/reports" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V11h4v9m4 0V4h4v16m4 0v-6h-4"/></svg><span>Rapports</span>
+        </a>
+      </div>
     </nav>
 
-    <div class="sidebar-footer">
-      <a routerLink="/crm/settings" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
-        <span class="nav-icon" aria-hidden="true">⚙</span><span>Paramètres du cabinet</span>
+    <div class="sidebar-bottom">
+      <a class="settings-link" routerLink="/crm/settings" routerLinkActive="nav-link--active" (click)="closeMobileNavigation()">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1a1.7 1.7 0 0 1-2.4 2.4l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a1.7 1.7 0 0 1-3.4 0v-.2a1.7 1.7 0 0 0-2.9-1.2l-.1.1a1.7 1.7 0 0 1-2.4-2.4l.1-.1a1.7 1.7 0 0 0-1.2-2.9H4a1.7 1.7 0 0 1 0-3.4h.2a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a1.7 1.7 0 0 1 2.4-2.4l.1.1a1.7 1.7 0 0 0 2.9-1.2V2a1.7 1.7 0 0 1 3.4 0v.2a1.7 1.7 0 0 0 2.9 1.2l.1-.1a1.7 1.7 0 0 1 2.4 2.4l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a1.7 1.7 0 0 1 0 3.4h-.2a1.7 1.7 0 0 0-1.2 2.9Z"/></svg><span>Paramètres du cabinet</span>
       </a>
-      <div class="session-placeholder">
+      <div class="account-card">
         @if (sessions.user(); as user) {
           <span class="session-avatar" aria-hidden="true">{{ userInitial }}</span>
           <span class="session-copy"><strong>{{ user.name || user.email }}</strong><small>{{ user.email }}</small></span>
-          <button class="sign-out-button" type="button" (click)="signOut()" [disabled]="signingOut()">
-            {{ signingOut() ? '…' : 'Déconnexion' }}
+          <button class="sign-out-button" type="button" (click)="signOut()" [disabled]="signingOut()" [attr.aria-label]="signingOut() ? 'Déconnexion en cours' : 'Se déconnecter'" title="Déconnexion">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5H5v14h5M14 8l4 4-4 4m4-4H9"/></svg>
           </button>
         } @else {
-          <span class="session-avatar" aria-hidden="true">…</span>
-          <span class="session-copy"><strong>Vérification de session</strong><small>Aucune identité affichée côté serveur</small></span>
+          <span class="session-avatar" aria-hidden="true">…</span><span class="session-copy"><strong>Vérification de session</strong><small>Aucune identité affichée côté serveur</small></span>
         }
       </div>
     </div>
@@ -82,25 +89,24 @@
 
   <div class="workspace">
     <header class="topbar">
-      <button class="mobile-menu-button" type="button" (click)="toggleMobileNavigation()" [attr.aria-expanded]="mobileNavigationOpen()" aria-label="Ouvrir la navigation">
-        <span aria-hidden="true">☰</span>
+      <button class="mobile-menu-button" type="button" (click)="toggleMobileNavigation()" [attr.aria-expanded]="mobileNavigationOpen()" aria-controls="main-navigation" aria-label="Ouvrir la navigation">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
       <div class="topbar-context">
-        <span class="eyebrow">DENTALEUS CLINICAL</span>
-        <span class="topbar-title">Espace de travail</span>
+        <span class="topbar-kicker">ESPACE CLINIQUE</span>
+        <span class="topbar-title">{{ tenantContext.activeClinic()?.name || 'Votre cabinet' }}</span>
       </div>
-      <div class="topbar-status"><span class="status-dot" aria-hidden="true"></span> Validation avant pilote</div>
-      <button class="theme-toggle" type="button" (click)="toggleTheme()" [attr.aria-label]="theme() === 'dark' ? 'Activer le thème clair' : 'Activer le thème sombre'" [attr.aria-pressed]="theme() === 'dark'"><span aria-hidden="true">{{ theme() === 'dark' ? '☀' : '☾' }}</span><span class="theme-toggle-label">{{ theme() === 'dark' ? 'Clair' : 'Sombre' }}</span></button>
+      <div class="topbar-actions">
+        <span class="clinic-status"><span class="status-dot" aria-hidden="true"></span>{{ tenantContext.activeClinic() ? 'Contexte clinique actif' : 'Aucune clinique sélectionnée' }}</span>
+        <button class="theme-toggle" type="button" (click)="toggleTheme()" [attr.aria-label]="theme() === 'dark' ? 'Activer le thème clair' : 'Activer le thème sombre'" [attr.aria-pressed]="theme() === 'dark'">
+          <svg viewBox="0 0 24 24" aria-hidden="true">@if (theme() === 'dark') { <circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/> } @else { <path d="M20.5 15.2A8.5 8.5 0 0 1 8.8 3.5 8.5 8.5 0 1 0 20.5 15.2Z"/> }</svg>
+          <span>{{ theme() === 'dark' ? 'Clair' : 'Sombre' }}</span>
+        </button>
+      </div>
     </header>
 
     <main id="main-content" class="main-content">
-      @if (signOutError()) {
-        <div class="sign-out-error" role="alert">{{ signOutError() }}</div>
-      }
-      <div class="foundation-notice" role="status">
-        <span class="notice-icon" aria-hidden="true">i</span>
-        <p><strong>Fondation en reconstruction.</strong> Les écrans sont reconstruits autour des données authentifiées. Aucun dossier fictif n’est affiché et cet espace ne doit pas encore être utilisé avec des données patient réelles.</p>
-      </div>
+      @if (signOutError()) { <div class="sign-out-error" role="alert">{{ signOutError() }}</div> }
       <router-outlet />
     </main>
   </div>
