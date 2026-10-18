@@ -42,13 +42,13 @@ export const reportRoutes: FastifyPluginAsync = async (app) => {
 
       const [appointments, patients, recalls, trend] = await Promise.all([
         pool.query(
-          `SELECT status, count(*)::integer AS count
+          `SELECT a.status, count(*)::integer AS count
            FROM appointments a
            JOIN clinics c ON c.organization_id = a.organization_id AND c.id = a.clinic_id
            WHERE a.organization_id = $1 AND a.clinic_id = $2
              AND (a.starts_at AT TIME ZONE c.timezone) >= $3::date::timestamp
              AND (a.starts_at AT TIME ZONE c.timezone) < ($4::date + interval '1 day')::timestamp
-           GROUP BY status`,
+           GROUP BY a.status`,
           [organizationId, clinicId, from, to],
         ),
         pool.query(
