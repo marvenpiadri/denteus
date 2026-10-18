@@ -331,6 +331,7 @@ export class AgendaPageComponent {
   }
 
   openCreateAtTime(selection: CalendarSlotSelection): void {
+    if (this.saving()) return;
     this.openCreateForm();
     if (!selection.startsAt) return;
     this.startsAt = selection.startsAt;
@@ -343,6 +344,7 @@ export class AgendaPageComponent {
   }
 
   openCreateForm(): void {
+    if (this.saving()) return;
     const date = this.selectedDate();
     if (!date) return;
     this.formError.set('');
@@ -439,6 +441,7 @@ export class AgendaPageComponent {
   }
 
   openReschedule(appointment: AppointmentRecord): void {
+    if (this.saving()) return;
     const timezone = this.tenant.activeClinic()?.timezone || 'Africa/Casablanca';
     this.reschedulingId.set(appointment.id);
     this.rescheduleError.set('');
