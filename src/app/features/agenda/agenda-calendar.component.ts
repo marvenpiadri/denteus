@@ -252,8 +252,7 @@ export class AgendaCalendarComponent implements OnChanges {
     this.slotSelected.emit(selection);
   }
 
-  setView(mode: CalendarResourceMode | CalendarDisplayView): void {
-  setView(mode: CalendarResourceMode, emit = true): void {
+  setView(mode: CalendarResourceMode | CalendarDisplayView, emit = true): void {
     if (mode === 'provider' && !this.providers.length) return;
     if (mode === 'operatory' && !this.operatories.length) return;
     if (mode === 'day' || mode === 'week' || mode === 'month' || mode === 'year') {
