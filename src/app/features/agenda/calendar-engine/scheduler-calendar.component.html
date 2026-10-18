@@ -30,6 +30,12 @@
         <cal-year-view />
       }
     }
+    @if (loading()) {
+      <div class="calendar-loading" role="status" aria-live="polite">
+        <span class="calendar-loading-spinner" aria-hidden="true"></span>
+        Chargement du planning…
+      </div>
+    }
   </section>
 
   <cal-toasts />
