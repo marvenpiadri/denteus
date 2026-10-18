@@ -101,6 +101,7 @@
     [providers]="providers()"
     [operatories]="operatories()"
     [date]="selectedDate()"
+    (viewChanged)="changeCalendarView($event)"
     [timeZone]="tenant.activeClinic()?.timezone || 'Africa/Casablanca'"
     [loading]="loading() || saving()"
     (slotSelected)="openCreateAtTime($event)"
