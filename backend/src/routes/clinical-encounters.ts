@@ -21,6 +21,8 @@ interface CreateFindingBody { findingType: 'OBSERVATION' | 'DIAGNOSIS' | 'SYMPTO
 interface CreateProcedureBody { title: string; category: 'EXAM' | 'HYGIENE' | 'RESTORATIVE' | 'ENDODONTICS' | 'EXTRACTION' | 'PROSTHODONTICS' | 'ORTHODONTICS' | 'PERIODONTICS' | 'IMPLANT' | 'OTHER'; notes?: string | null; toothSites?: Array<{ toothNo: number; surface: string }>; }
 interface ProcedureParams extends EncounterParams { procedureId: string; }
 interface FindingParams extends EncounterParams { findingId: string; }
+interface FollowUpParams extends EncounterParams { followUpId: string; }
+interface CreateFollowUpBody { instruction: string; dueAt?: string | null; }
 interface RecordAmendmentBody { reason: string; content: string; }
 
 const encounterTypes: EncounterType[] = ['CONSULTATION', 'EMERGENCY', 'FOLLOW_UP', 'PROCEDURE', 'OTHER'];
@@ -69,6 +71,7 @@ const createProcedureSchema = {
     } },
   },
 } as const;
+const createFollowUpSchema = { type: 'object', additionalProperties: false, required: ['instruction'], properties: { instruction: { type: 'string', minLength: 1, maxLength: 4000 }, dueAt: { anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }] } } } as const;
 const recordAmendmentSchema = { type: 'object', additionalProperties: false, required: ['reason','content'], properties: { reason: { type: 'string', minLength: 1, maxLength: 1000 }, content: { type: 'string', minLength: 1, maxLength: 20000 } } } as const;
 const amendNoteSchema = {
   type: 'object', additionalProperties: false, required: ['reason', 'amendedContent'],
@@ -250,6 +253,87 @@ export const clinicalEncounterRoutes: FastifyPluginAsync = async (app) => {
         pool.query('SELECT p.user_id AS "userId", u.name, p.role, p.added_by_id AS "addedById", p.created_at AS "createdAt" FROM clinical_encounter_participants p JOIN app_users u ON u.id=p.user_id WHERE p.organization_id=$1 AND p.clinic_id=$2 AND p.patient_id=$3 AND p.encounter_id=$4 ORDER BY p.created_at', [organizationId, clinicId, patientId, encounterId]),
       ]);
       return { data: { ...encounter.rows[0], notes: notes.rows, findings: findings.rows, procedures: procedures.rows, media: media.rows, followUps: followUps.rows, participants: participants.rows } };
+    },
+  );
+
+  app.post<{ Params: EncounterParams; Body: CreateFollowUpBody }>(
+    '/organizations/:organizationId/clinics/:clinicId/patients/:patientId/encounters/:encounterId/follow-ups',
+    { schema: { body: createFollowUpSchema } },
+    async (request, reply) => {
+      const { organizationId, clinicId, patientId, encounterId } = request.params;
+      const access = await requireClinicAccess(request, reply, organizationId, clinicId);
+      if (!access) return;
+      if (!canWriteOdontogram(access)) return denyInsufficientRole(reply);
+      const instruction = request.body.instruction.trim();
+      if (!instruction) return reply.code(400).send({ error: { code: 'EMPTY_FOLLOW_UP', message: 'A follow-up instruction is required.' } });
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const encounter = await client.query(
+          'SELECT status FROM clinical_encounters WHERE organization_id=$1 AND clinic_id=$2 AND patient_id=$3 AND id=$4 FOR UPDATE',
+          [organizationId, clinicId, patientId, encounterId],
+        );
+        if (!encounter.rowCount) {
+          await client.query('ROLLBACK');
+          return reply.code(404).send({ error: { code: 'ENCOUNTER_NOT_FOUND', message: 'Clinical encounter not found.' } });
+        }
+        if (['SIGNED', 'CANCELLED'].includes(encounter.rows[0].status)) {
+          await client.query('ROLLBACK');
+          return reply.code(409).send({ error: { code: 'ENCOUNTER_CLOSED', message: 'This encounter no longer accepts new follow-up instructions.' } });
+        }
+        const result = await client.query(
+          `INSERT INTO clinical_follow_ups (id, organization_id, clinic_id, patient_id, encounter_id, due_at, instruction, status, created_by_id)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,'OPEN',$8)
+           RETURNING id, due_at AS "dueAt", instruction, status, created_by_id AS "createdById", created_at AS "createdAt"`,
+          [randomUUID(), organizationId, clinicId, patientId, encounterId, request.body.dueAt ?? null, instruction, access.userId],
+        );
+        await client.query(
+          `INSERT INTO audit_events (id, organization_id, user_id, action, resource_type, resource_id, metadata)
+           VALUES ($1,$2,$3,'CLINICAL_FOLLOW_UP_CREATED','CLINICAL_FOLLOW_UP',$4,$5::jsonb)`,
+          [randomUUID(), organizationId, access.userId, result.rows[0].id, JSON.stringify({ clinicId, patientId, encounterId, dueAt: request.body.dueAt ?? null })],
+        );
+        await client.query('COMMIT');
+        return reply.code(201).send({ data: result.rows[0] });
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally { client.release(); }
+    },
+  );
+
+  app.post<{ Params: FollowUpParams }>(
+    '/organizations/:organizationId/clinics/:clinicId/patients/:patientId/encounters/:encounterId/follow-ups/:followUpId/complete',
+    async (request, reply) => {
+      const { organizationId, clinicId, patientId, encounterId, followUpId } = request.params;
+      const access = await requireClinicAccess(request, reply, organizationId, clinicId);
+      if (!access) return;
+      if (!canWriteOdontogram(access)) return denyInsufficientRole(reply);
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const result = await client.query(
+          `UPDATE clinical_follow_ups
+           SET status='COMPLETED', completed_by_id=$6, completed_at=now(), updated_at=now()
+           WHERE organization_id=$1 AND clinic_id=$2 AND patient_id=$3 AND encounter_id=$4 AND id=$5
+             AND status IN ('OPEN','SCHEDULED')
+           RETURNING id, due_at AS "dueAt", instruction, status, completed_by_id AS "completedById", completed_at AS "completedAt"`,
+          [organizationId, clinicId, patientId, encounterId, followUpId, access.userId],
+        );
+        if (!result.rowCount) {
+          await client.query('ROLLBACK');
+          return reply.code(409).send({ error: { code: 'FOLLOW_UP_NOT_COMPLETABLE', message: 'This follow-up is already completed, cancelled, or unavailable.' } });
+        }
+        await client.query(
+          `INSERT INTO audit_events (id, organization_id, user_id, action, resource_type, resource_id, metadata)
+           VALUES ($1,$2,$3,'CLINICAL_FOLLOW_UP_COMPLETED','CLINICAL_FOLLOW_UP',$4,$5::jsonb)`,
+          [randomUUID(), organizationId, access.userId, followUpId, JSON.stringify({ clinicId, patientId, encounterId })],
+        );
+        await client.query('COMMIT');
+        return { data: result.rows[0] };
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally { client.release(); }
     },
   );
 
