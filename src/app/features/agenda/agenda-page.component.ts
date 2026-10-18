@@ -54,6 +54,10 @@ export class AgendaPageComponent {
   private appointmentLoadSequence = 0;
   private resourceLoadSequence = 0;
   private patientOptionsLoadSequence = 0;
+  private appointmentMutationSequence = 0;
+  private resourceMutationSequence = 0;
+  private statusMutationSequence = 0;
+  private activeClinicId = '';
 
   patientId = '';
   startsAt = '';
@@ -81,6 +85,65 @@ export class AgendaPageComponent {
   rescheduleOperatoryId = '';
 
   constructor() {
+    effect(() => {
+      const clinic = this.tenant.activeClinic();
+      if (!clinic) return;
+      if (!this.activeClinicId) {
+        this.activeClinicId = clinic.id;
+        return;
+      }
+      if (this.activeClinicId === clinic.id) return;
+      this.activeClinicId = clinic.id;
+      this.appointmentLoadSequence++;
+      this.resourceLoadSequence++;
+      this.patientOptionsLoadSequence++;
+      this.appointmentMutationSequence++;
+      this.resourceMutationSequence++;
+      this.statusMutationSequence++;
+      this.appointments.set([]);
+      this.patients.set([]);
+      this.providers.set([]);
+      this.operatories.set([]);
+      this.loading.set(false);
+      this.loadingPatients.set(false);
+      this.loadingResources.set(false);
+      this.saving.set(false);
+      this.resourceSaving.set(false);
+      this.changingStatusId.set(null);
+      this.reschedulingId.set(null);
+      this.pendingStatusChange.set(null);
+      this.showCreateForm.set(false);
+      this.showResourceSetup.set(false);
+      this.error.set('');
+      this.formError.set('');
+      this.patientsError.set('');
+      this.rescheduleError.set('');
+      this.resourceError.set('');
+      this.success.set('');
+      this.patientId = '';
+      this.startsAt = '';
+      this.endsAt = '';
+      this.reason = '';
+      this.providerId = '';
+      this.operatoryId = '';
+      this.providerName = '';
+      this.providerRole = 'DENTIST';
+      this.operatoryName = '';
+      this.chairNumber = '';
+      this.hoursProviderId = '';
+      this.rescheduleStartsAt = '';
+      this.rescheduleEndsAt = '';
+      this.rescheduleProviderId = '';
+      this.rescheduleOperatoryId = '';
+      for (const day of this.weekdays) {
+        day.enabled = false;
+        day.startsAt = '09:00';
+        day.endsAt = day.dayOfWeek === 0 || day.dayOfWeek === 6 ? '13:00' : '18:00';
+      }
+      this.patientOptionsClinicId = '';
+      this.resourceOptionsClinicId = '';
+    });
+
     effect(() => {
       const clinic = this.tenant.activeClinic();
       if (!isPlatformBrowser(this.platformId) || !clinic) return;
@@ -164,6 +227,7 @@ export class AgendaPageComponent {
   async createProvider(): Promise<void> {
     const clinic = this.tenant.activeClinic();
     if (!clinic || this.resourceSaving() || !this.providerName.trim()) return;
+    const mutationSequence = ++this.resourceMutationSequence;
     this.resourceSaving.set(true);
     this.resourceError.set('');
     try {
@@ -179,7 +243,7 @@ export class AgendaPageComponent {
       if (this.tenant.activeClinic()?.id !== clinic.id) return;
       this.resourceError.set('Le praticien n’a pas pu être ajouté. Vérifiez le nom et réessayez.');
     } finally {
-      this.resourceSaving.set(false);
+      if (mutationSequence === this.resourceMutationSequence) this.resourceSaving.set(false);
     }
   }
 
@@ -191,6 +255,7 @@ export class AgendaPageComponent {
       this.resourceError.set('Le numéro de fauteuil doit être compris entre 1 et 999.');
       return;
     }
+    const mutationSequence = ++this.resourceMutationSequence;
     this.resourceSaving.set(true);
     this.resourceError.set('');
     try {
@@ -206,7 +271,7 @@ export class AgendaPageComponent {
       if (this.tenant.activeClinic()?.id !== clinic.id) return;
       this.resourceError.set('Le fauteuil n’a pas pu être ajouté. Vérifiez le nom (il doit être unique dans cette clinique).');
     } finally {
-      this.resourceSaving.set(false);
+      if (mutationSequence === this.resourceMutationSequence) this.resourceSaving.set(false);
     }
   }
 
@@ -231,6 +296,7 @@ export class AgendaPageComponent {
       this.resourceError.set('Pour chaque journée activée, l’heure de fin doit être après l’heure de début.');
       return;
     }
+    const mutationSequence = ++this.resourceMutationSequence;
     this.resourceSaving.set(true);
     this.resourceError.set('');
     try {
@@ -243,7 +309,7 @@ export class AgendaPageComponent {
       if (this.tenant.activeClinic()?.id !== clinic.id) return;
       this.resourceError.set('Les horaires n’ont pas tous été enregistrés. Rechargez les ressources et vérifiez le planning.');
     } finally {
-      this.resourceSaving.set(false);
+      if (mutationSequence === this.resourceMutationSequence) this.resourceSaving.set(false);
     }
   }
 
@@ -295,6 +361,7 @@ export class AgendaPageComponent {
     if (!clinic || this.saving()) return;
     this.formError.set('');
     this.success.set('');
+    const mutationSequence = ++this.appointmentMutationSequence;
     this.saving.set(true);
     try {
       const timezone = clinic.timezone || 'Africa/Casablanca';
@@ -325,7 +392,7 @@ export class AgendaPageComponent {
               ? 'Votre rôle ne permet pas de planifier un rendez-vous.'
               : 'Le rendez-vous n’a pas été enregistré. Vérifiez les horaires puis réessayez.');
     } finally {
-      this.saving.set(false);
+      if (mutationSequence === this.appointmentMutationSequence) this.saving.set(false);
     }
   }
 
@@ -390,6 +457,7 @@ export class AgendaPageComponent {
     const durationMs = new Date(appointment.endsAt).getTime() - new Date(appointment.startsAt).getTime();
     if (!Number.isFinite(durationMs) || durationMs <= 0) return;
     const endsAt = new Date(new Date(startsAt).getTime() + durationMs).toISOString();
+    const mutationSequence = ++this.appointmentMutationSequence;
     this.saving.set(true);
     this.error.set('');
     this.success.set('');
@@ -413,7 +481,7 @@ export class AgendaPageComponent {
         ? 'Ce déplacement crée un conflit de planning. Le rendez-vous a conservé son horaire initial.'
         : 'Le déplacement n’a pas été enregistré. Le rendez-vous a conservé son horaire initial.');
     } finally {
-      this.saving.set(false);
+      if (mutationSequence === this.appointmentMutationSequence) this.saving.set(false);
     }
   }
 
@@ -421,6 +489,7 @@ export class AgendaPageComponent {
     const clinic = this.tenant.activeClinic();
     if (!clinic || this.saving()) return;
     this.rescheduleError.set('');
+    const mutationSequence = ++this.appointmentMutationSequence;
     this.saving.set(true);
     try {
       const timezone = clinic.timezone || 'Africa/Casablanca';
@@ -441,7 +510,7 @@ export class AgendaPageComponent {
           ? 'Le créneau n’est plus disponible ou le rendez-vous ne peut plus être déplacé.'
           : 'Le déplacement n’a pas été enregistré. Vérifiez les horaires puis réessayez.');
     } finally {
-      this.saving.set(false);
+      if (mutationSequence === this.appointmentMutationSequence) this.saving.set(false);
     }
   }
 
@@ -478,6 +547,7 @@ export class AgendaPageComponent {
   async changeStatus(appointment: AppointmentRecord, status: Exclude<AppointmentStatus, 'SCHEDULED'>): Promise<void> {
     const clinic = this.tenant.activeClinic();
     if (!clinic || this.changingStatusId()) return;
+    const mutationSequence = ++this.statusMutationSequence;
     this.changingStatusId.set(appointment.id);
     this.error.set('');
     this.success.set('');
@@ -492,7 +562,7 @@ export class AgendaPageComponent {
         ? 'Le statut a changé ou cette transition n’est plus autorisée. Rechargez l’agenda.'
         : 'Le statut n’a pas été modifié. Réessayez.');
     } finally {
-      this.changingStatusId.set(null);
+      if (mutationSequence === this.statusMutationSequence) this.changingStatusId.set(null);
     }
   }
 
