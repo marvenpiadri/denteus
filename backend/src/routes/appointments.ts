@@ -380,9 +380,11 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
         await client.query('BEGIN');
         transactionOpen = true;
         await lockClinicSchedule(client, request.params.organizationId, request.params.clinicId);
-        const current = await client.query<{ status: AppointmentStatus; patientId: string }>(
+        const current = await client.query<{ status: AppointmentStatus; patientId: string; startsAt: string; endsAt: string; providerId: string | null; operatoryId: string | null }>(
           `
-            SELECT status, patient_id AS "patientId"
+            SELECT status, patient_id AS "patientId",
+                   starts_at AS "startsAt", ends_at AS "endsAt",
+                   provider_id AS "providerId", operatory_id AS "operatoryId"
             FROM appointments
             WHERE organization_id = $1 AND clinic_id = $2 AND id = $3
             FOR UPDATE
@@ -404,6 +406,20 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
           return reply.code(409).send({
             error: { code: 'INVALID_STATUS_TRANSITION', message: 'Cette transition de statut n’est pas autorisée.' },
           });
+        }
+
+        if (request.body.status === 'NO_SHOW') {
+          const ended = await client.query<{ ended: boolean }>(
+            'SELECT ends_at <= now() AS ended FROM appointments WHERE organization_id = $1 AND clinic_id = $2 AND id = $3',
+            [request.params.organizationId, request.params.clinicId, request.params.appointmentId],
+          );
+          if (!ended.rows[0]?.ended) {
+            await client.query('ROLLBACK');
+            transactionOpen = false;
+            return reply.code(409).send({
+              error: { code: 'APPOINTMENT_NOT_ENDED', message: 'Un rendez-vous ne peut être marqué comme absent qu’après l’heure prévue de fin.' },
+            });
+          }
         }
 
         if (request.body.status === 'ARRIVED') {
@@ -449,6 +465,42 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
             return reply.code(409).send({
               error: { code: 'APPOINTMENT_REINSTATEMENT_CONFLICT', message: 'Le créneau n’est plus disponible. Vérifiez le patient, le praticien et le fauteuil avant de rétablir ce rendez-vous.' },
             });
+          }
+
+          const { startsAt, endsAt, providerId, operatoryId } = current.rows[0];
+          if ((providerId && !operatoryId) || (!providerId && operatoryId)) {
+            await client.query('ROLLBACK');
+            transactionOpen = false;
+            return reply.code(409).send({
+              error: { code: 'APPOINTMENT_RESOURCES_INVALID', message: 'Les ressources associées à ce rendez-vous ne sont plus valides. Réattribuez le praticien et le fauteuil avant de le rétablir.' },
+            });
+          }
+          if (providerId && operatoryId) {
+            const availability = await client.query(
+              `SELECT
+                 EXISTS (
+                   SELECT 1 FROM clinic_providers p
+                   JOIN clinics c ON c.organization_id = p.organization_id AND c.id = p.clinic_id
+                   JOIN provider_working_hours h ON h.organization_id = p.organization_id
+                     AND h.clinic_id = p.clinic_id AND h.provider_id = p.id
+                     AND h.day_of_week = EXTRACT(DOW FROM ($4::timestamptz AT TIME ZONE c.timezone))::int
+                   WHERE p.organization_id = $1 AND p.clinic_id = $2 AND p.id = $6 AND p.active
+                     AND ($4::timestamptz AT TIME ZONE c.timezone)::date = ($5::timestamptz AT TIME ZONE c.timezone)::date
+                     AND ($4::timestamptz AT TIME ZONE c.timezone)::time >= h.starts_at
+                     AND ($5::timestamptz AT TIME ZONE c.timezone)::time <= h.ends_at
+                 ) AS provider_available,
+                 EXISTS (SELECT 1 FROM clinic_operatories o
+                   WHERE o.organization_id = $1 AND o.clinic_id = $2 AND o.id = $7 AND o.active) AS operatory_available`,
+              [request.params.organizationId, request.params.clinicId, request.params.appointmentId,
+                startsAt, endsAt, providerId, operatoryId],
+            );
+            if (!availability.rows[0]?.provider_available || !availability.rows[0]?.operatory_available) {
+              await client.query('ROLLBACK');
+              transactionOpen = false;
+              return reply.code(409).send({
+                error: { code: 'APPOINTMENT_RESOURCES_UNAVAILABLE', message: 'Le praticien ou le fauteuil est inactif, ou les horaires du praticien ne couvrent plus ce rendez-vous.' },
+              });
+            }
           }
         }
 
