@@ -254,6 +254,9 @@ a {
   --border-focus: var(--color-brand);
   --color-brand-strong: var(--color-brand-hover);
   --color-brand-border: color-mix(in srgb, var(--color-brand) 24%, var(--color-border));
+  --color-action: #087f75;
+  --color-action-hover: #066a63;
+  --text-on-brand: #ffffff;
   --color-success: #17805d;
   --color-success-soft: #e3f5eb;
   --color-warning-strong: #805500;
@@ -271,6 +274,9 @@ a {
   --surface-hover: color-mix(in srgb, var(--color-brand-soft) 65%, var(--color-surface));
   --color-brand-strong: var(--color-brand);
   --color-brand-border: color-mix(in srgb, var(--color-brand) 34%, var(--color-border));
+  --color-action: #168d81;
+  --color-action-hover: #20a194;
+  --text-on-brand: #102a2a;
   --color-success: #71d6ae;
   --color-success-soft: #193b31;
   --color-warning-strong: #f0c36c;
