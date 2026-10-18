@@ -7,6 +7,7 @@ import {
   requireClinicAccess,
 } from '../auth/authorization.js';
 import { pool } from '../db/pool.js';
+import { isValidFdiTooth } from '../domain/patient-treatment-policy.js';
 
 interface OdontogramParams {
   organizationId: string;
@@ -143,6 +144,18 @@ export const odontogramRoutes: FastifyPluginAsync = async (app) => {
       if (!linkedPatient.rowCount) {
         return reply.code(404).send({
           error: { code: 'PATIENT_NOT_FOUND', message: 'Patient not found.' },
+        });
+      }
+
+      const invalidPlanChange = (request.body.planChanges ?? []).find(
+        (change) => !isValidFdiTooth(change.toothNo),
+      );
+      if (invalidPlanChange) {
+        return reply.code(400).send({
+          error: {
+            code: 'INVALID_FDI_TOOTH',
+            message: 'Chaque modification du plan doit référencer une dent FDI valide.',
+          },
         });
       }
 
