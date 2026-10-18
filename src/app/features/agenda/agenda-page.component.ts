@@ -87,7 +87,55 @@ export class AgendaPageComponent {
   constructor() {
     effect(() => {
       const clinic = this.tenant.activeClinic();
-      if (!clinic) return;
+      if (!clinic) {
+        if (!this.activeClinicId) return;
+        this.activeClinicId = '';
+        this.appointmentLoadSequence++;
+        this.resourceLoadSequence++;
+        this.patientOptionsLoadSequence++;
+        this.appointmentMutationSequence++;
+        this.resourceMutationSequence++;
+        this.statusMutationSequence++;
+        this.appointments.set([]);
+        this.patients.set([]);
+        this.providers.set([]);
+        this.operatories.set([]);
+        this.selectedDate.set('');
+        this.loading.set(false);
+        this.loadingPatients.set(false);
+        this.loadingResources.set(false);
+        this.saving.set(false);
+        this.resourceSaving.set(false);
+        this.changingStatusId.set(null);
+        this.reschedulingId.set(null);
+        this.pendingStatusChange.set(null);
+        this.showCreateForm.set(false);
+        this.showResourceSetup.set(false);
+        this.error.set('');
+        this.formError.set('');
+        this.patientsError.set('');
+        this.rescheduleError.set('');
+        this.resourceError.set('');
+        this.success.set('');
+        this.patientId = '';
+        this.startsAt = '';
+        this.endsAt = '';
+        this.reason = '';
+        this.providerId = '';
+        this.operatoryId = '';
+        this.providerName = '';
+        this.providerRole = 'DENTIST';
+        this.operatoryName = '';
+        this.chairNumber = '';
+        this.hoursProviderId = '';
+        this.rescheduleStartsAt = '';
+        this.rescheduleEndsAt = '';
+        this.rescheduleProviderId = '';
+        this.rescheduleOperatoryId = '';
+        this.patientOptionsClinicId = '';
+        this.resourceOptionsClinicId = '';
+        return;
+      }
       if (!this.activeClinicId) {
         this.activeClinicId = clinic.id;
         return;
