@@ -12,7 +12,6 @@ interface TeamMember {
   organizationRole: string;
   clinicRole: string | null;
   effectiveRole: string;
-  joinedAt: string | null;
 }
 interface TeamResponse { data: TeamMember[]; canManage: boolean; }
 
