@@ -229,6 +229,10 @@ export class ClinicTeamPageComponent {
     finally { this.invitationSaving.set(false); }
   }
 
+  dateLabel(value: string): string {
+    return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeZone: 'Africa/Casablanca' }).format(new Date(value));
+  }
+
   invitationStatusLabel(status: OrganizationInvitation['status']): string {
     return ({ PENDING: 'En attente', ACCEPTED: 'Acceptée', REVOKED: 'Révoquée', EXPIRED: 'Expirée' } as const)[status];
   }
