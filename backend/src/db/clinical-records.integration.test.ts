@@ -66,7 +66,7 @@ test('clinical records enforce clinic scope and preserve signed notes through am
   await assert.rejects(
    client.query(`INSERT INTO clinical_media
       (id,organization_id,clinic_id,patient_id,encounter_id,media_type,storage_key,original_filename,mime_type,size_bytes,uploaded_by_id)
-    VALUES ($1,$2,$3,$4,$5,'PHOTO',NULL,'no-source.jpg','image/jpeg',0,$6)`,
+    VALUES ($1,$2,$3,$4,$5,'PHOTO',NULL,'no-source.jpg','image/jpeg',1,$6)`,
     [`no-source-${suffix}`,orgId,clinicId,patientId,encounterId,userId]),
    (error) => error.code === '23514',
   );
