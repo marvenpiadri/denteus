@@ -164,8 +164,10 @@ export class ClinicTeamPageComponent {
   }
 
   availableOrganizationRoles(member: OrganizationMember): Array<{value:string;label:string}> {
-    return this.organizationRoleOptions.filter((role) =>
-      (this.canManageOwners() || role.value !== 'ORGANIZATION_ADMIN') &&
+    const options = this.canManageOwners()
+      ? [{ value: 'ORGANIZATION_OWNER', label: 'Propriétaire organisation' }, ...this.organizationRoleOptions]
+      : this.organizationRoleOptions.filter((role) => role.value !== 'ORGANIZATION_ADMIN');
+    return options.filter((role) =>
       (member.role !== 'ORGANIZATION_OWNER' || this.canManageOwners()) &&
       (!member.isCurrentUser || role.value === member.role),
     );
