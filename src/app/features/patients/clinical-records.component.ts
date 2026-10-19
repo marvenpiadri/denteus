@@ -59,15 +59,17 @@ export class ClinicalRecordsComponent {
   if(this.mediaCapturedAt&&!capturedAt){this.error.set('Cette heure locale n’existe pas dans le fuseau horaire de la clinique. Choisissez une autre heure.');input.value='';return;}
   this.mediaUploading.set(true);this.error.set('');this.success.set('');
   try{
-   const bytes=new Uint8Array(await file.arrayBuffer());let binary='';
+   const bytes=new Uint8Array(await file.arrayBuffer());
+   if(this.tenant.activeClinic()?.id!==clinic.id||this.patientId()!==patient||this.selected()?.id!==visit.id)return;
+   let binary='';
    for(let offset=0;offset<bytes.length;offset+=0x8000)binary+=String.fromCharCode(...bytes.subarray(offset,offset+0x8000));
-   await this.api.uploadMedia(clinic.organizationId,clinic.id,this.patientId(),visit.id,{
+   await this.api.uploadMedia(clinic.organizationId,clinic.id,patient,visit.id,{
     mediaType:this.mediaType,originalFilename:file.name,mimeType,contentBase64:btoa(binary),description:this.mediaDescription.trim()||null,capturedAt,
    });
    if(this.tenant.activeClinic()?.id!==clinic.id||this.patientId()!==patient||this.selected()?.id!==visit.id)return;
    this.mediaDescription='';this.mediaCapturedAt='';await this.open(visit.id);this.success.set('Document clinique ajouté au dossier privé.');
   }catch(e){
-   this.error.set(e instanceof HttpErrorResponse&&e.status===409?'Cette visite est clôturée; aucun fichier n’a été ajouté.':e instanceof HttpErrorResponse&&e.status===413?'Le fichier dépasse la limite autorisée.':'Le fichier n’a pas été enregistré. Vérifiez son format puis réessayez.');
+   if(this.tenant.activeClinic()?.id===clinic.id&&this.patientId()===patient&&this.selected()?.id===visit.id)this.error.set(e instanceof HttpErrorResponse&&e.status===409?'Cette visite est clôturée; aucun fichier n’a été ajouté.':e instanceof HttpErrorResponse&&e.status===413?'Le fichier dépasse la limite autorisée.':'Le fichier n’a pas été enregistré. Vérifiez son format puis réessayez.');
   }finally{this.mediaUploading.set(false);input.value='';}
  }
  async downloadMedia(media:Encounter['media'][number]):Promise<void>{
@@ -76,7 +78,7 @@ export class ClinicalRecordsComponent {
    const blob=await this.api.downloadMedia(clinic.organizationId,clinic.id,patient,visit.id,media.id);
    if(this.tenant.activeClinic()?.id!==clinic.id||this.patientId()!==patient||this.selected()?.id!==visit.id)return;
    const url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download=media.originalFilename||'document-clinique';anchor.rel='noopener';anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
-  }catch{this.error.set('Ce document ne peut pas être téléchargé. Vérifiez vos droits et réessayez.');}
+  }catch{if(this.tenant.activeClinic()?.id===clinic.id&&this.patientId()===patient&&this.selected()?.id===visit.id)this.error.set('Ce document ne peut pas être téléchargé. Vérifiez vos droits et réessayez.');}
  }
  label(value:string){return ({DRAFT:'Brouillon',SIGNED:'Signée',CONSULTATION:'Consultation',EMERGENCY:'Urgence',FOLLOW_UP:'Suivi',PROCEDURE:'Séance de soins',CHIEF_COMPLAINT:'Motif',EXAMINATION:'Examen',ASSESSMENT:'Évaluation',PROGRESS:'Note de séance',DISCHARGE:'Conclusion',OTHER:'Autre',XRAY:'Radiographie',PHOTO:'Photo clinique',DOCUMENT:'Document',OBSERVATION:'Observation',DIAGNOSIS:'Diagnostic',SYMPTOM:'Symptôme',RISK:'Risque',EXAM:'Examen',HYGIENE:'Hygiène',RESTORATIVE:'Restaurateur',ENDODONTICS:'Endodontie',EXTRACTION:'Extraction',PROSTHODONTICS:'Prothèse',ORTHODONTICS:'Orthodontie',PERIODONTICS:'Parodontologie',IMPLANT:'Implantologie',PLANNED:'Prévu',IN_PROGRESS:'En cours',COMPLETED:'Réalisé',CANCELLED:'Annulé'} as Record<string,string>)[value]??value;}
  private clinicLocalDateTimeToIso(value:string,timeZone:string):string|null{
