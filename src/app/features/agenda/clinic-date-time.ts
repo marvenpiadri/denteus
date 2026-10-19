@@ -1,5 +1,5 @@
 import { localDateTimeToIso, partsAt } from '../../core/date-time/clinic-local-date-time';
-export { localDateTimeToIso } from '../../core/date-time/clinic-local-date-time';
+export { localDateTimeToIso };
 
 export function todayInTimeZone(timeZone: string, now = new Date()): string {
   const parts = partsAt(now, timeZone);
