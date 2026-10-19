@@ -5,7 +5,7 @@
     <button class="navigation-backdrop" type="button" aria-label="Fermer le menu" (click)="closeMobileNavigation()"></button>
   }
 
-  <aside class="sidebar" [class.sidebar--mobile-open]="mobileNavigationOpen()" [attr.inert]="isMobileViewport() && !mobileNavigationOpen() ? '' : null" [attr.aria-hidden]="isMobileViewport() && !mobileNavigationOpen() ? 'true' : null" aria-label="Navigation principale">
+  <aside #mobileSidebar class="sidebar" [class.sidebar--mobile-open]="mobileNavigationOpen()" [attr.inert]="isMobileViewport() && !mobileNavigationOpen() ? '' : null" [attr.aria-hidden]="isMobileViewport() && !mobileNavigationOpen() ? 'true' : null" [attr.role]="isMobileViewport() && mobileNavigationOpen() ? 'dialog' : null" [attr.aria-modal]="isMobileViewport() && mobileNavigationOpen() ? 'true' : null" aria-label="Navigation principale" tabindex="-1" (keydown)="onSidebarKeydown($event)">
     <a class="brand" routerLink="/crm/today" (click)="closeMobileNavigation()" aria-label="Dentaleus — espace clinique">
       <img class="brand-logo" [src]="theme() === 'dark' ? '/logo_light.png' : '/logo_black.png'" alt="Dentaleus" />
     </a>
@@ -90,7 +90,7 @@
 
   <div class="workspace">
     <header class="topbar">
-      <button class="mobile-menu-button" type="button" (click)="toggleMobileNavigation()" [attr.aria-expanded]="mobileNavigationOpen()" aria-controls="main-navigation" [attr.aria-label]="mobileNavigationOpen() ? 'Fermer la navigation' : 'Ouvrir la navigation'">
+      <button #mobileMenuButton class="mobile-menu-button" type="button" (click)="toggleMobileNavigation()" [attr.aria-expanded]="mobileNavigationOpen()" aria-controls="main-navigation" [attr.aria-label]="mobileNavigationOpen() ? 'Fermer la navigation' : 'Ouvrir la navigation'">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
       <div class="topbar-context">
