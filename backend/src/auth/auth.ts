@@ -13,14 +13,17 @@ const trustedOrigins = (configuredOrigins ?? 'http://localhost:3000')
   .filter(Boolean);
 
 if (process.env['NODE_ENV'] === 'production') {
+  if (trustedOrigins.length === 0) {
+    throw new Error('At least one CLIENT_ORIGINS HTTPS origin must be configured in production.');
+  }
   let baseUrl: URL;
   try {
     baseUrl = new URL(configuredBaseUrl ?? '');
   } catch {
     throw new Error('BETTER_AUTH_URL must be a valid HTTPS URL in production.');
   }
-  if (baseUrl.protocol !== 'https:' || baseUrl.username || baseUrl.password) {
-    throw new Error('BETTER_AUTH_URL must use HTTPS and must not contain credentials in production.');
+  if (baseUrl.protocol !== 'https:' || baseUrl.username || baseUrl.password || baseUrl.pathname !== '/' || baseUrl.search || baseUrl.hash || baseUrl.origin !== configuredBaseUrl) {
+    throw new Error('BETTER_AUTH_URL must be a canonical HTTPS origin without credentials, a path, query, or fragment in production.');
   }
   for (const origin of trustedOrigins) {
     let parsed: URL;
