@@ -11,10 +11,6 @@ const organizationRoles = new Set([
   'ORGANIZATION_OWNER', 'ORGANIZATION_ADMIN', 'CLINIC_ADMIN', 'DENTIST',
   'ORTHODONTIST', 'HYGIENIST', 'ASSISTANT', 'RECEPTIONIST', 'ACCOUNTANT',
 ]);
-const staffRoles = new Set([
-  'CLINIC_ADMIN', 'DENTIST', 'ORTHODONTIST', 'HYGIENIST',
-  'ASSISTANT', 'RECEPTIONIST', 'ACCOUNTANT',
-]);
 const roleSchema = {
   type: 'object', additionalProperties: false, required: ['role'],
   properties: { role: { type: 'string', enum: [...organizationRoles] } },
@@ -35,7 +31,7 @@ export const organizationTeamRoutes: FastifyPluginAsync = async (app) => {
     const result = await pool.query(
       `SELECT u.id AS "userId", u.name, u.email, om.role,
               om.created_at AS "joinedAt",
-              (om.user_id = $3) AS "isCurrentUser",
+              (om.user_id = $2) AS "isCurrentUser",
               COALESCE(
                 jsonb_agg(jsonb_build_object('id', c.id, 'name', c.name, 'role', cm.role)
                   ORDER BY c.name) FILTER (WHERE c.id IS NOT NULL),
@@ -50,7 +46,7 @@ export const organizationTeamRoutes: FastifyPluginAsync = async (app) => {
        WHERE om.organization_id = $1
        GROUP BY u.id, om.role, om.created_at, om.user_id
        ORDER BY CASE om.role WHEN 'ORGANIZATION_OWNER' THEN 0 WHEN 'ORGANIZATION_ADMIN' THEN 1 ELSE 2 END, u.name, u.email`,
-      [request.params.organizationId, current.user.id, current.user.id],
+      [request.params.organizationId, current.user.id],
     );
     return { data: result.rows, canManage, canManageOwners: access.rows[0].role === 'ORGANIZATION_OWNER' };
   });
