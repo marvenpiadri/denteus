@@ -1,0 +1,28 @@
+<main class="accept-page">
+  <section class="accept-card" aria-labelledby="accept-title">
+    <div class="brand-mark" aria-hidden="true">D</div>
+    @if (accepted()) {
+      <p class="eyebrow">INVITATION ACCEPTÉE</p>
+      <h1 id="accept-title">Bienvenue dans l’équipe</h1>
+      <p class="intro">Vous avez rejoint <strong>{{organizationName()}}</strong> avec le rôle <strong>{{role()}}</strong>.</p>
+      <button type="button" class="primary-button" (click)="continueToApp()">Ouvrir Dentaleus</button>
+    } @else if (!token) {
+      <p class="eyebrow">ACCÈS À L’ORGANISATION</p>
+      <h1 id="accept-title">Lien d’invitation manquant</h1>
+      <p class="intro">Ouvrez le lien complet fourni par l’administrateur de votre organisation.</p>
+      <a routerLink="/sign-in" class="secondary-link">Se connecter</a>
+    } @else {
+      <p class="eyebrow">ACCÈS À L’ORGANISATION</p>
+      <h1 id="accept-title">Vous êtes invité(e)</h1>
+      <p class="intro">Acceptez l’invitation pour rejoindre l’organisation. Vous devez être connecté(e) avec l’adresse e-mail à laquelle l’invitation a été envoyée.</p>
+      @if(error()) {
+        <p class="feedback" role="alert">{{error()}}</p>
+        @if(error().includes('Connectez-vous')) {
+          <a class="secondary-link" routerLink="/sign-in" target="_blank" rel="noopener">Ouvrir la connexion dans un nouvel onglet</a>
+        }
+      }
+      <button type="button" class="primary-button" (click)="accept()" [disabled]="accepting()">{{accepting() ? 'Vérification…' : 'Accepter l’invitation'}}</button>
+    }
+    <p class="security-note">Le lien est à usage unique et expire après sept jours. Si vous ne vous attendiez pas à cette invitation, vous pouvez simplement fermer cette page.</p>
+  </section>
+</main>
