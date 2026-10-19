@@ -32,6 +32,7 @@ This checklist is a release gate, not a claim that the items have passed. Mark a
 - [ ] Choose and record the production hosting target for the Angular SSR frontend and the independent Fastify API.
 - [ ] Configure production routing so page requests reach Angular SSR and `/api/*` requests reach Fastify; do not expose PostgreSQL to the browser.
 - [ ] Configure `DATABASE_URL`, `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, and exact `CLIENT_ORIGINS` through the hosting secret manager. Configure `DATABASE_POOL_MAX`, `API_HOST`, `API_PORT`, `LOG_LEVEL`, and `TRUST_PROXY` deliberately for the runtime.
+- [ ] Verify PostgreSQL TLS settings for the selected host and confirm database traffic is encrypted and certificates are validated where the provider supports it.
 - [ ] Run database migrations as a controlled release step before shifting traffic to code that requires the new schema.
 - [ ] Verify `/health` and `/health/ready`, TLS termination, trusted proxy configuration, security headers, logs, alerting, and graceful shutdown in the deployed environment.
 - [ ] Confirm deployment rollback and database recovery procedures.
