@@ -105,6 +105,13 @@ export const organizationInvitationRoutes: FastifyPluginAsync = async (app) => {
         const client = await pool.connect();
         try {
           await client.query('BEGIN');
+          await client.query(
+            `UPDATE organization_invitations
+             SET revoked_at=now()
+             WHERE organization_id=$1 AND invited_email=$2
+               AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at<=now()`,
+            [organizationId, email],
+          );
           const inserted = await client.query(
             `INSERT INTO organization_invitations
              (id, organization_id, invited_email, role, clinic_ids, token_hash, invited_by_id, expires_at)
@@ -213,6 +220,10 @@ export const organizationInvitationRoutes: FastifyPluginAsync = async (app) => {
             "SELECT id FROM clinics WHERE organization_id=$1 AND status='ACTIVE' AND id=ANY($2::text[])",
             [invite.organization_id, clinicIds],
           );
+          if (clinics.rowCount !== clinicIds.length) {
+            await client.query('ROLLBACK');
+            return reply.code(409).send({ error: { code: 'INVITATION_SCOPE_CHANGED', message: 'One or more invited clinics are no longer active. Ask the administrator for a new invitation.' } });
+          }
           for (const clinic of clinics.rows) {
             await client.query(
               'INSERT INTO clinic_memberships (id, organization_id, clinic_id, user_id, role) VALUES ($1,$2,$3,$4,$5)',
