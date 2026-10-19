@@ -22,7 +22,7 @@ test('production auth configuration rejects non-canonical authentication base UR
     'https://dentaleus.example?next=/',
     'https://user:password@dentaleus.example',
   ]) {
-    assert.throws(() => validateProductionAuthConfiguration(value, 'https://dentaleus.example'), value);
+    assert.throws(() => validateProductionAuthConfiguration(value, 'https://dentaleus.example'));
   }
 });
 
@@ -34,6 +34,6 @@ test('production auth configuration rejects invalid trusted origins', () => {
     'https://user:password@dentaleus.example',
     'not a url',
   ]) {
-    assert.throws(() => validateProductionAuthConfiguration('https://dentaleus.example', value), value);
+    assert.throws(() => validateProductionAuthConfiguration('https://dentaleus.example', value));
   }
 });
