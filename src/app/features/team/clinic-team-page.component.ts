@@ -230,7 +230,7 @@ export class ClinicTeamPageComponent {
   }
 
   dateLabel(value: string): string {
-    return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeZone: 'Africa/Casablanca' }).format(new Date(value));
+    return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeZone: this.tenant.activeClinic()?.timezone || 'Africa/Casablanca' }).format(new Date(value));
   }
 
   invitationStatusLabel(status: OrganizationInvitation['status']): string {
