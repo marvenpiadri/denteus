@@ -14,6 +14,8 @@ test('production auth configuration rejects placeholder or weak secrets', () => 
   assert.throws(() => validateProductionAuthConfiguration('https://dentaleus.example', 'https://dentaleus.example', undefined));
   assert.throws(() => validateProductionAuthConfiguration('https://dentaleus.example', 'https://dentaleus.example', 'replace-with-at-least-32-random-characters'));
   assert.throws(() => validateProductionAuthConfiguration('https://dentaleus.example', 'https://dentaleus.example', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'));
+  assert.throws(() => validateProductionAuthConfiguration('https://dentaleus.example', 'https://dentaleus.example', 'abababababababababababababababab'));
+  assert.throws(() => validateProductionAuthConfiguration('https://dentaleus.example', 'https://dentaleus.example', ' replace-with-at-least-32-random-characters '));
 });
 
 test('production auth configuration rejects missing or empty trusted origins', () => {
