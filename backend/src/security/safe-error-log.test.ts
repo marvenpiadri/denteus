@@ -12,6 +12,8 @@ test('error logging metadata excludes messages, details, and stack traces', () =
   assert.deepEqual(fields, { errorType: 'Error', errorCode: '23505', httpStatus: 409 });
   assert.equal(JSON.stringify(fields).includes('Patient name'), false);
   assert.equal(JSON.stringify(fields).includes('private clinical row'), false);
+  const malformedName = Object.assign(new Error('hidden'), { name: 'Patient Jane Doe' });
+  assert.deepEqual(safeErrorLogFields(malformedName), { errorType: 'UnknownError' });
 });
 
 test('unknown and malformed errors produce safe diagnostic fields', () => {
