@@ -145,6 +145,17 @@ export class ClinicTeamPageComponent {
     return role ? labels[role] ?? role : 'Pas encore affecté';
   }
 
+  get invitableClinics(): Array<{ id: string; name: string }> {
+    const organizationId = this.tenant.activeClinic()?.organizationId;
+    return this.tenant.clinics().filter((clinic) => clinic.organizationId === organizationId).map((clinic) => ({ id: clinic.id, name: clinic.name }));
+  }
+
+  get invitationRoleOptions(): Array<{ value: string; label: string }> {
+    return this.canManageOwners()
+      ? [{ value: 'ORGANIZATION_ADMIN', label: 'Administrateur organisation' }, ...this.organizationRoleOptions]
+      : this.organizationRoleOptions.filter((role) => role.value !== 'ORGANIZATION_ADMIN');
+  }
+
   private organizationUrl(): string {
     const clinic = this.tenant.activeClinic();
     return clinic ? '/api/v1/organizations/' + encodeURIComponent(clinic.organizationId) + '/team' : '';
