@@ -43,20 +43,23 @@ export const clinicSettingsRoutes:FastifyPluginAsync=async(app)=>{
       const name=body.name.trim();
       if(!name)return reply.code(400).send({error:{code:'INVALID_CLINIC_NAME',message:'A clinic name is required.'}});
       const clean=(value:string|null)=>value?.trim()||null;
+      const timezone=body.timezone.trim();
+      try { new Intl.DateTimeFormat('en-US',{timeZone:timezone}).format(); }
+      catch { return reply.code(400).send({error:{code:'INVALID_TIMEZONE',message:'Choose a valid IANA time zone, such as Africa/Casablanca.'}}); }
       const client=await pool.connect();
       try{
         await client.query('BEGIN');
         const result=await client.query(
-          `UPDATE clinics SET name=$3,city=$4,address=$5,phone=$6,email=$7,updated_at=now()
+          `UPDATE clinics SET name=$3,city=$4,address=$5,phone=$6,email=$7,timezone=$8,updated_at=now()
            WHERE organization_id=$1 AND id=$2 AND status='ACTIVE'
-           RETURNING id,name,city,address,phone,email,updated_at AS "updatedAt"`,
-          [organizationId,clinicId,name,clean(body.city),clean(body.address),clean(body.phone),clean(body.email)?.toLowerCase()??null],
+           RETURNING id,name,city,address,phone,email,timezone,updated_at AS "updatedAt"`,
+          [organizationId,clinicId,name,clean(body.city),clean(body.address),clean(body.phone),clean(body.email)?.toLowerCase()??null,timezone],
         );
         if(!result.rowCount){await client.query('ROLLBACK');return reply.code(404).send({error:{code:'CLINIC_NOT_FOUND',message:'Clinic not found.'}});}
         await client.query(
           `INSERT INTO audit_events(id,organization_id,user_id,action,resource_type,resource_id,metadata)
            VALUES($1,$2,$3,'CLINIC_PROFILE_UPDATED','CLINIC',$4,$5::jsonb)`,
-          [randomUUID(),organizationId,access.userId,clinicId,JSON.stringify({changedFields:['name','city','address','phone','email']})],
+          [randomUUID(),organizationId,access.userId,clinicId,JSON.stringify({changedFields:['name','city','address','phone','email','timezone']})],
         );
         await client.query('COMMIT');
         return {data:result.rows[0]};
