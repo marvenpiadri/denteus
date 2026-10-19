@@ -12,6 +12,7 @@ import { RecallsPageComponent } from './features/recalls/recalls-page.component'
 import { ClinicSettingsPageComponent } from './features/settings/clinic-settings-page.component';
 import { ClinicReportsPageComponent } from './features/reports/clinic-reports-page.component';
 import { ClinicTeamPageComponent } from './features/team/clinic-team-page.component';
+import { AcceptInvitationPageComponent } from './features/team/accept-invitation-page.component';
 
 export const routes: Routes = [
   {
@@ -28,6 +29,11 @@ export const routes: Routes = [
     path: 'sign-up',
     component: SignUpPageComponent,
     title: 'Créer un compte | Dentaleus',
+  },
+  {
+    path: 'accept-invitation',
+    component: AcceptInvitationPageComponent,
+    title: 'Accepter une invitation | Dentaleus',
   },
   {
     path: 'onboarding/clinic',
