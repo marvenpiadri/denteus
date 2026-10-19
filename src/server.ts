@@ -49,6 +49,7 @@ app.use((req, res, next) => {
 });
 
 app.use((error: unknown, _request: Request, response: Response, _next: NextFunction) => {
+  void _next;
   const errorType = error instanceof Error && /^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(error.name)
     ? error.name
     : 'UnknownError';
