@@ -127,6 +127,11 @@ export const clinicalMediaRoutes: FastifyPluginAsync = async (app) => {
       );
       const media = result.rows[0];
       if (!media || !media.contentBytes) return reply.code(404).send({ error: { code: 'CLINICAL_MEDIA_NOT_FOUND', message: 'Clinical file not found.' } });
+      const actualChecksum = createHash('sha256').update(media.contentBytes).digest('hex');
+      if (actualChecksum !== media.checksumSha256) {
+        request.log.error({ mediaId, clinicId, patientId, encounterId }, 'Clinical media integrity check failed');
+        return reply.code(500).send({ error: { code: 'CLINICAL_MEDIA_INTEGRITY_FAILURE', message: 'The clinical file failed its integrity check.' } });
+      }
       reply.header('Content-Type', media.mimeType);
       reply.header('Content-Length', media.contentBytes.length);
       reply.header('Content-Disposition', `attachment; filename="clinical-file"; filename*=UTF-8''${encodeURIComponent(media.originalFilename)}`);
