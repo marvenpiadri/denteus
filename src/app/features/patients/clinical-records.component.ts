@@ -3,7 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TenantContextService } from '../../core/tenant/tenant-context.service';
-import { localDateTimeToIso } from '../agenda/clinic-date-time';
+import { localDateTimeToIso } from '../../core/date-time/clinic-local-date-time';
 import { ClinicalRecordsApiService } from './clinical-records-api.service';
 import type { ClinicalNote, ClinicProvider, ClinicalMediaType, Encounter, EncounterSummary, EncounterType, FindingType, NoteType, ProcedureCategory } from './clinical-records-api.service';
 
