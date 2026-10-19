@@ -123,7 +123,7 @@ app.route({
       }
       return reply.send(response.body ? await response.text() : null);
     } catch (error) {
-      request.log.error({ err: error }, 'Authentication handler failed');
+      request.log.error(safeErrorLogFields(error), 'Authentication handler failed');
       return reply.code(500).send({
         error: { code: 'AUTH_FAILURE', message: 'The authentication request could not be completed.' },
       });
@@ -158,7 +158,7 @@ await app.register(organizationInvitationRoutes, { prefix: '/api/v1' });
 
 app.setNotFoundHandler(async (_request, reply) => reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Route not found.' } }));
 app.setErrorHandler((error, request, reply) => {
-  request.log.error({ err: error }, 'Unhandled API error');
+  request.log.error(safeErrorLogFields(error), 'Unhandled API error');
   return reply.code(error.statusCode && error.statusCode < 500 ? error.statusCode : 500).send({
     error: {
       code: error.statusCode && error.statusCode < 500 ? 'REQUEST_ERROR' : 'INTERNAL_ERROR',
@@ -176,10 +176,10 @@ if (!Number.isInteger(port) || port < 1 || port > 65_535) {
 async function shutdown(signal: string): Promise<void> {
   app.log.info({ signal }, 'Shutting down Dentaleus API');
   try { await app.close(); await pool.end(); process.exit(0); }
-  catch (error) { app.log.error({ err: error }, 'Graceful shutdown failed'); process.exit(1); }
+  catch (error) { app.log.error(safeErrorLogFields(error), 'Graceful shutdown failed'); process.exit(1); }
 }
 process.once('SIGINT', () => void shutdown('SIGINT'));
 process.once('SIGTERM', () => void shutdown('SIGTERM'));
 
 try { await app.listen({ port, host }); }
-catch (error) { app.log.error({ err: error }, 'Unable to start Dentaleus API'); await pool.end(); process.exit(1); }
+catch (error) { app.log.error(safeErrorLogFields(error), 'Unable to start Dentaleus API'); await pool.end(); process.exit(1); }
