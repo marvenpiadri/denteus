@@ -17,6 +17,29 @@
     </section>
   }
 
+
+  <section class="members-card organization-members-card" aria-labelledby="organization-members-title">
+    <div class="card-heading"><div><h2 id="organization-members-title">Accès à l’organisation</h2><p>{{organizationMembers().length}} membre(s) · les changements ici s’appliquent à toutes les cliniques de cette organisation</p></div><button type="button" class="refresh-button" (click)="loadOrganizationTeam()" [disabled]="loading()">{{loading() ? 'Actualisation…' : 'Actualiser'}}</button></div>
+    @if (!organizationMembers().length) { <p class="empty-note">Aucun membre disponible ou impossible de charger l’organisation.</p> }
+    @else {
+      <div class="table-scroll"><table><thead><tr><th scope="col">Membre</th><th scope="col">Rôle organisationnel</th><th scope="col">Cliniques accessibles</th>@if(canManageOrganization()){<th scope="col">Actions</th>}</tr></thead><tbody>
+        @for (member of organizationMembers(); track member.userId) {
+          <tr>
+            <td><div class="member-identity"><span class="avatar" aria-hidden="true">{{member.name.trim().charAt(0).toUpperCase() || 'M'}}</span><span><strong>{{member.name}}</strong><small>{{member.email}}</small></span></div></td>
+            <td>
+              @if (canManageOrganization() && !member.isCurrentUser) {
+                <div class="role-editor"><select [name]="'org-role-' + member.userId" [(ngModel)]="organizationRoleDrafts[member.userId]" [attr.aria-label]="'Rôle organisationnel de ' + member.name">@for(role of availableOrganizationRoles(member); track role.value){<option [value]="role.value">{{role.label}}</option>}</select><button type="button" (click)="saveOrganizationRole(member)" [disabled]="saving() || organizationRoleDrafts[member.userId] === member.role">Enregistrer</button></div>
+              } @else { <span class="role-pill">{{roleLabel(member.role)}}</span> }
+            </td>
+            <td><div class="clinic-chips">@for(clinic of member.clinics;track clinic.id){<span class="clinic-chip">{{clinic.name}} <small>{{roleLabel(clinic.role)}}</small></span>} @if(!member.clinics.length){<span class="muted">Aucune clinique attribuée</span>}</div></td>
+            @if(canManageOrganization()){<td>@if(!member.isCurrentUser){<button class="remove-button" type="button" (click)="removeOrganizationMember(member)" [disabled]="saving()">Retirer de l’organisation</button>} @else {<span class="muted">Votre compte</span>}</td>}
+          </tr>
+        }
+      </tbody></table></div>
+    }
+    <p class="scope-note">Les rôles organisationnels s’appliquent à l’ensemble de l’organisation. Seul un propriétaire peut attribuer ou retirer les rôles de propriétaire et d’administrateur organisationnel. Le dernier propriétaire est protégé.</p>
+  </section>
+
   <section class="members-card" aria-labelledby="members-title">
     <div class="card-heading"><div><h2 id="members-title">Membres de l’organisation</h2><p>{{members().length}} compte(s) · {{assignedCount}} avec accès à la clinique active</p></div><button type="button" class="refresh-button" (click)="load()" [disabled]="loading()">{{loading() ? 'Actualisation…' : 'Actualiser'}}</button></div>
     @if (loading() && !members().length) { <p class="empty-note" role="status">Chargement de l’équipe…</p> }
