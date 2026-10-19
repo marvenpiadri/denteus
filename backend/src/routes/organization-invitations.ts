@@ -149,27 +149,44 @@ export const organizationInvitationRoutes: FastifyPluginAsync = async (app) => {
     async (request, reply) => {
       const current = await auth.api.getSession({ headers: fromNodeHeaders(request.headers) });
       if (!current) return reply.code(401).send({ error: { code: 'UNAUTHENTICATED', message: 'Authentication is required.' } });
-      const actor = await pool.query<{ role: string }>(
-        'SELECT role FROM organization_memberships WHERE organization_id=$1 AND user_id=$2',
-        [request.params.organizationId, current.user.id],
-      );
-      if (!actor.rowCount) return reply.code(404).send({ error: { code: 'ORGANIZATION_NOT_FOUND', message: 'Organization not found.' } });
-      if (!['ORGANIZATION_OWNER', 'ORGANIZATION_ADMIN'].includes(actor.rows[0].role)) {
-        return reply.code(403).send({ error: { code: 'FORBIDDEN', message: 'Only organization administrators can revoke invitations.' } });
-      }
-      const revoked = await pool.query(
-        `UPDATE organization_invitations SET revoked_at=now()
-         WHERE organization_id=$1 AND id=$2 AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at>now()
-         RETURNING id`,
-        [request.params.organizationId, request.params.invitationId],
-      );
-      if (!revoked.rowCount) return reply.code(404).send({ error: { code: 'INVITATION_NOT_FOUND', message: 'No pending invitation was found.' } });
-      await pool.query(
-        `INSERT INTO audit_events (id, organization_id, user_id, action, resource_type, resource_id, metadata)
-         VALUES ($1,$2,$3,'ORGANIZATION_INVITATION_REVOKED','ORGANIZATION_INVITATION',$4,'{}'::jsonb)`,
-        [randomUUID(), request.params.organizationId, current.user.id, request.params.invitationId],
-      );
-      return reply.code(204).send();
+      const { organizationId, invitationId } = request.params;
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [organizationId]);
+        const actor = await client.query<{ role: string }>(
+          'SELECT role FROM organization_memberships WHERE organization_id=$1 AND user_id=$2 FOR UPDATE',
+          [organizationId, current.user.id],
+        );
+        if (!actor.rowCount) {
+          await client.query('ROLLBACK');
+          return reply.code(404).send({ error: { code: 'ORGANIZATION_NOT_FOUND', message: 'Organization not found.' } });
+        }
+        if (!['ORGANIZATION_OWNER', 'ORGANIZATION_ADMIN'].includes(actor.rows[0].role)) {
+          await client.query('ROLLBACK');
+          return reply.code(403).send({ error: { code: 'FORBIDDEN', message: 'Only organization administrators can revoke invitations.' } });
+        }
+        const revoked = await client.query(
+          `UPDATE organization_invitations SET revoked_at=now()
+           WHERE organization_id=$1 AND id=$2 AND accepted_at IS NULL AND revoked_at IS NULL AND expires_at>now()
+           RETURNING id`,
+          [organizationId, invitationId],
+        );
+        if (!revoked.rowCount) {
+          await client.query('ROLLBACK');
+          return reply.code(404).send({ error: { code: 'INVITATION_NOT_FOUND', message: 'No pending invitation was found.' } });
+        }
+        await client.query(
+          `INSERT INTO audit_events (id, organization_id, user_id, action, resource_type, resource_id, metadata)
+           VALUES ($1,$2,$3,'ORGANIZATION_INVITATION_REVOKED','ORGANIZATION_INVITATION',$4,'{}'::jsonb)`,
+          [randomUUID(), organizationId, current.user.id, invitationId],
+        );
+        await client.query('COMMIT');
+        return reply.code(204).send();
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally { client.release(); }
     },
   );
 
