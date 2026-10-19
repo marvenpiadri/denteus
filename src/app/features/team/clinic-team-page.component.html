@@ -18,6 +18,27 @@
   }
 
 
+
+  @if (canManageOrganization()) {
+    <section class="invite-card organization-invitation-card" aria-labelledby="invitation-title">
+      <div><h2 id="invitation-title">Inviter un membre</h2><p>Créez un lien sécurisé à transmettre à la personne. Il est utilisable une seule fois et expire après sept jours.</p></div>
+      <form class="invitation-form" (ngSubmit)="createInvitation()">
+        <div class="field"><label for="invitation-email">Adresse e-mail</label><input id="invitation-email" name="invitationEmail" type="email" [(ngModel)]="invitationEmail" autocomplete="email" placeholder="nom@cabinet.ma" required maxlength="254"></div>
+        <div class="field"><label for="invitation-role">Rôle dans l’organisation</label><select id="invitation-role" name="invitationRole" [(ngModel)]="invitationRole">@for(role of invitationRoleOptions;track role.value){<option [value]="role.value">{{role.label}}</option>}</select></div>
+        @if(invitationRole !== 'ORGANIZATION_ADMIN'){
+          <div class="field clinic-scope-field"><label for="invitation-clinics">Cliniques accessibles</label><select id="invitation-clinics" name="invitationClinics" multiple [(ngModel)]="invitationClinicIds" size="3" required>@for(clinic of invitableClinics;track clinic.id){<option [value]="clinic.id">{{clinic.name}}</option>}</select><small>Maintenez Ctrl ou Cmd pour sélectionner plusieurs cliniques.</small></div>
+        }
+        <button type="submit" [disabled]="invitationSaving() || !invitationEmail.trim() || (invitationRole !== 'ORGANIZATION_ADMIN' && !invitationClinicIds.length)">{{invitationSaving() ? 'Création…' : 'Créer l’invitation'}}</button>
+      </form>
+      @if(createdInvitationUrl){
+        <div class="created-invitation" aria-live="polite"><label for="created-invitation-link">Lien d’invitation — à copier maintenant</label><div><input id="created-invitation-link" type="text" [value]="createdInvitationUrl" readonly><button type="button" (click)="copyInvitationLink()">Copier le lien</button></div><p>Ce lien ne sera plus affiché après avoir quitté cette page. Il ne donne accès qu’après connexion avec l’adresse invitée.</p></div>
+      }
+      <div class="invitation-list-heading"><h3>Invitations récentes</h3><button type="button" class="refresh-button" (click)="loadInvitations()" [disabled]="invitationSaving()">Actualiser</button></div>
+      @if(!invitations().length){<p class="empty-note">Aucune invitation enregistrée.</p>}
+      @else {<div class="invitation-list">@for(invitation of invitations();track invitation.id){<div class="invitation-row"><div class="invitation-person"><strong>{{invitation.email}}</strong><span>{{roleLabel(invitation.role)}} · expire le {{dateLabel(invitation.expiresAt)}}</span></div><span class="invitation-status" [attr.data-status]="invitation.status">{{invitationStatusLabel(invitation.status)}}</span>@if(invitation.status === 'PENDING'){<button class="remove-button" type="button" (click)="revokeInvitation(invitation)" [disabled]="invitationSaving()">Révoquer</button>}</div>}</div>}
+    </section>
+  }
+
   <section class="members-card organization-members-card" aria-labelledby="organization-members-title">
     <div class="card-heading"><div><h2 id="organization-members-title">Accès à l’organisation</h2><p>{{organizationMembers().length}} membre(s) · les changements ici s’appliquent à toutes les cliniques de cette organisation</p></div><button type="button" class="refresh-button" (click)="loadOrganizationTeam()" [disabled]="loading()">{{loading() ? 'Actualisation…' : 'Actualiser'}}</button></div>
     @if (!organizationMembers().length) { <p class="empty-note">Aucun membre disponible ou impossible de charger l’organisation.</p> }
