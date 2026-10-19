@@ -13,6 +13,7 @@ const app = express();
 const angularApp = new AngularNodeAppEngine();
 
 app.use((_req, res, next) => {
+  res.setHeader('Cache-Control', 'private, no-store, max-age=0');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
