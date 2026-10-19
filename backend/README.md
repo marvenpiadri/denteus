@@ -43,8 +43,10 @@ The API listens on `http://localhost:4100` by default. The PostgreSQL integratio
 
 ## Security boundary
 
-Authentication and clinic membership checks are wired for patient and odontogram routes. Appointment routes, first-clinic onboarding, frontend authentication/API integration, and automated integration tests remain incomplete. Do not use real patient data until the migration and all authorization/persistence tests have been run against PostgreSQL.
+The backend now has authenticated organization and clinic-scoped routes for patients, appointments, recalls, scheduling resources, odontograms, clinical encounters, private clinical media, patient clinical history, clinic settings, reports, team management, and organization invitations. Sensitive clinical routes use explicit role policies; clinical writes and invitation changes use transactional persistence and audit events where implemented. These source-level controls do not replace executed negative authorization and integration tests.
 
-The old Express-mounted demo API has been removed from Angular SSR. Do not add private clinical endpoints back to the SSR server.
+Clinical media is stored in PostgreSQL and served only through authenticated clinic-scoped routes. Uploads validate size, category, encoding, and file signatures; downloads verify the stored SHA-256 checksum. Signed clinical records are amended rather than silently overwritten. Database migrations preserve legacy media categories while permitting the current API categories and enforce stored-byte size/checksum consistency.
 
-For production, provide secrets through the deployment environment, run migrations as a controlled release step, use HTTPS, configure exact trusted origins, and deploy the frontend and backend independently. Do not expose PostgreSQL to the browser.
+The Angular SSR server and Fastify API remain separate processes. Do not add private clinical endpoints back to the SSR server or expose PostgreSQL to the browser.
+
+For production, provide secrets through the deployment environment, use HTTPS and exact trusted origins, run migrations as a controlled release step, configure routing from `/api` to Fastify and page requests to Angular SSR, and deploy the frontend and backend independently. The backend currently has no checked-in npm lockfile, so dependency installation is not yet reproducible. Do not use real patient data until the production builds, migration sequence, authorization/persistence tests, backup/restore, and clinical acceptance checks have actually passed.
