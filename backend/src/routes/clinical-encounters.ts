@@ -318,9 +318,6 @@ export const clinicalEncounterRoutes: FastifyPluginAsync = async (app) => {
       const access = await requireClinicAccess(request, reply, organizationId, clinicId);
       if (!access) return;
       if (!canWriteOdontogram(access)) return denyInsufficientRole(reply);
-      if (!await hasActiveClinicalProvider(organizationId, clinicId, access.userId, ['DENTIST', 'ORTHODONTIST'])) {
-        return reply.code(403).send({ error: { code: 'CLINICIAN_REQUIRED', message: 'Only an active dentist or orthodontist can sign a clinical encounter.' } });
-      }
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
@@ -544,6 +541,9 @@ export const clinicalEncounterRoutes: FastifyPluginAsync = async (app) => {
       const access = await requireClinicAccess(request, reply, organizationId, clinicId);
       if (!access) return;
       if (!canWriteOdontogram(access)) return denyInsufficientRole(reply);
+      if (!await hasActiveClinicalProvider(organizationId, clinicId, access.userId, ['DENTIST', 'ORTHODONTIST'])) {
+        return reply.code(403).send({ error: { code: 'CLINICIAN_REQUIRED', message: 'Only an active dentist or orthodontist can sign a clinical encounter.' } });
+      }
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
