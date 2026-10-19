@@ -93,6 +93,10 @@ export const organizationTeamRoutes: FastifyPluginAsync = async (app) => {
           await client.query('ROLLBACK');
           return reply.code(403).send({ error: { code: 'FORBIDDEN', message: 'Organization membership permissions changed. Refresh and try again.' } });
         }
+        if (['ORGANIZATION_OWNER', 'ORGANIZATION_ADMIN'].includes(requestedRole) && effectiveActorRole !== 'ORGANIZATION_OWNER') {
+          await client.query('ROLLBACK');
+          return reply.code(403).send({ error: { code: 'ADMIN_ROLE_PROTECTED', message: 'Only an organization owner can assign organization administrator roles.' } });
+        }
         const target = await client.query<{ role: string }>(
           'SELECT role FROM organization_memberships WHERE organization_id = $1 AND user_id = $2 FOR UPDATE',
           [organizationId, userId],
