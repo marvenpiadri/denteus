@@ -4,7 +4,7 @@ import {
   isMainModule,
   writeResponseToNodeResponse,
 } from '@angular/ssr/node';
-import express from 'express';
+import express, { type NextFunction, type Request, type Response } from 'express';
 import {join} from 'node:path';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
@@ -46,6 +46,18 @@ app.use((req, res, next) => {
       response ? writeResponseToNodeResponse(response, res) : next(),
     )
     .catch(next);
+});
+
+app.use((error: unknown, _request: Request, response: Response, _next: NextFunction) => {
+  const errorType = error instanceof Error && /^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(error.name)
+    ? error.name
+    : 'UnknownError';
+  console.error('Angular SSR request failed', { errorType });
+  if (response.headersSent) {
+    response.end();
+    return;
+  }
+  response.status(500).type('text/plain').send('An unexpected server error occurred.');
 });
 
 /**
