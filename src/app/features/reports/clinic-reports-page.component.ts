@@ -36,11 +36,6 @@ export class ClinicReportsPageComponent {
   private sequence = 0;
 
   constructor() {
-    if (isPlatformBrowser(this.platformId)) {
-      const today = new Date();
-      this.to = this.localDate(today);
-      this.from = this.localDate(new Date(today.getFullYear(), today.getMonth(), 1));
-    }
     effect(() => {
       const clinic = this.tenant.activeClinic();
       if (!isPlatformBrowser(this.platformId)) return;
@@ -53,13 +48,24 @@ export class ClinicReportsPageComponent {
       const key = clinic.organizationId + ':' + clinic.id;
       if (key === this.context) return;
       this.context = key;
+      if (!this.from || !this.to) {
+        this.to = this.todayInTimezone(clinic.timezone || 'Africa/Casablanca');
+        this.from = this.to.slice(0, 7) + '-01';
+      }
       this.report.set(null);
       void this.load();
     });
   }
 
-  private localDate(date: Date): string {
-    return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
+  private todayInTimezone(timeZone: string): string {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(new Date());
+    const part = (type: string) => parts.find((item) => item.type === type)?.value ?? '';
+    return part('year') + '-' + part('month') + '-' + part('day');
   }
 
   get periodInvalid(): boolean {
