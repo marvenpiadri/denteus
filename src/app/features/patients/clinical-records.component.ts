@@ -43,7 +43,7 @@ export class ClinicalRecordsComponent {
  setReason(reason:string){this.amendment.update(v=>({...v,reason}));} setContent(content:string){this.amendment.update(v=>({...v,content}));}
  async saveAmendment(note:ClinicalNote){const c=this.tenant.activeClinic(),v=this.selected(),a=this.amendment();if(!c||!v||!a.reason.trim()||!a.content.trim()||this.saving())return;this.saving.set(true);this.error.set('');try{await this.api.amend(c.organizationId,c.id,this.patientId(),v.id,note.id,{reason:a.reason.trim(),amendedContent:a.content.trim()});this.amendmentId.set(null);await this.open(v.id);this.success.set('Amendement ajouté. La note signée d’origine reste intacte.');}catch{this.error.set('Amendement non enregistré; la note d’origine reste intacte.');}finally{this.saving.set(false);}}
  async uploadMedia(event:Event):Promise<void>{
-  const input=event.target as HTMLInputElement, file=input.files?.[0], clinic=this.tenant.activeClinic(), visit=this.selected();
+  const input=event.target as HTMLInputElement, file=input.files?.[0], clinic=this.tenant.activeClinic(), visit=this.selected(), patient=this.patientId();
   if(!file||!clinic||!visit){input.value='';return;}
   if(this.mediaUploading())return;
   if(file.size===0||file.size>8*1024*1024){this.error.set('Le fichier doit peser entre 1 octet et 8 Mio.');input.value='';return;}
@@ -60,8 +60,9 @@ export class ClinicalRecordsComponent {
    const bytes=new Uint8Array(await file.arrayBuffer());let binary='';
    for(let offset=0;offset<bytes.length;offset+=0x8000)binary+=String.fromCharCode(...bytes.subarray(offset,offset+0x8000));
    await this.api.uploadMedia(clinic.organizationId,clinic.id,this.patientId(),visit.id,{
-    mediaType:this.mediaType,originalFilename:file.name,mimeType,contentBase64:btoa(binary),description:this.mediaDescription.trim()||null,
+    mediaType:this.mediaType,originalFilename:file.name,mimeType,contentBase64:btoa(binary),description:this.mediaDescription.trim()||null,capturedAt:file.lastModified?new Date(file.lastModified).toISOString():null,
    });
+   if(this.tenant.activeClinic()?.id!==clinic.id||this.patientId()!==patient||this.selected()?.id!==visit.id)return;
    this.mediaDescription='';await this.open(visit.id);this.success.set('Document clinique ajouté au dossier privé.');
   }catch(e){
    this.error.set(e instanceof HttpErrorResponse&&e.status===409?'Cette visite est clôturée; aucun fichier n’a été ajouté.':e instanceof HttpErrorResponse&&e.status===413?'Le fichier dépasse la limite autorisée.':'Le fichier n’a pas été enregistré. Vérifiez son format puis réessayez.');
