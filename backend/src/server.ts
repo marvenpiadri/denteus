@@ -53,7 +53,10 @@ await app.register(fastifyCors, {
   maxAge: 86_400,
 });
 
-app.addHook('onSend', async (_request, reply, payload) => {
+app.addHook('onSend', async (request, reply, payload) => {
+  if (request.url.startsWith('/api/')) {
+    reply.header('Cache-Control', 'private, no-store, max-age=0');
+  }
   reply.header('X-Content-Type-Options', 'nosniff');
   reply.header('X-Frame-Options', 'DENY');
   reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
