@@ -7,8 +7,15 @@ export function validateProductionAuthConfiguration(
     throw new Error('CLIENT_ORIGINS must be configured in production.');
   }
 
-  if (!secret || secret.length < 32 || /^(replace-with|change-me|changeme|your[-_ ]|example|test[-_ ]|secret\b)/i.test(secret) || /^(.)\1+$/.test(secret)) {
-    throw new Error('BETTER_AUTH_SECRET must be a non-placeholder secret with at least 32 characters in production.');
+  const normalizedSecret = secret?.trim() ?? '';
+  if (
+    !secret ||
+    secret !== normalizedSecret ||
+    normalizedSecret.length < 32 ||
+    /^(replace-with|change-me|changeme|your[-_ ]|example|test[-_ ]|secret\\b)/i.test(normalizedSecret) ||
+    new Set(normalizedSecret).size < 8
+  ) {
+    throw new Error('BETTER_AUTH_SECRET must be a non-placeholder, high-entropy secret with at least 32 characters in production.');
   }
 
   const trustedOrigins = configuredOrigins
