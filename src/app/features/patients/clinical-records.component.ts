@@ -14,7 +14,7 @@ export class ClinicalRecordsComponent {
  readonly loading=signal(false); readonly detailLoading=signal(false); readonly saving=signal(false); readonly mediaUploading=signal(false);
  readonly error=signal(''); readonly success=signal(''); readonly showVisitForm=signal(false); readonly showNoteForm=signal(false);
  readonly amendmentId=signal<string|null>(null); readonly showFollowUpForm=signal(false); readonly confirmingEncounterSign=signal(false); readonly amendment=signal({reason:'',content:''}); readonly recordAmendmentTarget=signal<{kind:'finding'|'procedure';id:string}|null>(null); readonly recordAmendmentDraft=signal({reason:'',content:''}); readonly showFindingForm=signal(false); readonly showProcedureForm=signal(false);
- mediaType:ClinicalMediaType='XRAY'; mediaDescription=''; visitType:EncounterType='CONSULTATION'; responsibleProviderId=''; complaint=''; noteType:NoteType='PROGRESS'; noteContent=''; findingType:FindingType='OBSERVATION'; findingDescription=''; findingSeverity:''|'LOW'|'MODERATE'|'HIGH'|'CRITICAL'=''; findingToothNo:number|null=null; findingSurface='WHOLE'; procedureTitle=''; procedureCategory:ProcedureCategory='RESTORATIVE'; procedureNotes=''; procedureToothNo:number|null=null; procedureSurface='WHOLE';
+ mediaType:ClinicalMediaType='XRAY'; mediaDescription=''; mediaCapturedAt=''; visitType:EncounterType='CONSULTATION'; responsibleProviderId=''; complaint=''; noteType:NoteType='PROGRESS'; noteContent=''; findingType:FindingType='OBSERVATION'; findingDescription=''; findingSeverity:''|'LOW'|'MODERATE'|'HIGH'|'CRITICAL'=''; findingToothNo:number|null=null; findingSurface='WHOLE'; procedureTitle=''; procedureCategory:ProcedureCategory='RESTORATIVE'; procedureNotes=''; procedureToothNo:number|null=null; procedureSurface='WHOLE';
  readonly visitTypes:Array<{value:EncounterType;label:string}>=[{value:'CONSULTATION',label:'Consultation'},{value:'EMERGENCY',label:'Urgence'},{value:'FOLLOW_UP',label:'Suivi'},{value:'PROCEDURE',label:'Séance de soins'},{value:'OTHER',label:'Autre'}];
  readonly procedureCategories:Array<{value:ProcedureCategory;label:string}>=[{value:'EXAM',label:'Examen'},{value:'HYGIENE',label:'Hygiène'},{value:'RESTORATIVE',label:'Restaurateur'},{value:'ENDODONTICS',label:'Endodontie'},{value:'EXTRACTION',label:'Extraction'},{value:'PROSTHODONTICS',label:'Prothèse'},{value:'ORTHODONTICS',label:'Orthodontie'},{value:'PERIODONTICS',label:'Parodontologie'},{value:'IMPLANT',label:'Implantologie'},{value:'OTHER',label:'Autre'}];
  readonly mediaTypes:Array<{value:ClinicalMediaType;label:string}>=[{value:'XRAY',label:'Radiographie'},{value:'PHOTO',label:'Photo clinique'},{value:'DOCUMENT',label:'Document PDF'}];
@@ -60,10 +60,10 @@ export class ClinicalRecordsComponent {
    const bytes=new Uint8Array(await file.arrayBuffer());let binary='';
    for(let offset=0;offset<bytes.length;offset+=0x8000)binary+=String.fromCharCode(...bytes.subarray(offset,offset+0x8000));
    await this.api.uploadMedia(clinic.organizationId,clinic.id,this.patientId(),visit.id,{
-    mediaType:this.mediaType,originalFilename:file.name,mimeType,contentBase64:btoa(binary),description:this.mediaDescription.trim()||null,capturedAt:file.lastModified?new Date(file.lastModified).toISOString():null,
+    mediaType:this.mediaType,originalFilename:file.name,mimeType,contentBase64:btoa(binary),description:this.mediaDescription.trim()||null,capturedAt:this.mediaCapturedAt?new Date(this.mediaCapturedAt).toISOString():null,
    });
    if(this.tenant.activeClinic()?.id!==clinic.id||this.patientId()!==patient||this.selected()?.id!==visit.id)return;
-   this.mediaDescription='';await this.open(visit.id);this.success.set('Document clinique ajouté au dossier privé.');
+   this.mediaDescription='';this.mediaCapturedAt='';await this.open(visit.id);this.success.set('Document clinique ajouté au dossier privé.');
   }catch(e){
    this.error.set(e instanceof HttpErrorResponse&&e.status===409?'Cette visite est clôturée; aucun fichier n’a été ajouté.':e instanceof HttpErrorResponse&&e.status===413?'Le fichier dépasse la limite autorisée.':'Le fichier n’a pas été enregistré. Vérifiez son format puis réessayez.');
   }finally{this.mediaUploading.set(false);input.value='';}
