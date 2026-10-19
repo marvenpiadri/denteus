@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TenantContextService } from '../../core/tenant/tenant-context.service';
+import { localDateTimeToIso } from '../agenda/clinic-date-time';
 import { ClinicalRecordsApiService } from './clinical-records-api.service';
 import type { ClinicalNote, ClinicProvider, ClinicalMediaType, Encounter, EncounterSummary, EncounterType, FindingType, NoteType, ProcedureCategory } from './clinical-records-api.service';
 
@@ -55,8 +56,11 @@ export class ClinicalRecordsComponent {
   if(!categoryTypes[this.mediaType].includes(mimeType)){
    this.error.set('Le type de fichier ne correspond pas à la catégorie sélectionnée.');input.value='';return;
   }
-  const capturedAt=this.mediaCapturedAt?this.clinicLocalDateTimeToIso(this.mediaCapturedAt,clinic.timezone):null;
-  if(this.mediaCapturedAt&&!capturedAt){this.error.set('Cette heure locale n’existe pas dans le fuseau horaire de la clinique. Choisissez une autre heure.');input.value='';return;}
+  let capturedAt:string|null=null;
+  if(this.mediaCapturedAt){
+   try{capturedAt=localDateTimeToIso(this.mediaCapturedAt,clinic.timezone||'Africa/Casablanca');}
+   catch(error){this.error.set(error instanceof Error?error.message:'Saisissez une date et une heure de capture valides.');input.value='';return;}
+  }
   this.mediaUploading.set(true);this.error.set('');this.success.set('');
   try{
    const bytes=new Uint8Array(await file.arrayBuffer());
@@ -81,29 +85,6 @@ export class ClinicalRecordsComponent {
   }catch{if(this.tenant.activeClinic()?.id===clinic.id&&this.patientId()===patient&&this.selected()?.id===visit.id)this.error.set('Ce document ne peut pas être téléchargé. Vérifiez vos droits et réessayez.');}
  }
  label(value:string){return ({DRAFT:'Brouillon',SIGNED:'Signée',CONSULTATION:'Consultation',EMERGENCY:'Urgence',FOLLOW_UP:'Suivi',PROCEDURE:'Séance de soins',CHIEF_COMPLAINT:'Motif',EXAMINATION:'Examen',ASSESSMENT:'Évaluation',PROGRESS:'Note de séance',DISCHARGE:'Conclusion',OTHER:'Autre',XRAY:'Radiographie',PHOTO:'Photo clinique',DOCUMENT:'Document',OBSERVATION:'Observation',DIAGNOSIS:'Diagnostic',SYMPTOM:'Symptôme',RISK:'Risque',EXAM:'Examen',HYGIENE:'Hygiène',RESTORATIVE:'Restaurateur',ENDODONTICS:'Endodontie',EXTRACTION:'Extraction',PROSTHODONTICS:'Prothèse',ORTHODONTICS:'Orthodontie',PERIODONTICS:'Parodontologie',IMPLANT:'Implantologie',PLANNED:'Prévu',IN_PROGRESS:'En cours',COMPLETED:'Réalisé',CANCELLED:'Annulé'} as Record<string,string>)[value]??value;}
- private clinicLocalDateTimeToIso(value:string,timeZone:string):string|null{
-  const match=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value);
-  if(!match)return null;
-  const [,yearText,monthText,dayText,hourText,minuteText]=match;
-  const target={year:Number(yearText),month:Number(monthText),day:Number(dayText),hour:Number(hourText),minute:Number(minuteText)};
-  const desired=Date.UTC(target.year,target.month-1,target.day,target.hour,target.minute);
-  const check=new Date(desired);
-  if(check.getUTCFullYear()!==target.year||check.getUTCMonth()!==target.month-1||check.getUTCDate()!==target.day||target.hour>23||target.minute>59)return null;
-  try{
-   const formatter=new Intl.DateTimeFormat('en-GB',{timeZone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'});
-   let candidate=desired;
-   for(let i=0;i<4;i++){
-    const parts=Object.fromEntries(formatter.formatToParts(new Date(candidate)).map(part=>[part.type,part.value]));
-    const represented=Date.UTC(Number(parts['year']),Number(parts['month'])-1,Number(parts['day']),Number(parts['hour']),Number(parts['minute']),Number(parts['second']));
-    const delta=desired-represented;
-    if(delta===0)break;
-    candidate+=delta;
-   }
-   const actual=Object.fromEntries(formatter.formatToParts(new Date(candidate)).map(part=>[part.type,part.value]));
-   if(Number(actual['year'])!==target.year||Number(actual['month'])!==target.month||Number(actual['day'])!==target.day||Number(actual['hour'])!==target.hour||Number(actual['minute'])!==target.minute||Number(actual['second'])!==0)return null;
-   return new Date(candidate).toISOString();
-  }catch{return null;}
- }
  get activeClinicTimezone():string{return this.tenant.activeClinic()?.timezone||'Africa/Casablanca';}
  date(value:string|null|undefined,withTime=true){if(!value)return '—';return new Intl.DateTimeFormat('fr-FR',{timeZone:this.activeClinicTimezone,dateStyle:'medium',...(withTime?{timeStyle:'short'}:{})}).format(new Date(value));}
 }
