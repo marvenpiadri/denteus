@@ -62,11 +62,19 @@ export class ClinicReportsPageComponent {
     return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
   }
 
+  get periodInvalid(): boolean {
+    if (!this.from || !this.to || this.from > this.to) return true;
+    const start = Date.parse(this.from + 'T00:00:00Z');
+    const end = Date.parse(this.to + 'T00:00:00Z');
+    return !Number.isFinite(start) || !Number.isFinite(end) || end - start > 366 * 24 * 60 * 60 * 1000;
+  }
+
   async load(): Promise<void> {
     const clinic = this.tenant.activeClinic();
     if (!clinic) return;
-    if (!this.from || !this.to || this.from > this.to) {
-      this.error.set('La date de début doit précéder ou correspondre à la date de fin.');
+    if (this.periodInvalid) {
+      this.report.set(null);
+      this.error.set('Choisissez une période valide, du début à la fin, de 367 jours maximum.');
       return;
     }
     const seq = ++this.sequence;
@@ -87,6 +95,47 @@ export class ClinicReportsPageComponent {
     } finally {
       if (seq === this.sequence) this.loading.set(false);
     }
+  }
+
+  exportCsv(): void {
+    const data = this.report();
+    if (!data || !isPlatformBrowser(this.platformId)) return;
+
+    const rows: string[][] = [
+      ['Rapport d’activité Dentaleus'],
+      ['Clinique', this.tenant.activeClinic()?.name ?? ''],
+      ['Du', data.period.from, 'Au', data.period.to],
+      [],
+      ['Indicateur', 'Valeur'],
+      ['Rendez-vous total', String(data.appointments.total)],
+      ['Rendez-vous terminés', String(data.appointments.completed)],
+      ['Rendez-vous annulés', String(data.appointments.cancelled)],
+      ['Absences', String(data.appointments.noShow)],
+      ['Taux de réalisation (%)', data.appointments.completionRate === null ? '' : String(data.appointments.completionRate)],
+      ['Patients rattachés', String(data.patients.total)],
+      ['Nouveaux patients', String(data.patients.added)],
+      ['Rappels en retard à la fin de la période', String(data.recalls.overdue)],
+      ['Rappels dus pendant la période', String(data.recalls.due_in_period)],
+      ['Rappels terminés pendant la période', String(data.recalls.completed)],
+      [],
+      ['Statut des rendez-vous', 'Nombre'],
+      ...Object.entries(data.appointments.byStatus).map(([status, count]) => [this.statusLabel(status), String(count)]),
+      [],
+      ['Date', 'Rendez-vous', 'Terminés', 'Annulés', 'Absences'],
+      ...data.trend.map((day) => [day.day, String(day.total), String(day.completed), String(day.cancelled), String(day.no_show)]),
+    ];
+
+    const csv = rows.map((row) => row.map((value) => {
+      const safe = /^[=+@\\-\\t\\r]/.test(value) ? "'" + value : value;
+      return '"' + safe.replace(/"/g, '""') + '"';
+    }).join(';')).join('\\r\\n');
+    const blob = new Blob(['\\uFEFF', csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'dentaleus-rapport-' + data.period.from + '-' + data.period.to + '.csv';
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   get maxDailyAppointments(): number {
