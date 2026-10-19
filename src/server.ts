@@ -30,9 +30,17 @@ app.use((_req, res, next) => {
  */
 app.use(
   express.static(browserDistFolder, {
-    maxAge: '1y',
     index: false,
     redirect: false,
+    setHeaders(response, filePath) {
+      const isHashedAsset = /[.-][A-Z0-9_-]{8,}\.(?:js|mjs|css|woff2?|ttf|otf|svg|png|webp|avif|jpe?g)$/i.test(filePath);
+      response.setHeader(
+        'Cache-Control',
+        isHashedAsset
+          ? 'public, max-age=31536000, immutable'
+          : 'public, max-age=0, must-revalidate',
+      );
+    },
   }),
 );
 
