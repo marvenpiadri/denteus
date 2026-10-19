@@ -40,6 +40,17 @@ const additionalClinicSchema = {
   },
 } as const;
 
+function normalizeTimeZone(value?: string): string | null {
+  const timezone = value === undefined ? 'Africa/Casablanca' : value.trim();
+  if (!timezone) return null;
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: timezone }).format();
+    return timezone;
+  } catch {
+    return null;
+  }
+}
+
 const createClinicSchema = {
   type: 'object',
   additionalProperties: false,
@@ -104,6 +115,11 @@ export const onboardingRoutes: FastifyPluginAsync = async (app) => {
         });
       }
 
+      const timezone = normalizeTimeZone(request.body.timezone);
+      if (!timezone) {
+        return reply.code(400).send({ error: { code: 'INVALID_TIMEZONE', message: 'Choisissez un fuseau horaire IANA valide, par exemple Africa/Casablanca.' } });
+      }
+
       const clinicId = randomUUID();
       const client = await pool.connect();
       let transactionOpen = false;
@@ -123,7 +139,7 @@ export const onboardingRoutes: FastifyPluginAsync = async (app) => {
             request.body.address?.trim() || null,
             request.body.phone?.trim() || null,
             request.body.email?.trim().toLowerCase() || null,
-            request.body.timezone ?? 'Africa/Casablanca',
+            timezone,
           ],
         );
         await client.query(
@@ -185,6 +201,10 @@ export const onboardingRoutes: FastifyPluginAsync = async (app) => {
       }
 
       const body = request.body;
+      const timezone = normalizeTimeZone(body.timezone);
+      if (!timezone) {
+        return reply.code(400).send({ error: { code: 'INVALID_TIMEZONE', message: 'Choisissez un fuseau horaire IANA valide, par exemple Africa/Casablanca.' } });
+      }
       const organizationId = randomUUID();
       const clinicId = randomUUID();
       const client = await pool.connect();
@@ -268,7 +288,7 @@ export const onboardingRoutes: FastifyPluginAsync = async (app) => {
             body.address?.trim() || null,
             body.phone?.trim() || null,
             body.email?.trim().toLowerCase() || null,
-            body.timezone ?? 'Africa/Casablanca',
+            timezone,
           ],
         );
 
