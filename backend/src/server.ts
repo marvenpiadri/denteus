@@ -168,6 +168,9 @@ app.setErrorHandler((error, request, reply) => {
 
 const port = Number(process.env['API_PORT'] ?? 4100);
 const host = process.env['API_HOST'] ?? '0.0.0.0';
+if (!Number.isInteger(port) || port < 1 || port > 65_535) {
+  throw new Error('API_PORT must be an integer between 1 and 65535.');
+}
 
 async function shutdown(signal: string): Promise<void> {
   app.log.info({ signal }, 'Shutting down Dentaleus API');
