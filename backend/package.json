@@ -12,7 +12,7 @@
     "start": "node dist/server.js",
     "db:migrate": "tsx src/db/migrate.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "node --import tsx --test src/auth/role-policy.test.ts src/domain/appointment-policy.test.ts src/domain/clinical-media-policy.test.ts src/domain/organization-invitation-policy.test.ts src/domain/odontogram-policy.test.ts src/domain/recall-policy.test.ts src/domain/timezone-policy.test.ts src/db/tenant-schema.integration.test.ts src/db/clinical-records.integration.test.ts src/db/organization-invitations.integration.test.ts"
+    "test": "node --import tsx --test src/auth/role-policy.test.ts src/auth/production-config-policy.test.ts src/domain/appointment-policy.test.ts src/domain/clinical-media-policy.test.ts src/domain/organization-invitation-policy.test.ts src/domain/odontogram-policy.test.ts src/domain/recall-policy.test.ts src/domain/timezone-policy.test.ts src/db/tenant-schema.integration.test.ts src/db/clinical-records.integration.test.ts src/db/organization-invitations.integration.test.ts"
   },
   "dependencies": {
     "fastify": "^5.6.2",
