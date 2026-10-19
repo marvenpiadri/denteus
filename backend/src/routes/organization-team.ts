@@ -109,6 +109,12 @@ export const organizationTeamRoutes: FastifyPluginAsync = async (app) => {
           'UPDATE organization_memberships SET role = $3, updated_at = now() WHERE organization_id = $1 AND user_id = $2 RETURNING role',
           [organizationId, userId, requestedRole],
         );
+        if (!['ORGANIZATION_OWNER', 'ORGANIZATION_ADMIN'].includes(requestedRole)) {
+          await client.query(
+            'UPDATE clinic_memberships SET role = $3 WHERE organization_id = $1 AND user_id = $2',
+            [organizationId, userId, requestedRole],
+          );
+        }
         await client.query(
           `INSERT INTO audit_events (id, organization_id, user_id, action, resource_type, resource_id, metadata)
            VALUES ($1, $2, $3, 'ORGANIZATION_MEMBER_ROLE_UPDATED', 'ORGANIZATION_MEMBERSHIP', $4, $5::jsonb)`,
