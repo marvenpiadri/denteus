@@ -6,7 +6,7 @@ const configuredBaseUrl = process.env['BETTER_AUTH_URL'];
 const secret = process.env['BETTER_AUTH_SECRET'];
 const configuredOrigins = process.env['CLIENT_ORIGINS'];
 if (process.env['NODE_ENV'] === 'production') {
-  validateProductionAuthConfiguration(configuredBaseUrl, configuredOrigins);
+  validateProductionAuthConfiguration(configuredBaseUrl, configuredOrigins, secret);
 }
 const trustedOrigins = (configuredOrigins ?? 'http://localhost:3000')
   .split(',')
