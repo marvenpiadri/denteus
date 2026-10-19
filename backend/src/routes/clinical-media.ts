@@ -90,8 +90,8 @@ export const clinicalMediaRoutes: FastifyPluginAsync = async (app) => {
               mime_type, size_bytes, checksum_sha256, content_bytes, captured_at, description, uploaded_by_id)
            VALUES ($1,$2,$3,$4,$5,$6,NULL,$7,$8,$9,$10,$11,$12,$13,$14)
            RETURNING id, media_type AS "mediaType", original_filename AS "originalFilename", mime_type AS "mimeType",
-                     size_bytes AS "sizeBytes", checksum_sha256 AS "checksumSha256", captured_at AS "capturedAt",
-                     description, uploaded_by_id AS "uploadedById", created_at AS "createdAt"`,
+                     size_bytes AS "sizeBytes", (content_bytes IS NOT NULL) AS "hasPrivateContent",
+                     captured_at AS "capturedAt", description, created_at AS "createdAt"`,
           [id, organizationId, clinicId, patientId, encounterId, mediaType, filename, mimeType, bytes.length,
             checksum, bytes, request.body.capturedAt ?? null, request.body.description?.trim() || null, access.userId],
         );
