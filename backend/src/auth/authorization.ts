@@ -78,6 +78,22 @@ export async function requireClinicAccess(
   };
 }
 
+export async function hasActiveClinicalProvider(
+  organizationId: string,
+  clinicId: string,
+  userId: string,
+  roles: readonly string[],
+): Promise<boolean> {
+  if (!roles.length) return false;
+  const result = await pool.query(
+    `SELECT 1 FROM clinic_providers
+     WHERE organization_id=$1 AND clinic_id=$2 AND user_id=$3 AND active=true AND role = ANY($4::text[])
+     LIMIT 1`,
+    [organizationId, clinicId, userId, roles],
+  );
+  return Boolean(result.rowCount);
+}
+
 export function denyInsufficientRole(reply: FastifyReply): null {
   reply.code(403).send({
     error: { code: 'FORBIDDEN', message: 'Your role does not permit this action.' },
