@@ -38,6 +38,21 @@ test('clinical records enforce clinic scope and preserve signed notes through am
   );
   assert.deepEqual(privateMedia.rows[0]?.bytes, mediaBytes);
   assert.equal(privateMedia.rows[0]?.checksum, mediaChecksum);
+  await client.query('SAVEPOINT media_size_guard');
+  await assert.rejects(
+   client.query(`INSERT INTO clinical_media (id,organization_id,clinic_id,patient_id,encounter_id,media_type,storage_key,original_filename,mime_type,size_bytes,checksum_sha256,content_bytes,uploaded_by_id) VALUES ($1,$2,$3,$4,$5,'XRAY',NULL,'bad-size.jpg','image/jpeg',$6,$7,$8,$9)`, [`bad-size-${suffix}`,orgId,clinicId,patientId,encounterId,mediaBytes.length+1,mediaChecksum,mediaBytes,userId]),
+   (error) => error.code === '23514',
+  );
+  await client.query('ROLLBACK TO SAVEPOINT media_size_guard');
+  await client.query('RELEASE SAVEPOINT media_size_guard');
+  await client.query('SAVEPOINT media_checksum_guard');
+  await assert.rejects(
+   client.query(`INSERT INTO clinical_media (id,organization_id,clinic_id,patient_id,encounter_id,media_type,storage_key,original_filename,mime_type,size_bytes,checksum_sha256,content_bytes,uploaded_by_id) VALUES ($1,$2,$3,$4,$5,'PHOTO',NULL,'missing-checksum.jpg','image/jpeg',$6,NULL,$7,$8)`, [`missing-checksum-${suffix}`,orgId,clinicId,patientId,encounterId,mediaBytes.length,mediaBytes,userId]),
+   (error) => error.code === '23514',
+  );
+  await client.query('ROLLBACK TO SAVEPOINT media_checksum_guard');
+  await client.query('RELEASE SAVEPOINT media_checksum_guard');
+  await client.query(`INSERT INTO clinical_media (id,organization_id,clinic_id,patient_id,encounter_id,media_type,storage_key,original_filename,mime_type,size_bytes,uploaded_by_id) VALUES ($1,$2,$3,$4,$5,'INTRAORAL_XRAY',$6,'legacy.jpg','image/jpeg',1,$7)`, [`legacy-media-${suffix}`,orgId,clinicId,patientId,encounterId,`legacy-${suffix}`,userId]);
   assert.equal((await client.query('SELECT count(*)::int AS count FROM clinical_media WHERE organization_id=$1 AND clinic_id=$2 AND id=$3', [orgId, otherClinicId, mediaId])).rows[0]?.count, 0);
   await client.query("INSERT INTO clinical_notes (id, organization_id, clinic_id, patient_id, encounter_id, content, created_by_id) VALUES ($1, $2, $3, $4, $5, 'Signed source note', $6)", [noteId, orgId, clinicId, patientId, encounterId, userId]);
   await client.query('UPDATE clinical_notes SET signed_at = now(), signed_by_id = $2, updated_by_id = $2, version = version + 1 WHERE id = $1', [noteId, userId]);
