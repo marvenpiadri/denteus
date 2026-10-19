@@ -20,6 +20,8 @@ on:
       - 'angular.json'
       - 'package.json'
       - 'bun.lock'
+      - 'eslint.config.js'
+      - 'proxy.conf.json'
       - 'tsconfig*.json'
       - '.github/workflows/frontend-checks.yml'
 
