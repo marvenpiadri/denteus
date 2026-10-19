@@ -110,6 +110,14 @@ export const organizationInvitationRoutes: FastifyPluginAsync = async (app) => {
             await client.query('ROLLBACK');
             return reply.code(403).send({ error: { code: 'FORBIDDEN', message: 'Your invitation permissions changed. Refresh and try again.' } });
           }
+          const memberCheck = await client.query(
+            'SELECT 1 FROM app_users u JOIN organization_memberships om ON om.user_id=u.id WHERE om.organization_id=$1 AND lower(u.email)=lower($2)',
+            [organizationId, email],
+          );
+          if (memberCheck.rowCount) {
+            await client.query('ROLLBACK');
+            return reply.code(409).send({ error: { code: 'ALREADY_MEMBER', message: 'This person is already a member of the organization.' } });
+          }
           await client.query(
             `UPDATE organization_invitations
              SET revoked_at=now()
@@ -199,13 +207,23 @@ export const organizationInvitationRoutes: FastifyPluginAsync = async (app) => {
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
+        const tokenHash = hashInvitationToken(request.body.token);
+        const invitationScope = await client.query<{ organization_id: string }>(
+          'SELECT organization_id FROM organization_invitations WHERE token_hash=$1',
+          [tokenHash],
+        );
+        if (!invitationScope.rowCount) {
+          await client.query('ROLLBACK');
+          return reply.code(410).send({ error: { code: 'INVITATION_INVALID', message: 'This invitation is expired, revoked, or already used.' } });
+        }
+        await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [invitationScope.rows[0].organization_id]);
         const invitation = await client.query<{
           id: string; organization_id: string; invited_email: string; role: string;
           clinic_ids: string[]; expires_at: Date; accepted_at: Date | null; revoked_at: Date | null;
         }>(
           `SELECT id, organization_id, invited_email, role, clinic_ids, expires_at, accepted_at, revoked_at
            FROM organization_invitations WHERE token_hash=$1 FOR UPDATE`,
-          [hashInvitationToken(request.body.token)],
+          [tokenHash],
         );
         const invite = invitation.rows[0];
         if (!invite || !isInvitationUsable({ expiresAt: invite.expires_at, acceptedAt: invite.accepted_at, revokedAt: invite.revoked_at })) {
