@@ -101,6 +101,15 @@ export const organizationInvitationRoutes: FastifyPluginAsync = async (app) => {
         const client = await pool.connect();
         try {
           await client.query('BEGIN');
+          await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [organizationId]);
+          const lockedActor = await client.query<{ role: string }>(
+            'SELECT role FROM organization_memberships WHERE organization_id=$1 AND user_id=$2 FOR UPDATE',
+            [organizationId, current.user.id],
+          );
+          if (!lockedActor.rowCount || !canInviteOrganizationRole(lockedActor.rows[0].role, role)) {
+            await client.query('ROLLBACK');
+            return reply.code(403).send({ error: { code: 'FORBIDDEN', message: 'Your invitation permissions changed. Refresh and try again.' } });
+          }
           await client.query(
             `UPDATE organization_invitations
              SET revoked_at=now()
