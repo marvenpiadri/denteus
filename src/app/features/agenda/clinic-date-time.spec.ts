@@ -19,6 +19,12 @@ describe('clinic date/time conversion', () => {
     expect(formatCalendarDate('2026-10-17')).toContain('17');
   });
 
+  it('rejects invalid calendar dates instead of normalizing them into another day', () => {
+    for (const value of ['2026-02-29T10:00', '2026-04-31T10:00', '2026-13-01T10:00', '0999-12-31T10:00']) {
+      expect(() => localDateTimeToIso(value, 'Africa/Casablanca')).toThrow(/date et une heure valides/);
+    }
+  });
+
   it('rejects nonexistent and ambiguous daylight-saving local times', () => {
     expect(() => localDateTimeToIso('2026-03-08T02:30', 'America/New_York')).toThrow(/n’existe pas/);
     expect(() => localDateTimeToIso('2026-11-01T01:30', 'America/New_York')).toThrow(/ambiguë/);

@@ -54,6 +54,16 @@ export function localDateTimeToIso(value: string, timeZone: string): string {
   }
 
   const desiredAsUtc = Date.UTC(desired.year, desired.month - 1, desired.day, desired.hour, desired.minute);
+  const normalizedDate = new Date(desiredAsUtc);
+  if (
+    desired.year < 1000 ||
+    normalizedDate.getUTCFullYear() !== desired.year ||
+    normalizedDate.getUTCMonth() !== desired.month - 1 ||
+    normalizedDate.getUTCDate() !== desired.day
+  ) {
+    throw new Error('Saisissez une date et une heure valides.');
+  }
+
   const offsets = new Set<number>();
   for (let hours = -36; hours <= 36; hours += 3) {
     const instant = desiredAsUtc + hours * 60 * 60_000;
