@@ -152,7 +152,7 @@ export class ClinicTeamPageComponent {
 
   get invitationRoleOptions(): Array<{ value: string; label: string }> {
     return this.canManageOwners()
-      ? [{ value: 'ORGANIZATION_ADMIN', label: 'Administrateur organisation' }, ...this.organizationRoleOptions]
+      ? this.organizationRoleOptions
       : this.organizationRoleOptions.filter((role) => role.value !== 'ORGANIZATION_ADMIN');
   }
 
