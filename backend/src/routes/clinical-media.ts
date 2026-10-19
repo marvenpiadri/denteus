@@ -129,7 +129,14 @@ export const clinicalMediaRoutes: FastifyPluginAsync = async (app) => {
       if (!media || !media.contentBytes) return reply.code(404).send({ error: { code: 'CLINICAL_MEDIA_NOT_FOUND', message: 'Clinical file not found.' } });
       const actualChecksum = createHash('sha256').update(media.contentBytes).digest('hex');
       if (actualChecksum !== media.checksumSha256) {
-        request.log.error({ mediaId, clinicId, patientId, encounterId }, 'Clinical media integrity check failed');
+        await pool.query(
+          `INSERT INTO audit_events (id, organization_id, user_id, action, resource_type, resource_id, metadata)
+           VALUES ($1,$2,$3,'CLINICAL_MEDIA_INTEGRITY_FAILED','CLINICAL_MEDIA',$4,$5::jsonb)`,
+          [randomUUID(), organizationId, access.userId, mediaId, JSON.stringify({
+            clinicId, patientId, encounterId, expectedChecksum: media.checksumSha256, actualChecksum,
+          })],
+        );
+        request.log.error({ event: 'CLINICAL_MEDIA_INTEGRITY_FAILURE' }, 'Clinical media integrity check failed');
         return reply.code(500).send({ error: { code: 'CLINICAL_MEDIA_INTEGRITY_FAILURE', message: 'The clinical file failed its integrity check.' } });
       }
       reply.header('Content-Type', media.mimeType);
