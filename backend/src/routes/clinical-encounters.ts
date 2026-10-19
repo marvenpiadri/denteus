@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { FastifyPluginAsync } from 'fastify';
-import { canReadOdontogram, canWriteOdontogram, denyInsufficientRole, requireClinicAccess } from '../auth/authorization.js';
+import { canReadOdontogram, canWriteOdontogram, denyInsufficientRole, hasActiveClinicalProvider, requireClinicAccess } from '../auth/authorization.js';
 import { pool } from '../db/pool.js';
 
 interface PatientParams { organizationId: string; clinicId: string; patientId: string; }
@@ -27,16 +27,6 @@ interface RecordAmendmentBody { reason: string; content: string; }
 
 const encounterTypes: EncounterType[] = ['CONSULTATION', 'EMERGENCY', 'FOLLOW_UP', 'PROCEDURE', 'OTHER'];
 const noteTypes: NoteType[] = ['CHIEF_COMPLAINT', 'EXAMINATION', 'ASSESSMENT', 'PROGRESS', 'DISCHARGE', 'OTHER'];
-
-async function hasActiveClinicalProvider(organizationId: string, clinicId: string, userId: string, roles: readonly string[]): Promise<boolean> {
-  const result = await pool.query(
-    `SELECT 1 FROM clinic_providers
-     WHERE organization_id=$1 AND clinic_id=$2 AND user_id=$3 AND active=true AND role = ANY($4::text[])
-     LIMIT 1`,
-    [organizationId, clinicId, userId, roles],
-  );
-  return Boolean(result.rowCount);
-}
 
 const createEncounterSchema = {
   type: 'object', additionalProperties: false,
@@ -449,6 +439,7 @@ export const clinicalEncounterRoutes: FastifyPluginAsync = async (app) => {
       const access = await requireClinicAccess(request, reply, organizationId, clinicId);
       if (!access) return;
       if (!canWriteOdontogram(access)) return denyInsufficientRole(reply);
+      if (!await hasActiveClinicalProvider(organizationId, clinicId, access.userId, ['DENTIST', 'ORTHODONTIST', 'HYGIENIST'])) return reply.code(403).send({ error: { code: 'CLINICIAN_REQUIRED', message: 'An active clinical provider account is required to amend a finding.' } });
       const reason=request.body.reason.trim(), content=request.body.content.trim();
       if(!reason||!content)return reply.code(400).send({error:{code:'INVALID_AMENDMENT',message:'A reason and corrected finding are required.'}});
       const client=await pool.connect();
@@ -471,6 +462,7 @@ export const clinicalEncounterRoutes: FastifyPluginAsync = async (app) => {
       const access = await requireClinicAccess(request, reply, organizationId, clinicId);
       if (!access) return;
       if (!canWriteOdontogram(access)) return denyInsufficientRole(reply);
+      if (!await hasActiveClinicalProvider(organizationId, clinicId, access.userId, ['DENTIST', 'ORTHODONTIST'])) return reply.code(403).send({ error: { code: 'CLINICIAN_REQUIRED', message: 'An active dentist or orthodontist account is required to amend a completed act.' } });
       const reason=request.body.reason.trim(), content=request.body.content.trim();
       if(!reason||!content)return reply.code(400).send({error:{code:'INVALID_AMENDMENT',message:'A reason and correction details are required.'}});
       const client=await pool.connect();
@@ -657,6 +649,7 @@ export const clinicalEncounterRoutes: FastifyPluginAsync = async (app) => {
       const access = await requireClinicAccess(request, reply, organizationId, clinicId);
       if (!access) return;
       if (!canWriteOdontogram(access)) return denyInsufficientRole(reply);
+      if (!await hasActiveClinicalProvider(organizationId, clinicId, access.userId, ['DENTIST', 'ORTHODONTIST', 'HYGIENIST'])) return reply.code(403).send({ error: { code: 'CLINICIAN_REQUIRED', message: 'An active clinical provider account is required to amend a signed note.' } });
       const reason = request.body.reason.trim(), amendedContent = request.body.amendedContent.trim();
       if (!reason || !amendedContent) {
         return reply.code(400).send({ error: { code: 'INVALID_AMENDMENT', message: 'A reason and corrected content are required.' } });
