@@ -6,9 +6,12 @@
 
 # Compiled output
 /dist
+/backend/dist
 /tmp
+/backend/tmp
 /out-tsc
 /bazel-out
+*.tsbuildinfo
 
 # Node
 node_modules/
