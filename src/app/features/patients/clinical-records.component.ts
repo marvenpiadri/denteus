@@ -69,9 +69,10 @@ export class ClinicalRecordsComponent {
   }finally{this.mediaUploading.set(false);input.value='';}
  }
  async downloadMedia(media:Encounter['media'][number]):Promise<void>{
-  const clinic=this.tenant.activeClinic(),visit=this.selected();if(!clinic||!visit)return;
+  const clinic=this.tenant.activeClinic(),visit=this.selected(),patient=this.patientId();if(!clinic||!visit)return;
   try{
-   const blob=await this.api.downloadMedia(clinic.organizationId,clinic.id,this.patientId(),visit.id,media.id);
+   const blob=await this.api.downloadMedia(clinic.organizationId,clinic.id,patient,visit.id,media.id);
+   if(this.tenant.activeClinic()?.id!==clinic.id||this.patientId()!==patient||this.selected()?.id!==visit.id)return;
    const url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download=media.originalFilename||'document-clinique';anchor.rel='noopener';anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   }catch{this.error.set('Ce document ne peut pas être téléchargé. Vérifiez vos droits et réessayez.');}
  }
