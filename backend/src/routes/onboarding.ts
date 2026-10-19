@@ -3,6 +3,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import { fromNodeHeaders } from 'better-auth/node';
 import { auth } from '../auth/auth.js';
 import { pool } from '../db/pool.js';
+import { normalizeIanaTimeZone } from '../domain/timezone-policy.js';
 
 interface AdditionalClinicBody {
   name: string;
@@ -39,17 +40,6 @@ const additionalClinicSchema = {
     timezone: { type: 'string', minLength: 1, maxLength: 100 },
   },
 } as const;
-
-function normalizeTimeZone(value?: string): string | null {
-  const timezone = value === undefined ? 'Africa/Casablanca' : value.trim();
-  if (!timezone) return null;
-  try {
-    new Intl.DateTimeFormat('en-US', { timeZone: timezone }).format();
-    return timezone;
-  } catch {
-    return null;
-  }
-}
 
 const createClinicSchema = {
   type: 'object',
@@ -115,7 +105,7 @@ export const onboardingRoutes: FastifyPluginAsync = async (app) => {
         });
       }
 
-      const timezone = normalizeTimeZone(request.body.timezone);
+      const timezone = normalizeIanaTimeZone(request.body.timezone);
       if (!timezone) {
         return reply.code(400).send({ error: { code: 'INVALID_TIMEZONE', message: 'Choisissez un fuseau horaire IANA valide, par exemple Africa/Casablanca.' } });
       }
@@ -201,7 +191,7 @@ export const onboardingRoutes: FastifyPluginAsync = async (app) => {
       }
 
       const body = request.body;
-      const timezone = normalizeTimeZone(body.timezone);
+      const timezone = normalizeIanaTimeZone(body.timezone);
       if (!timezone) {
         return reply.code(400).send({ error: { code: 'INVALID_TIMEZONE', message: 'Choisissez un fuseau horaire IANA valide, par exemple Africa/Casablanca.' } });
       }
