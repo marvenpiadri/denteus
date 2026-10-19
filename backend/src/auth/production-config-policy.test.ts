@@ -6,12 +6,19 @@ test('production auth configuration accepts canonical HTTPS origins', () => {
   assert.doesNotThrow(() => validateProductionAuthConfiguration(
     'https://dentaleus.example',
     'https://dentaleus.example,https://app.dentaleus.example',
+    'A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6',
   ));
 });
 
+test('production auth configuration rejects placeholder or weak secrets', () => {
+  assert.throws(() => validateProductionAuthConfiguration('https://dentaleus.example', 'https://dentaleus.example', undefined));
+  assert.throws(() => validateProductionAuthConfiguration('https://dentaleus.example', 'https://dentaleus.example', 'replace-with-at-least-32-random-characters'));
+  assert.throws(() => validateProductionAuthConfiguration('https://dentaleus.example', 'https://dentaleus.example', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'));
+});
+
 test('production auth configuration rejects missing or empty trusted origins', () => {
-  assert.throws(() => validateProductionAuthConfiguration('https://dentaleus.example', undefined));
-  assert.throws(() => validateProductionAuthConfiguration('https://dentaleus.example', ' , '));
+  assert.throws(() => validateProductionAuthConfiguration('https://dentaleus.example', undefined, 'A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6'));
+  assert.throws(() => validateProductionAuthConfiguration('https://dentaleus.example', ' , ', 'A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6'));
 });
 
 test('production auth configuration rejects non-canonical authentication base URLs', () => {
@@ -22,7 +29,7 @@ test('production auth configuration rejects non-canonical authentication base UR
     'https://dentaleus.example?next=/',
     'https://user:password@dentaleus.example',
   ]) {
-    assert.throws(() => validateProductionAuthConfiguration(value, 'https://dentaleus.example'));
+    assert.throws(() => validateProductionAuthConfiguration(value, 'https://dentaleus.example', 'A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6'));
   }
 });
 
@@ -34,6 +41,6 @@ test('production auth configuration rejects invalid trusted origins', () => {
     'https://user:password@dentaleus.example',
     'not a url',
   ]) {
-    assert.throws(() => validateProductionAuthConfiguration('https://dentaleus.example', value));
+    assert.throws(() => validateProductionAuthConfiguration('https://dentaleus.example', value, 'A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6'));
   }
 });
