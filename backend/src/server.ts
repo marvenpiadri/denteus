@@ -105,7 +105,18 @@ app.route({
       });
       const response = await auth.handler(authRequest);
       reply.status(response.status);
-      response.headers.forEach((value, key) => reply.header(key, value));
+      const forwardedHeaders = ['content-type', 'cache-control', 'location', 'retry-after', 'www-authenticate', 'pragma', 'expires'];
+      for (const name of forwardedHeaders) {
+        const value = response.headers.get(name);
+        if (value !== null) reply.header(name, value);
+      }
+      const authHeaders = response.headers as Headers & { getSetCookie?: () => string[] };
+      const setCookies = authHeaders.getSetCookie?.() ?? [];
+      if (setCookies.length) reply.header('set-cookie', setCookies);
+      else {
+        const setCookie = response.headers.get('set-cookie');
+        if (setCookie) reply.header('set-cookie', setCookie);
+      }
       return reply.send(response.body ? await response.text() : null);
     } catch (error) {
       request.log.error({ err: error }, 'Authentication handler failed');
