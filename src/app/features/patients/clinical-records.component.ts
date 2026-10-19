@@ -82,7 +82,7 @@ export class ClinicalRecordsComponent {
  }
  label(value:string){return ({DRAFT:'Brouillon',SIGNED:'Signée',CONSULTATION:'Consultation',EMERGENCY:'Urgence',FOLLOW_UP:'Suivi',PROCEDURE:'Séance de soins',CHIEF_COMPLAINT:'Motif',EXAMINATION:'Examen',ASSESSMENT:'Évaluation',PROGRESS:'Note de séance',DISCHARGE:'Conclusion',OTHER:'Autre',XRAY:'Radiographie',PHOTO:'Photo clinique',DOCUMENT:'Document',OBSERVATION:'Observation',DIAGNOSIS:'Diagnostic',SYMPTOM:'Symptôme',RISK:'Risque',EXAM:'Examen',HYGIENE:'Hygiène',RESTORATIVE:'Restaurateur',ENDODONTICS:'Endodontie',EXTRACTION:'Extraction',PROSTHODONTICS:'Prothèse',ORTHODONTICS:'Orthodontie',PERIODONTICS:'Parodontologie',IMPLANT:'Implantologie',PLANNED:'Prévu',IN_PROGRESS:'En cours',COMPLETED:'Réalisé',CANCELLED:'Annulé'} as Record<string,string>)[value]??value;}
  private clinicLocalDateTimeToIso(value:string,timeZone:string):string|null{
-  const match=/^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2})$/.exec(value);
+  const match=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value);
   if(!match)return null;
   const [,yearText,monthText,dayText,hourText,minuteText]=match;
   const target={year:Number(yearText),month:Number(monthText),day:Number(dayText),hour:Number(hourText),minute:Number(minuteText)};
