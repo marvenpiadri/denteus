@@ -27,10 +27,6 @@ const acceptSchema = {
 } as const;
 const hashToken = (token: string): string => createHash('sha256').update(token).digest('hex');
 
-async function getCurrentUser(request: Parameters<typeof auth.api.getSession>[0]['headers'] extends never ? never : { headers: ReturnType<typeof fromNodeHeaders> }) {
-  return auth.api.getSession({ headers: request.headers });
-}
-
 export const organizationInvitationRoutes: FastifyPluginAsync = async (app) => {
   app.get<{ Params: OrganizationParams }>('/organizations/:organizationId/invitations', async (request, reply) => {
     const current = await auth.api.getSession({ headers: fromNodeHeaders(request.headers) });
@@ -91,6 +87,9 @@ export const organizationInvitationRoutes: FastifyPluginAsync = async (app) => {
       if (existing.rowCount) return reply.code(409).send({ error: { code: 'ALREADY_MEMBER', message: 'This person is already a member of the organization.' } });
 
       const clinicIds = [...new Set(request.body.clinicIds ?? [])];
+      if (role !== 'ORGANIZATION_ADMIN' && clinicIds.length === 0) {
+        return reply.code(400).send({ error: { code: 'CLINIC_SCOPE_REQUIRED', message: 'Select at least one clinic for this staff role.' } });
+      }
       if (clinicIds.length) {
         const clinics = await pool.query(
           "SELECT id FROM clinics WHERE organization_id=$1 AND status='ACTIVE' AND id=ANY($2::text[])",
