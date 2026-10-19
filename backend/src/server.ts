@@ -4,6 +4,7 @@ import fastifyCors from '@fastify/cors';
 import { fromNodeHeaders } from 'better-auth/node';
 import { auth } from './auth/auth.js';
 import { checkDatabaseConnection, pool } from './db/pool.js';
+import { safeErrorLogFields } from './security/safe-error-log.js';
 import { organizationRoutes } from './routes/organizations.js';
 import { patientRoutes } from './routes/patients.js';
 import { odontogramRoutes } from './routes/odontograms.js';
