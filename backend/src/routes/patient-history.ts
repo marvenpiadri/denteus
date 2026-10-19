@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { FastifyPluginAsync } from 'fastify';
-import { canReadOdontogram, canWriteOdontogram, denyInsufficientRole, requireClinicAccess } from '../auth/authorization.js';
+import { canReadOdontogram, canWriteOdontogram, denyInsufficientRole, hasActiveClinicalProvider, requireClinicAccess } from '../auth/authorization.js';
 import { pool } from '../db/pool.js';
 
 interface PatientHistoryParams { organizationId:string; clinicId:string; patientId:string; }
@@ -82,6 +82,7 @@ export const patientHistoryRoutes:FastifyPluginAsync=async(app)=>{
       const access=await requireClinicAccess(request,reply,organizationId,clinicId);
       if(!access)return;
       if(!canWriteOdontogram(access))return denyInsufficientRole(reply);
+      if(!await hasActiveClinicalProvider(organizationId,clinicId,access.userId,['DENTIST','ORTHODONTIST','HYGIENIST']))return reply.code(403).send({error:{code:'CLINICIAN_REQUIRED',message:'An active clinical provider account is required to amend patient history.'}});
       const reason=request.body.reason.trim(),correctedContent=request.body.correctedContent.trim();
       if(!reason||!correctedContent)return reply.code(400).send({error:{code:'INVALID_AMENDMENT',message:'A reason and corrected content are required.'}});
       const client=await pool.connect();
