@@ -37,6 +37,7 @@ const app = Fastify({
       'req.headers.authorization',
       'req.headers.cookie',
       'req.headers["set-cookie"]',
+      'req.body',
       'req.body.password',
       'req.body.token',
     ],
