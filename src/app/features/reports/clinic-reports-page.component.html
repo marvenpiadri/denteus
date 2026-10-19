@@ -6,10 +6,11 @@
   <form class="period-filter" (ngSubmit)="load()">
     <div class="date-field"><label for="report-from">Du</label><input id="report-from" name="from" type="date" [(ngModel)]="from" required></div>
     <div class="date-field"><label for="report-to">Au</label><input id="report-to" name="to" type="date" [(ngModel)]="to" [min]="from" required></div>
-    <button type="submit" [disabled]="loading() || !from || !to || from > to">{{loading() ? 'Actualisation…' : 'Actualiser les rapports'}}</button>
+    <button type="submit" [disabled]="loading() || periodInvalid">{{loading() ? 'Actualisation…' : 'Actualiser les rapports'}}</button>
+    @if (report()) { <button type="button" class="export-button" (click)="exportCsv()">Exporter en CSV</button> }
   </form>
 
-  @if (error()) { <p class="feedback error" role="alert">{{error()}} <button type="button" (click)="load()">Réessayer</button></p> }
+  @if (error()) { <p class="feedback error" role="alert">{{error()}} @if (!periodInvalid) { <button type="button" (click)="load()">Réessayer</button> }</p> }
   @if (loading() && !report()) { <p class="feedback" role="status">Chargement des données de la clinique…</p> }
 
   @if (report(); as data) {
