@@ -120,6 +120,7 @@ export const patientRoutes: FastifyPluginAsync = async (app) => {
         request.params.clinicId,
       );
       if (!access) return;
+      if (!canManagePatients(access)) return denyInsufficientRole(reply);
 
       const query = (request.query.q ?? '').trim().slice(0, 120);
       const result = await pool.query(
@@ -158,6 +159,7 @@ export const patientRoutes: FastifyPluginAsync = async (app) => {
         request.params.clinicId,
       );
       if (!access) return;
+      if (!canManagePatients(access)) return denyInsufficientRole(reply);
 
       const result = await pool.query(
         `
