@@ -19,7 +19,7 @@
     "pg": "^8.16.3",
     "dotenv": "^17.2.3",
     "better-auth": "^1.7.10",
-    "@fastify/cors": "^10.1.0"
+    "@fastify/cors": "^11.3.1"
   },
   "devDependencies": {
     "@types/node": "^20.17.19",
