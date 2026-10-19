@@ -13,6 +13,7 @@
           <div class="field"><label for="clinicEmail">E-mail professionnel</label><input id="clinicEmail" name="clinicEmail" type="email" autocomplete="email" [(ngModel)]="email" maxlength="254" [readonly]="!canEdit()"></div>
           <div class="field wide"><label for="clinicAddress">Adresse</label><input id="clinicAddress" name="clinicAddress" autocomplete="street-address" [(ngModel)]="address" maxlength="500" [readonly]="!canEdit()"></div>
           <div class="field"><label for="clinicCity">Ville</label><input id="clinicCity" name="clinicCity" autocomplete="address-level2" [(ngModel)]="city" maxlength="120" [readonly]="!canEdit()"></div>
+          <div class="field"><label for="clinicTimezone">Fuseau horaire *</label><input id="clinicTimezone" name="clinicTimezone" [(ngModel)]="timezone" required maxlength="100" placeholder="Africa/Casablanca" [readonly]="!canEdit()"><small>Identifiant IANA, par exemple Africa/Casablanca.</small></div>
         </div>
         <div class="form-footer"><p>Dernière modification : {{clinic.updatedAt|date:'dd/MM/yyyy à HH:mm'}}</p>@if(canEdit()){<button class="primary-button" type="submit" [disabled]="profileForm.invalid||saving()">{{saving()?'Enregistrement…':'Enregistrer les modifications'}}</button>}</div>
       </form>
