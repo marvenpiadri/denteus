@@ -4,7 +4,8 @@ import { fromNodeHeaders } from 'better-auth/node';
 import { auth } from '../auth/auth.js';
 import { pool } from '../db/pool.js';
 
-interface Params { organizationId: string; userId?: string; }
+interface Params { organizationId: string; }
+interface MemberParams extends Params { userId: string; }
 interface RoleBody { role: string; }
 
 const organizationRoles = new Set([
@@ -51,7 +52,7 @@ export const organizationTeamRoutes: FastifyPluginAsync = async (app) => {
     return { data: result.rows, canManage, canManageOwners: access.rows[0].role === 'ORGANIZATION_OWNER' };
   });
 
-  app.put<{ Params: Params; Body: RoleBody }>(
+  app.put<{ Params: MemberParams; Body: RoleBody }>(
     '/organizations/:organizationId/team/:userId',
     { schema: { body: roleSchema } },
     async (request, reply) => {
@@ -91,6 +92,10 @@ export const organizationTeamRoutes: FastifyPluginAsync = async (app) => {
           await client.query('ROLLBACK');
           return reply.code(404).send({ error: { code: 'MEMBER_NOT_FOUND', message: 'Organization member not found.' } });
         }
+        if (['ORGANIZATION_OWNER', 'ORGANIZATION_ADMIN'].includes(target.rows[0].role) && actorRole !== 'ORGANIZATION_OWNER') {
+          await client.query('ROLLBACK');
+          return reply.code(403).send({ error: { code: 'ADMIN_ROLE_PROTECTED', message: 'Only an organization owner can change an organization owner or administrator.' } });
+        }
         if (target.rows[0].role === 'ORGANIZATION_OWNER' && requestedRole !== 'ORGANIZATION_OWNER') {
           const owners = await client.query<{ count: number }>(
             "SELECT count(*)::integer AS count FROM organization_memberships WHERE organization_id = $1 AND role = 'ORGANIZATION_OWNER'",
@@ -129,7 +134,7 @@ export const organizationTeamRoutes: FastifyPluginAsync = async (app) => {
     },
   );
 
-  app.delete<{ Params: Params }>(
+  app.delete<{ Params: MemberParams }>(
     '/organizations/:organizationId/team/:userId',
     async (request, reply) => {
       const current = await auth.api.getSession({ headers: fromNodeHeaders(request.headers) });
