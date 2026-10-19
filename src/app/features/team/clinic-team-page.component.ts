@@ -14,6 +14,8 @@ interface TeamMember {
   effectiveRole: string;
 }
 interface TeamResponse { data: TeamMember[]; canManage: boolean; }
+interface OrganizationMember { userId: string; name: string; email: string; role: string; joinedAt: string; isCurrentUser: boolean; clinics: Array<{id:string;name:string;role:string}>; }
+interface OrganizationTeamResponse { data: OrganizationMember[]; canManage: boolean; canManageOwners: boolean; }
 
 @Component({
   selector: 'app-clinic-team-page',
@@ -27,6 +29,20 @@ export class ClinicTeamPageComponent {
   private readonly http = inject(HttpClient);
   private readonly platformId = inject(PLATFORM_ID);
   readonly members = signal<TeamMember[]>([]);
+  readonly organizationMembers = signal<OrganizationMember[]>([]);
+  readonly canManageOrganization = signal(false);
+  readonly canManageOwners = signal(false);
+  organizationRoleDrafts: Record<string, string> = {};
+  readonly organizationRoleOptions = [
+    { value: 'ORGANIZATION_ADMIN', label: 'Administrateur organisation' },
+    { value: 'CLINIC_ADMIN', label: 'Administrateur clinique' },
+    { value: 'DENTIST', label: 'Chirurgien-dentiste' },
+    { value: 'ORTHODONTIST', label: 'Orthodontiste' },
+    { value: 'HYGIENIST', label: 'Hygiéniste' },
+    { value: 'ASSISTANT', label: 'Assistant(e)' },
+    { value: 'RECEPTIONIST', label: 'Accueil' },
+    { value: 'ACCOUNTANT', label: 'Comptabilité' },
+  ];
   readonly canManage = signal(false);
   readonly loading = signal(false);
   readonly saving = signal(false);
@@ -54,6 +70,7 @@ export class ClinicTeamPageComponent {
       if (!clinic) {
         this.context = '';
         this.members.set([]);
+        this.organizationMembers.set([]);
         this.error.set('Sélectionnez une clinique autorisée pour gérer son équipe.');
         return;
       }
@@ -61,6 +78,7 @@ export class ClinicTeamPageComponent {
       if (key === this.context) return;
       this.context = key;
       this.members.set([]);
+      void this.loadOrganizationTeam();
       void this.load();
     });
   }
@@ -111,13 +129,83 @@ export class ClinicTeamPageComponent {
   roleLabel(role: string | null): string {
     const labels: Record<string, string> = {
       ORGANIZATION_OWNER: 'Propriétaire organisation', ORGANIZATION_ADMIN: 'Admin. organisation',
-      ORGANIZATION_MEMBER: 'Membre organisation', CLINIC_ADMIN: 'Administrateur clinique',
+      ORGANIZATION_MEMBER: 'Membre organisation', CLINIC_ADMIN: 'Administrateur clinique', ACCOUNTANT: 'Comptabilité',
       DENTIST: 'Chirurgien-dentiste', ORTHODONTIST: 'Orthodontiste',
       HYGIENIST: 'Hygiéniste', ASSISTANT: 'Assistant(e)', RECEPTIONIST: 'Accueil',
     };
     return role ? labels[role] ?? role : 'Pas encore affecté';
   }
 
+  private organizationUrl(): string {
+    const clinic = this.tenant.activeClinic();
+    return clinic ? '/api/v1/organizations/' + encodeURIComponent(clinic.organizationId) + '/team' : '';
+  }
+
+  async loadOrganizationTeam(): Promise<void> {
+    const clinic = this.tenant.activeClinic();
+    if (!clinic) return;
+    const orgId = clinic.organizationId;
+    try {
+      const response = await firstValueFrom(this.http.get<OrganizationTeamResponse>(this.organizationUrl(), { withCredentials: true }));
+      if (this.tenant.activeClinic()?.organizationId !== orgId) return;
+      this.organizationMembers.set(response.data);
+      this.canManageOrganization.set(response.canManage);
+      this.canManageOwners.set(response.canManageOwners);
+      this.organizationRoleDrafts = Object.fromEntries(response.data.map((member) => [member.userId, member.role]));
+    } catch (error) {
+      if (this.tenant.activeClinic()?.organizationId === orgId) {
+        this.organizationMembers.set([]);
+        this.canManageOrganization.set(false);
+        this.error.set(error instanceof HttpErrorResponse && error.status === 403
+          ? 'Votre rôle ne permet pas de gérer les membres de l’organisation.'
+          : 'Les membres de l’organisation ne peuvent pas être chargés.');
+      }
+    }
+  }
+
+  availableOrganizationRoles(member: OrganizationMember): Array<{value:string;label:string}> {
+    return this.organizationRoleOptions.filter((role) =>
+      (this.canManageOwners() || role.value !== 'ORGANIZATION_ADMIN') &&
+      (member.role !== 'ORGANIZATION_OWNER' || this.canManageOwners()) &&
+      (!member.isCurrentUser || role.value === member.role),
+    );
+  }
+
+  async saveOrganizationRole(member: OrganizationMember): Promise<void> {
+    if (!this.canManageOrganization() || member.isCurrentUser || this.saving()) return;
+    const role = this.organizationRoleDrafts[member.userId];
+    if (!role || role === member.role) return;
+    this.saving.set(true); this.error.set(''); this.success.set('');
+    try {
+      await firstValueFrom(this.http.put(this.organizationUrl() + '/' + encodeURIComponent(member.userId), { role }, { withCredentials: true }));
+      this.success.set('Le rôle dans l’organisation a été mis à jour.');
+      await this.loadOrganizationTeam();
+      await this.load();
+      await this.tenant.load(true);
+    } catch (error) {
+      this.error.set(error instanceof HttpErrorResponse && error.status === 409
+        ? 'L’organisation doit conserver au moins un propriétaire.'
+        : 'Le rôle organisationnel n’a pas pu être modifié.');
+    } finally { this.saving.set(false); }
+  }
+
+  async removeOrganizationMember(member: OrganizationMember): Promise<void> {
+    if (!this.canManageOrganization() || member.isCurrentUser || this.saving()) return;
+    if (!window.confirm('Retirer ' + member.name + ' de l’organisation ? Ses accès à toutes les cliniques de cette organisation seront retirés, mais son compte et son historique clinique seront conservés.')) return;
+    this.saving.set(true); this.error.set(''); this.success.set('');
+    try {
+      await firstValueFrom(this.http.delete(this.organizationUrl() + '/' + encodeURIComponent(member.userId), { withCredentials: true }));
+      this.success.set('Le membre a été retiré de l’organisation et de ses cliniques.');
+      await this.loadOrganizationTeam();
+      await this.load();
+    } catch (error) {
+      this.error.set(error instanceof HttpErrorResponse && error.status === 409
+        ? 'L’organisation doit conserver au moins un propriétaire.'
+        : error instanceof HttpErrorResponse && error.status === 403
+          ? 'Seul un propriétaire peut retirer un autre propriétaire ou administrateur de l’organisation.'
+          : 'Le membre n’a pas pu être retiré.');
+    } finally { this.saving.set(false); }
+  }
   async addMember(): Promise<void> {
     if (!this.canManage() || !this.addUserId || this.saving()) return;
     this.saving.set(true); this.error.set(''); this.success.set('');
