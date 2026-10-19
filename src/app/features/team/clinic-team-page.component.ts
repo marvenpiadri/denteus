@@ -16,6 +16,9 @@ interface TeamMember {
 interface TeamResponse { data: TeamMember[]; canManage: boolean; }
 interface OrganizationMember { userId: string; name: string; email: string; role: string; joinedAt: string; isCurrentUser: boolean; clinics: Array<{id:string;name:string;role:string}>; }
 interface OrganizationTeamResponse { data: OrganizationMember[]; canManage: boolean; canManageOwners: boolean; }
+interface OrganizationInvitation { id: string; email: string; role: string; clinicIds: string[]; expiresAt: string; acceptedAt: string | null; revokedAt: string | null; createdAt: string; invitedByName: string | null; status: 'PENDING' | 'ACCEPTED' | 'REVOKED' | 'EXPIRED'; }
+interface InvitationResponse { data: OrganizationInvitation[]; }
+interface CreatedInvitationResponse { data: { id: string; email: string; role: string; clinicIds: string[]; expiresAt: string; token: string; }; }
 
 @Component({
   selector: 'app-clinic-team-page',
@@ -32,6 +35,12 @@ export class ClinicTeamPageComponent {
   readonly organizationMembers = signal<OrganizationMember[]>([]);
   readonly canManageOrganization = signal(false);
   readonly canManageOwners = signal(false);
+  readonly invitations = signal<OrganizationInvitation[]>([]);
+  readonly invitationSaving = signal(false);
+  invitationEmail = '';
+  invitationRole = 'DENTIST';
+  invitationClinicIds: string[] = [];
+  createdInvitationUrl = '';
   organizationRoleDrafts: Record<string, string> = {};
   readonly organizationRoleOptions = [
     { value: 'ORGANIZATION_ADMIN', label: 'Administrateur organisation' },
@@ -152,6 +161,7 @@ export class ClinicTeamPageComponent {
       this.canManageOrganization.set(response.canManage);
       this.canManageOwners.set(response.canManageOwners);
       this.organizationRoleDrafts = Object.fromEntries(response.data.map((member) => [member.userId, member.role]));
+      if (response.canManage) await this.loadInvitations();
     } catch (error) {
       if (this.tenant.activeClinic()?.organizationId === orgId) {
         this.organizationMembers.set([]);
@@ -163,6 +173,54 @@ export class ClinicTeamPageComponent {
     }
   }
 
+  async loadInvitations(): Promise<void> {
+    const clinic = this.tenant.activeClinic();
+    if (!clinic || !this.canManageOrganization()) return;
+    try {
+      const response = await firstValueFrom(this.http.get<InvitationResponse>(this.organizationUrl().replace('/team', '/invitations'), { withCredentials: true }));
+      if (this.tenant.activeClinic()?.organizationId === clinic.organizationId) this.invitations.set(response.data);
+    } catch { this.invitations.set([]); }
+  }
+
+  async createInvitation(): Promise<void> {
+    if (!this.canManageOrganization() || !this.invitationEmail.trim() || this.invitationSaving()) return;
+    if (this.invitationRole !== 'ORGANIZATION_ADMIN' && !this.invitationClinicIds.length) { this.error.set('Sélectionnez au moins une clinique pour ce rôle.'); return; }
+    this.invitationSaving.set(true); this.error.set(''); this.success.set(''); this.createdInvitationUrl = '';
+    try {
+      const response = await firstValueFrom(this.http.post<CreatedInvitationResponse>(this.organizationUrl().replace('/team', '/invitations'), { email: this.invitationEmail.trim(), role: this.invitationRole, clinicIds: this.invitationRole === 'ORGANIZATION_ADMIN' ? [] : this.invitationClinicIds }, { withCredentials: true }));
+      this.createdInvitationUrl = window.location.origin + '/accept-invitation?token=' + encodeURIComponent(response.data.token);
+      this.invitationEmail = '';
+      this.success.set('Invitation créée. Copiez le lien et transmettez-le à la personne invitée. Il expire dans 7 jours.');
+      await this.loadInvitations();
+    } catch (error) {
+      this.error.set(error instanceof HttpErrorResponse && error.status === 409
+        ? 'Cette personne est déjà membre ou possède déjà une invitation active.'
+        : error instanceof HttpErrorResponse && error.status === 403
+          ? 'Seul un propriétaire peut inviter un administrateur organisationnel.'
+          : 'L’invitation n’a pas pu être créée. Vérifiez l’adresse et les cliniques sélectionnées.');
+    } finally { this.invitationSaving.set(false); }
+  }
+
+  async copyInvitationLink(): Promise<void> {
+    if (!this.createdInvitationUrl) return;
+    try { await navigator.clipboard.writeText(this.createdInvitationUrl); this.success.set('Lien d’invitation copié.'); }
+    catch { this.error.set('La copie automatique est indisponible. Sélectionnez et copiez le lien affiché.'); }
+  }
+
+  async revokeInvitation(invitation: OrganizationInvitation): Promise<void> {
+    if (!this.canManageOrganization() || invitation.status !== 'PENDING' || this.invitationSaving()) return;
+    if (!window.confirm('Révoquer l’invitation destinée à ' + invitation.email + ' ? Son lien ne permettra plus de rejoindre l’organisation.')) return;
+    this.invitationSaving.set(true); this.error.set(''); this.success.set('');
+    try {
+      await firstValueFrom(this.http.delete(this.organizationUrl().replace('/team', '/invitations') + '/' + encodeURIComponent(invitation.id), { withCredentials: true }));
+      this.success.set('Invitation révoquée.'); await this.loadInvitations();
+    } catch { this.error.set('Cette invitation n’a pas pu être révoquée. Actualisez la liste.'); }
+    finally { this.invitationSaving.set(false); }
+  }
+
+  invitationStatusLabel(status: OrganizationInvitation['status']): string {
+    return ({ PENDING: 'En attente', ACCEPTED: 'Acceptée', REVOKED: 'Révoquée', EXPIRED: 'Expirée' } as const)[status];
+  }
   availableOrganizationRoles(member: OrganizationMember): Array<{value:string;label:string}> {
     const options = this.canManageOwners()
       ? [{ value: 'ORGANIZATION_OWNER', label: 'Propriétaire organisation' }, ...this.organizationRoleOptions]
