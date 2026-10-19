@@ -104,5 +104,6 @@ export class ClinicalRecordsComponent {
    return new Date(candidate).toISOString();
   }catch{return null;}
  }
- date(value:string|null|undefined,withTime=true){if(!value)return '—';return new Intl.DateTimeFormat('fr-FR',{timeZone:this.tenant.activeClinic()?.timezone||'Africa/Casablanca',dateStyle:'medium',...(withTime?{timeStyle:'short'}:{})}).format(new Date(value));}
+ get activeClinicTimezone():string{return this.tenant.activeClinic()?.timezone||'Africa/Casablanca';}
+ date(value:string|null|undefined,withTime=true){if(!value)return '—';return new Intl.DateTimeFormat('fr-FR',{timeZone:this.activeClinicTimezone,dateStyle:'medium',...(withTime?{timeStyle:'short'}:{})}).format(new Date(value));}
 }
