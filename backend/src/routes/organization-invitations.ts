@@ -1,23 +1,20 @@
-import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import type { FastifyPluginAsync } from 'fastify';
 import { fromNodeHeaders } from 'better-auth/node';
 import { auth } from '../auth/auth.js';
 import { pool } from '../db/pool.js';
+import { canInviteOrganizationRole, hashInvitationToken, invitationNeedsClinicScope, isInvitationUsable, normalizeInvitationEmail, organizationInvitationRoles, type OrganizationInvitationRole } from '../domain/organization-invitation-policy.js';
 
 interface OrganizationParams { organizationId: string; }
 interface InvitationParams extends OrganizationParams { invitationId: string; }
 interface CreateInvitationBody { email: string; role: string; clinicIds?: string[]; }
 interface AcceptInvitationBody { token: string; }
 
-const invitationRoles = [
-  'ORGANIZATION_ADMIN', 'CLINIC_ADMIN', 'DENTIST', 'ORTHODONTIST',
-  'HYGIENIST', 'ASSISTANT', 'RECEPTIONIST', 'ACCOUNTANT',
-] as const;
 const createSchema = {
   type: 'object', additionalProperties: false, required: ['email', 'role'],
   properties: {
     email: { type: 'string', format: 'email', minLength: 3, maxLength: 254 },
-    role: { type: 'string', enum: invitationRoles },
+    role: { type: 'string', enum: organizationInvitationRoles },
     clinicIds: { type: 'array', uniqueItems: true, maxItems: 100, items: { type: 'string', minLength: 1, maxLength: 100 } },
   },
 } as const;
@@ -25,7 +22,6 @@ const acceptSchema = {
   type: 'object', additionalProperties: false, required: ['token'],
   properties: { token: { type: 'string', minLength: 32, maxLength: 200 } },
 } as const;
-const hashToken = (token: string): string => createHash('sha256').update(token).digest('hex');
 
 export const organizationInvitationRoutes: FastifyPluginAsync = async (app) => {
   app.get<{ Params: OrganizationParams }>('/organizations/:organizationId/invitations', async (request, reply) => {
@@ -72,12 +68,12 @@ export const organizationInvitationRoutes: FastifyPluginAsync = async (app) => {
       if (!['ORGANIZATION_OWNER', 'ORGANIZATION_ADMIN'].includes(actor.rows[0].role)) {
         return reply.code(403).send({ error: { code: 'FORBIDDEN', message: 'Only organization administrators can invite members.' } });
       }
-      const email = request.body.email.trim().toLowerCase();
+      const email = normalizeInvitationEmail(request.body.email);
       const role = request.body.role;
-      if (!invitationRoles.includes(role as typeof invitationRoles[number])) {
+      if (!organizationInvitationRoles.includes(role as OrganizationInvitationRole)) {
         return reply.code(400).send({ error: { code: 'INVALID_ROLE', message: 'The requested invitation role is invalid.' } });
       }
-      if (role === 'ORGANIZATION_ADMIN' && actor.rows[0].role !== 'ORGANIZATION_OWNER') {
+      if (!canInviteOrganizationRole(actor.rows[0].role, role)) {
         return reply.code(403).send({ error: { code: 'ADMIN_ROLE_PROTECTED', message: 'Only an organization owner can invite an organization administrator.' } });
       }
       const existing = await pool.query(
@@ -87,7 +83,7 @@ export const organizationInvitationRoutes: FastifyPluginAsync = async (app) => {
       if (existing.rowCount) return reply.code(409).send({ error: { code: 'ALREADY_MEMBER', message: 'This person is already a member of the organization.' } });
 
       const clinicIds = [...new Set(request.body.clinicIds ?? [])];
-      if (role !== 'ORGANIZATION_ADMIN' && clinicIds.length === 0) {
+      if (invitationNeedsClinicScope(role) && clinicIds.length === 0) {
         return reply.code(400).send({ error: { code: 'CLINIC_SCOPE_REQUIRED', message: 'Select at least one clinic for this staff role.' } });
       }
       if (clinicIds.length) {
@@ -117,7 +113,7 @@ export const organizationInvitationRoutes: FastifyPluginAsync = async (app) => {
              (id, organization_id, invited_email, role, clinic_ids, token_hash, invited_by_id, expires_at)
              VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7,$8)
              RETURNING id, expires_at AS "expiresAt"`,
-            [randomUUID(), organizationId, email, role, JSON.stringify(clinicIds), hashToken(token), current.user.id, expiresAt],
+            [randomUUID(), organizationId, email, role, JSON.stringify(clinicIds), hashInvitationToken(token), current.user.id, expiresAt],
           );
           await client.query(
             `INSERT INTO audit_events (id, organization_id, user_id, action, resource_type, resource_id, metadata)
@@ -183,10 +179,10 @@ export const organizationInvitationRoutes: FastifyPluginAsync = async (app) => {
         }>(
           `SELECT id, organization_id, invited_email, role, clinic_ids, expires_at, accepted_at, revoked_at
            FROM organization_invitations WHERE token_hash=$1 FOR UPDATE`,
-          [hashToken(request.body.token)],
+          [hashInvitationToken(request.body.token)],
         );
         const invite = invitation.rows[0];
-        if (!invite || invite.accepted_at || invite.revoked_at || new Date(invite.expires_at).getTime() <= Date.now()) {
+        if (!invite || !isInvitationUsable({ expiresAt: invite.expires_at, acceptedAt: invite.accepted_at, revokedAt: invite.revoked_at })) {
           await client.query('ROLLBACK');
           return reply.code(410).send({ error: { code: 'INVITATION_INVALID', message: 'This invitation is expired, revoked, or already used.' } });
         }
