@@ -18,6 +18,7 @@ import { clinicSettingsRoutes } from './routes/clinic-settings.js';
 import { reportRoutes } from './routes/reports.js';
 import { teamRoutes } from './routes/team.js';
 import { organizationTeamRoutes } from './routes/organization-team.js';
+import { organizationInvitationRoutes } from './routes/organization-invitations.js';
 
 const clientOrigins = (process.env['CLIENT_ORIGINS'] ?? 'http://localhost:3000')
   .split(',')
@@ -127,6 +128,7 @@ await app.register(clinicSettingsRoutes, { prefix: '/api/v1' });
 await app.register(reportRoutes, { prefix: '/api/v1' });
 await app.register(teamRoutes, { prefix: '/api/v1' });
 await app.register(organizationTeamRoutes, { prefix: '/api/v1' });
+await app.register(organizationInvitationRoutes, { prefix: '/api/v1' });
 
 app.setNotFoundHandler(async (_request, reply) => reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Route not found.' } }));
 app.setErrorHandler((error, request, reply) => {
