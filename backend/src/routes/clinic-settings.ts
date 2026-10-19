@@ -4,15 +4,16 @@ import { requireClinicAccess } from '../auth/authorization.js';
 import { pool } from '../db/pool.js';
 
 interface Params { organizationId:string; clinicId:string; }
-interface ClinicProfileBody { name:string; city:string|null; address:string|null; phone:string|null; email:string|null; }
+interface ClinicProfileBody { name:string; city:string|null; address:string|null; phone:string|null; email:string|null; timezone:string; }
 const profileSchema={
-  type:'object',additionalProperties:false,required:['name','city','address','phone','email'],
+  type:'object',additionalProperties:false,required:['name','city','address','phone','email','timezone'],
   properties:{
     name:{type:'string',minLength:1,maxLength:160},
     city:{anyOf:[{type:'string',maxLength:120},{type:'null'}]},
     address:{anyOf:[{type:'string',maxLength:500},{type:'null'}]},
     phone:{anyOf:[{type:'string',maxLength:40},{type:'null'}]},
     email:{anyOf:[{type:'string',format:'email',maxLength:254},{type:'null'}]},
+    timezone:{type:'string',minLength:1,maxLength:100},
   },
 } as const;
 const settingsRoles=new Set(['ORGANIZATION_OWNER','ORGANIZATION_ADMIN','CLINIC_ADMIN']);
@@ -23,7 +24,7 @@ export const clinicSettingsRoutes:FastifyPluginAsync=async(app)=>{
     const access=await requireClinicAccess(request,reply,organizationId,clinicId);
     if(!access)return;
     const result=await pool.query(
-      `SELECT id,name,city,address,phone,email,updated_at AS "updatedAt"
+      `SELECT id,name,city,address,phone,email,timezone,updated_at AS "updatedAt"
        FROM clinics WHERE organization_id=$1 AND id=$2 AND status='ACTIVE'`,
       [organizationId,clinicId],
     );
