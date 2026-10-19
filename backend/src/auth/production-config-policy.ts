@@ -1,9 +1,14 @@
 export function validateProductionAuthConfiguration(
   configuredBaseUrl: string | undefined,
   configuredOrigins: string | undefined,
+  secret: string | undefined,
 ): void {
   if (!configuredOrigins) {
     throw new Error('CLIENT_ORIGINS must be configured in production.');
+  }
+
+  if (!secret || secret.length < 32 || /^(replace-with|change-me|changeme|your[-_ ]|example|test[-_ ]|secret\b)/i.test(secret) || /^(.)\1+$/.test(secret)) {
+    throw new Error('BETTER_AUTH_SECRET must be a non-placeholder secret with at least 32 characters in production.');
   }
 
   const trustedOrigins = configuredOrigins
