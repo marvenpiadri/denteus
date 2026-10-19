@@ -9,7 +9,7 @@ This checklist is a release gate, not a claim that the items have passed. Mark a
 - [ ] Run frontend tests with `npm test -- --watch=false`.
 - [ ] Commit a backend dependency lockfile and switch backend CI/deployment installation to a frozen install. The backend currently has no checked-in npm lockfile, and its `npm install` can resolve different dependency versions over time.
 - [ ] Run `npm run typecheck`, `npm run build`, and `npm test` from `backend/`.
-- [ ] Run migrations against a clean PostgreSQL 16 database and verify the full migration sequence, including private clinical media, clinic timezone, media category compatibility, and media byte-integrity constraints.
+- [ ] Run migrations against a clean PostgreSQL 16 database and verify the full migration sequence, including private clinical media, clinic timezone, media category compatibility, media byte-integrity, checksum-format, and storage-source constraints.
 - [ ] Run integration tests against PostgreSQL, not a mocked database.
 - [ ] Confirm all GitHub Actions jobs have actually executed steps on a runner. A failed job with no runner and an empty step list is not a compiler or test diagnostic.
 
@@ -21,6 +21,7 @@ This checklist is a release gate, not a claim that the items have passed. Mark a
 - [ ] Verify media category, MIME type, file signature, size, checksum, and clinic scope enforcement, including legacy media records.
 - [ ] Verify API and rendered application responses containing user/session data are not cacheable.
 - [ ] Verify production auth URLs and trusted origins use canonical HTTPS origins.
+- [ ] Verify production auth-origin, authentication-secret, and PostgreSQL URL validation against the new policy tests.
 - [ ] Review rate limiting, account recovery, session expiry/revocation, log redaction, and dependency advisories.
 - [ ] Verify backup, restore, migration recovery, and retention policies before using real patient data.
 
