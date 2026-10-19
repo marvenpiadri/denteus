@@ -10,7 +10,7 @@ export interface SafeErrorLogFields {
  */
 export function safeErrorLogFields(error: unknown): SafeErrorLogFields {
   const fields: SafeErrorLogFields = {
-    errorType: error instanceof Error && error.name ? error.name : 'UnknownError',
+    errorType: error instanceof Error && /^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(error.name) ? error.name : 'UnknownError',
   };
 
   if (!error || typeof error !== 'object') return fields;
