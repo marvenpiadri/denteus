@@ -3,6 +3,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { pool } from './pool.js';
+import { safeErrorLogFields } from '../security/safe-error-log.js';
 
 const currentDirectory = dirname(fileURLToPath(import.meta.url));
 const migrationsDirectory = join(currentDirectory, 'migrations');
@@ -56,6 +57,6 @@ async function migrate(): Promise<void> {
 }
 
 migrate().catch((error: unknown) => {
-  console.error('Database migration failed:', error instanceof Error ? error.message : 'Unknown error');
+  console.error('Database migration failed:', safeErrorLogFields(error));
   process.exitCode = 1;
 });
