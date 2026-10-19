@@ -5,9 +5,11 @@ This checklist is a release gate, not a claim that the items have passed. Mark a
 ## Build and dependency integrity
 
 - [ ] Install the frontend from the committed Bun lockfile with `bun install --frozen-lockfile`.
+- [ ] Run frontend lint with `npm run lint`.
 - [ ] Run the production Angular SSR build with `npm run build`.
 - [ ] Run frontend tests with `npm test -- --watch=false`.
 - [ ] Commit a backend dependency lockfile and switch backend CI/deployment installation to a frozen install. The backend currently has no checked-in npm lockfile, and its `npm install` can resolve different dependency versions over time.
+- [ ] Run the backend production dependency audit with `npm audit --omit=dev --audit-level=high` after dependency installation.
 - [ ] Run `npm run typecheck`, `npm run build`, and `npm test` from `backend/`.
 - [ ] Run migrations against a clean PostgreSQL 16 database and verify the full migration sequence, including private clinical media, clinic timezone, media category compatibility, media byte-integrity, checksum-format, and storage-source constraints.
 - [ ] Run integration tests against PostgreSQL, not a mocked database.
