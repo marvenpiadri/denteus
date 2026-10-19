@@ -48,12 +48,12 @@
           <tr>
             <td><div class="member-identity"><span class="avatar" aria-hidden="true">{{member.name.trim().charAt(0).toUpperCase() || 'M'}}</span><span><strong>{{member.name}}</strong><small>{{member.email}}</small></span></div></td>
             <td>
-              @if (canManageOrganization() && !member.isCurrentUser) {
+              @if (canEditOrganizationMember(member)) {
                 <div class="role-editor"><select [name]="'org-role-' + member.userId" [(ngModel)]="organizationRoleDrafts[member.userId]" [attr.aria-label]="'Rôle organisationnel de ' + member.name">@for(role of availableOrganizationRoles(member); track role.value){<option [value]="role.value">{{role.label}}</option>}</select><button type="button" (click)="saveOrganizationRole(member)" [disabled]="saving() || organizationRoleDrafts[member.userId] === member.role">Enregistrer</button></div>
               } @else { <span class="role-pill">{{roleLabel(member.role)}}</span> }
             </td>
             <td><div class="clinic-chips">@for(clinic of member.clinics;track clinic.id){<span class="clinic-chip">{{clinic.name}} <small>{{roleLabel(clinic.role)}}</small></span>} @if(!member.clinics.length){<span class="muted">Aucune clinique attribuée</span>}</div></td>
-            @if(canManageOrganization()){<td>@if(!member.isCurrentUser){<button class="remove-button" type="button" (click)="removeOrganizationMember(member)" [disabled]="saving()">Retirer de l’organisation</button>} @else {<span class="muted">Votre compte</span>}</td>}
+            @if(canManageOrganization()){<td>@if(canEditOrganizationMember(member)){<button class="remove-button" type="button" (click)="removeOrganizationMember(member)" [disabled]="saving()">Retirer de l’organisation</button>} @else {<span class="muted">{{member.isCurrentUser ? 'Votre compte' : 'Rôle protégé'}}</span>}</td>}
           </tr>
         }
       </tbody></table></div>
