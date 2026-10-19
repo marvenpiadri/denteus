@@ -31,7 +31,7 @@
   <form class="entry-form media-upload" (submit)="$event.preventDefault()">
    <label>Catégorie du fichier<select name="mediaType" [(ngModel)]="mediaType">@for (type of mediaTypes; track type.value) {<option [value]="type.value">{{type.label}}</option>}</select></label>
    <label>Description (facultative)<input name="mediaDescription" [(ngModel)]="mediaDescription" maxlength="2000" placeholder="Ex. Panoramique dentaire du jour"></label>
-   <label>Date et heure de capture dans le fuseau de la clinique (facultatif)<input type="datetime-local" name="mediaCapturedAt" [(ngModel)]="mediaCapturedAt"><small>Fuseau : {{tenant.activeClinic()?.timezone || 'Africa/Casablanca'}}. Les heures locales inexistantes lors d’un changement d’heure sont refusées.</small></label>
+   <label>Date et heure de capture dans le fuseau de la clinique (facultatif)<input type="datetime-local" name="mediaCapturedAt" [(ngModel)]="mediaCapturedAt"><small>Fuseau : {{activeClinicTimezone}}. Les heures locales inexistantes lors d’un changement d’heure sont refusées.</small></label>
    <label>Choisir un fichier<input type="file" accept="image/jpeg,image/png,image/webp,application/pdf,application/dicom,.dcm" (change)="uploadMedia($event)" [disabled]="mediaUploading()" required></label>
    @if (mediaUploading()) {<p role="status">Envoi et sécurisation du fichier…</p>}
   </form>
