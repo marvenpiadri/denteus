@@ -6,6 +6,7 @@ import { auth } from './auth/auth.js';
 import { checkDatabaseConnection, pool } from './db/pool.js';
 import { safeErrorLogFields } from './security/safe-error-log.js';
 import { publicApiError } from './security/public-api-error.js';
+import { isTrustedMutationOrigin } from './security/trusted-origin-policy.js';
 import { organizationRoutes } from './routes/organizations.js';
 import { patientRoutes } from './routes/patients.js';
 import { odontogramRoutes } from './routes/odontograms.js';
@@ -54,6 +55,19 @@ await app.register(fastifyCors, {
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   maxAge: 86_400,
+});
+
+// CORS controls which browser code may read a response; it does not stop a
+// cross-site form from submitting a cookie-authenticated state change. Protect
+// the application's mutation API with an exact Origin allowlist as well.
+app.addHook('onRequest', async (request, reply) => {
+  if (!request.url.startsWith('/api/v1/')) return;
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) return;
+  if (!isTrustedMutationOrigin(request.headers.origin, clientOrigins)) {
+    return reply.code(403).send({
+      error: { code: 'UNTRUSTED_ORIGIN', message: 'This request origin is not allowed.' },
+    });
+  }
 });
 
 app.addHook('onSend', async (request, reply, payload) => {
