@@ -28,6 +28,16 @@ interface RecordAmendmentBody { reason: string; content: string; }
 const encounterTypes: EncounterType[] = ['CONSULTATION', 'EMERGENCY', 'FOLLOW_UP', 'PROCEDURE', 'OTHER'];
 const noteTypes: NoteType[] = ['CHIEF_COMPLAINT', 'EXAMINATION', 'ASSESSMENT', 'PROGRESS', 'DISCHARGE', 'OTHER'];
 
+async function hasActiveClinicalProvider(organizationId: string, clinicId: string, userId: string, roles: readonly string[]): Promise<boolean> {
+  const result = await pool.query(
+    `SELECT 1 FROM clinic_providers
+     WHERE organization_id=$1 AND clinic_id=$2 AND user_id=$3 AND active=true AND role = ANY($4::text[])
+     LIMIT 1`,
+    [organizationId, clinicId, userId, roles],
+  );
+  return Boolean(result.rowCount);
+}
+
 const createEncounterSchema = {
   type: 'object', additionalProperties: false,
   properties: {
@@ -308,6 +318,9 @@ export const clinicalEncounterRoutes: FastifyPluginAsync = async (app) => {
       const access = await requireClinicAccess(request, reply, organizationId, clinicId);
       if (!access) return;
       if (!canWriteOdontogram(access)) return denyInsufficientRole(reply);
+      if (!await hasActiveClinicalProvider(organizationId, clinicId, access.userId, ['DENTIST', 'ORTHODONTIST'])) {
+        return reply.code(403).send({ error: { code: 'CLINICIAN_REQUIRED', message: 'Only an active dentist or orthodontist can sign a clinical encounter.' } });
+      }
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
@@ -589,6 +602,9 @@ export const clinicalEncounterRoutes: FastifyPluginAsync = async (app) => {
       const access = await requireClinicAccess(request, reply, organizationId, clinicId);
       if (!access) return;
       if (!canWriteOdontogram(access)) return denyInsufficientRole(reply);
+      if (!await hasActiveClinicalProvider(organizationId, clinicId, access.userId, ['DENTIST', 'ORTHODONTIST', 'HYGIENIST'])) {
+        return reply.code(403).send({ error: { code: 'CLINICIAN_REQUIRED', message: 'An active clinical provider account is required to sign this note.' } });
+      }
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
