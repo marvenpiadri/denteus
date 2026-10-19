@@ -33,7 +33,7 @@ The patient record is the central entry point, but different concepts must remai
 - **Patient demographics:** identity and contact details.
 - **Clinical odontogram:** canonical tooth-level clinical status and plan state. Avoid maintaining a competing tooth-condition representation in the treatment-history UI.
 - **Treatment history:** dated care items with FDI tooth/surface references, status, performer and audit events. The current implementation is an initial workflow, not a complete clinical chart.
-- **Clinical notes/findings:** a dated, attributable, auditable record; signed append-only notes and complete medical/dental history are still outstanding.
+- **Clinical notes/findings:** the initial workflow supports dated encounters, signed append-only notes, amendments, findings, procedures, follow-ups, patient clinical history, and private clinical media. Consent workflows, broader clinical acceptance, and validation of the complete record lifecycle remain release concerns.
 - **Appointments:** scheduling records linked to a patient and optional provider/operatory resources.
 - **Recalls:** follow-up records and contact-attempt history. Automated messaging and delivery receipts are not implemented.
 - **Billing:** retain treatment and patient context plus invoice references; use the X-Facture integration boundary rather than building a competing invoice engine.
@@ -51,7 +51,7 @@ Appointments are persisted business records. Availability and rescheduling must 
 
 The server is authoritative for conflicts. Client drag-and-drop is an interaction only; every move must use the tenant-scoped rescheduling API, reload server state after a conflict, and offer an accessible non-drag alternative.
 
-Current scope is a day calendar with provider/operatory resource columns and 15-minute drag rescheduling. Week/month views, resize, and richer availability rules remain incomplete.
+The calendar engine contains time-grid, month, and year view components, but the separately supplied reusable calendar archive has not yet been transplanted. Treat the shipped view set, resize behavior, drag/drop conflict recovery, keyboard alternatives, and mobile scheduling flow as unverified until the replacement is available and the full calendar is tested.
 
 ## Public clinic Pages
 
@@ -70,8 +70,8 @@ Public booking must use a clinic-scoped public interface and expose only the min
 
 ## Current feature state
 
-Implemented initial flows include authentication/onboarding, tenant context, patient CRUD, day scheduling and resource setup, treatment history linked to FDI teeth/surfaces, and patient recalls. These are foundations, not proof of production readiness.
+Implemented initial flows include authentication/onboarding, tenant context, patient CRUD, appointment scheduling and resource setup, treatment history linked to FDI teeth/surfaces, patient recalls, odontogram revision protection, signed clinical notes and amendments, dated findings and procedures, follow-ups, private clinical media, patient clinical history, clinic settings, team invitations, and aggregate reports. These are foundations, not proof of production readiness.
 
-Generic workspace placeholders remain for areas such as today's work, clinical chart, team, reports, and settings. The full odontogram workflow, dated findings, signed notes, complete treatment planning, consent, billing, public Pages, automated communications, and end-to-end acceptance remain outstanding.
+Remaining work includes verifying the complete reusable calendar transplant, consent and broader treatment-plan lifecycle, billing, public clinic Pages, automated communications, deployment routing and secrets, reproducible backend dependency installation, backup/restore, and end-to-end acceptance across roles and devices.
 
 See `docs/PHASED_IMPROVEMENT_PLAN.md` for the phased implementation plan, source-audit findings, and owner verification boundary.
