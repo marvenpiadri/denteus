@@ -5,6 +5,7 @@ import { fromNodeHeaders } from 'better-auth/node';
 import { auth } from './auth/auth.js';
 import { checkDatabaseConnection, pool } from './db/pool.js';
 import { safeErrorLogFields } from './security/safe-error-log.js';
+import { publicApiError } from './security/public-api-error.js';
 import { organizationRoutes } from './routes/organizations.js';
 import { patientRoutes } from './routes/patients.js';
 import { odontogramRoutes } from './routes/odontograms.js';
@@ -160,12 +161,8 @@ await app.register(organizationInvitationRoutes, { prefix: '/api/v1' });
 app.setNotFoundHandler(async (_request, reply) => reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Route not found.' } }));
 app.setErrorHandler((error, request, reply) => {
   request.log.error(safeErrorLogFields(error), 'Unhandled API error');
-  return reply.code(error.statusCode && error.statusCode < 500 ? error.statusCode : 500).send({
-    error: {
-      code: error.statusCode && error.statusCode < 500 ? 'REQUEST_ERROR' : 'INTERNAL_ERROR',
-      message: error.statusCode && error.statusCode < 500 ? error.message : 'An unexpected server error occurred.',
-    },
-  });
+  const response = publicApiError(error);
+  return reply.code(response.statusCode).send(response.body);
 });
 
 const port = Number(process.env['API_PORT'] ?? 4100);
