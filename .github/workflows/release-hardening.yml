@@ -1,0 +1,89 @@
+name: Release hardening
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-hardening-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend build, lint and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.12.0
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+      - name: Install locked frontend dependencies
+        run: bun install --frozen-lockfile
+      - name: Production build
+        run: bun run build
+      - name: Lint frontend
+        run: bun run lint
+      - name: Run frontend tests
+        run: bun run test -- --watch=false
+
+  backend:
+    name: Backend build, typecheck and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: dentaleus_test
+          POSTGRES_USER: dentaleus
+          POSTGRES_PASSWORD: test-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U dentaleus -d dentaleus_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://dentaleus:test-only-password@localhost:5432/dentaleus_test
+      DATABASE_POOL_MAX: 10
+      API_HOST: 127.0.0.1
+      API_PORT: 4100
+      BETTER_AUTH_URL: http://localhost:4100
+      BETTER_AUTH_SECRET: test-only-secret-with-at-least-32-characters
+      CLIENT_ORIGINS: http://localhost:3000
+      TRUST_PROXY: "false"
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.12.0
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm install --no-audit --no-fund
+      - name: Typecheck backend
+        working-directory: backend
+        run: npm run typecheck
+      - name: Build backend
+        working-directory: backend
+        run: npm run build
+      - name: Apply database migrations
+        working-directory: backend
+        run: npm run db:migrate
+      - name: Run backend unit and PostgreSQL integration tests
+        working-directory: backend
+        run: npm test
