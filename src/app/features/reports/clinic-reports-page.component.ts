@@ -126,10 +126,10 @@ export class ClinicReportsPageComponent {
     ];
 
     const csv = rows.map((row) => row.map((value) => {
-      const safe = /^[=+@\\-\\t\\r]/.test(value) ? "'" + value : value;
+      const safe = /^[=+\-@\t\r]/.test(value) ? "'" + value : value;
       return '"' + safe.replace(/"/g, '""') + '"';
-    }).join(';')).join('\\r\\n');
-    const blob = new Blob(['\\uFEFF', csv], { type: 'text/csv;charset=utf-8' });
+    }).join(';')).join('\r\n');
+    const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
