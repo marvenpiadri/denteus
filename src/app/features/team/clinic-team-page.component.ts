@@ -236,6 +236,11 @@ export class ClinicTeamPageComponent {
   invitationStatusLabel(status: OrganizationInvitation['status']): string {
     return ({ PENDING: 'En attente', ACCEPTED: 'Acceptée', REVOKED: 'Révoquée', EXPIRED: 'Expirée' } as const)[status];
   }
+  canEditOrganizationMember(member: OrganizationMember): boolean {
+    return this.canManageOrganization() && !member.isCurrentUser &&
+      (this.canManageOwners() || !['ORGANIZATION_OWNER', 'ORGANIZATION_ADMIN'].includes(member.role));
+  }
+
   availableOrganizationRoles(member: OrganizationMember): Array<{value:string;label:string}> {
     const options = this.canManageOwners()
       ? [{ value: 'ORGANIZATION_OWNER', label: 'Propriétaire organisation' }, ...this.organizationRoleOptions]
