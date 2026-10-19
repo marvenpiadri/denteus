@@ -1,11 +1,10 @@
 import { Pool } from 'pg';
+import { validateDatabaseConfiguration } from './database-config-policy.js';
 
 const connectionString = process.env['DATABASE_URL'];
 const maxConnections = Number(process.env['DATABASE_POOL_MAX'] ?? 10);
 
-if (!connectionString) {
-  throw new Error('DATABASE_URL must be configured for the Dentaleus backend.');
-}
+validateDatabaseConfiguration(connectionString, process.env['NODE_ENV'] === 'production');
 if (!Number.isInteger(maxConnections) || maxConnections < 1 || maxConnections > 100) {
   throw new Error('DATABASE_POOL_MAX must be an integer between 1 and 100.');
 }
