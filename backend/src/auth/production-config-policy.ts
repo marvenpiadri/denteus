@@ -15,7 +15,7 @@ export function validateProductionAuthConfiguration(
     /^(replace-with|change-me|changeme|your[-_ ]|example|test[-_ ]|secret\b)/i.test(normalizedSecret) ||
     new Set(normalizedSecret).size < 8
   ) {
-    throw new Error('BETTER_AUTH_SECRET must be a non-placeholder, high-entropy secret with at least 32 characters in production.');
+    throw new Error('BETTER_AUTH_SECRET must be a non-placeholder secret with at least 32 characters and sufficient character diversity in production.');
   }
 
   const trustedOrigins = configuredOrigins
