@@ -84,6 +84,15 @@ export const organizationTeamRoutes: FastifyPluginAsync = async (app) => {
       try {
         await client.query('BEGIN');
         await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [organizationId]);
+        const lockedActor = await client.query<{ role: string }>(
+          'SELECT role FROM organization_memberships WHERE organization_id = $1 AND user_id = $2 FOR UPDATE',
+          [organizationId, current.user.id],
+        );
+        const effectiveActorRole = lockedActor.rows[0]?.role;
+        if (!effectiveActorRole || !['ORGANIZATION_OWNER', 'ORGANIZATION_ADMIN'].includes(effectiveActorRole)) {
+          await client.query('ROLLBACK');
+          return reply.code(403).send({ error: { code: 'FORBIDDEN', message: 'Organization membership permissions changed. Refresh and try again.' } });
+        }
         const target = await client.query<{ role: string }>(
           'SELECT role FROM organization_memberships WHERE organization_id = $1 AND user_id = $2 FOR UPDATE',
           [organizationId, userId],
@@ -92,7 +101,7 @@ export const organizationTeamRoutes: FastifyPluginAsync = async (app) => {
           await client.query('ROLLBACK');
           return reply.code(404).send({ error: { code: 'MEMBER_NOT_FOUND', message: 'Organization member not found.' } });
         }
-        if (['ORGANIZATION_OWNER', 'ORGANIZATION_ADMIN'].includes(target.rows[0].role) && actorRole !== 'ORGANIZATION_OWNER') {
+        if (['ORGANIZATION_OWNER', 'ORGANIZATION_ADMIN'].includes(target.rows[0].role) && effectiveActorRole !== 'ORGANIZATION_OWNER') {
           await client.query('ROLLBACK');
           return reply.code(403).send({ error: { code: 'ADMIN_ROLE_PROTECTED', message: 'Only an organization owner can change an organization owner or administrator.' } });
         }
@@ -154,6 +163,15 @@ export const organizationTeamRoutes: FastifyPluginAsync = async (app) => {
       try {
         await client.query('BEGIN');
         await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [organizationId]);
+        const lockedActor = await client.query<{ role: string }>(
+          'SELECT role FROM organization_memberships WHERE organization_id = $1 AND user_id = $2 FOR UPDATE',
+          [organizationId, current.user.id],
+        );
+        const effectiveActorRole = lockedActor.rows[0]?.role;
+        if (!effectiveActorRole || !['ORGANIZATION_OWNER', 'ORGANIZATION_ADMIN'].includes(effectiveActorRole)) {
+          await client.query('ROLLBACK');
+          return reply.code(403).send({ error: { code: 'FORBIDDEN', message: 'Organization membership permissions changed. Refresh and try again.' } });
+        }
         const target = await client.query<{ role: string }>(
           'SELECT role FROM organization_memberships WHERE organization_id = $1 AND user_id = $2 FOR UPDATE',
           [organizationId, userId],
@@ -163,7 +181,7 @@ export const organizationTeamRoutes: FastifyPluginAsync = async (app) => {
           return reply.code(404).send({ error: { code: 'MEMBER_NOT_FOUND', message: 'Organization member not found.' } });
         }
         if (target.rows[0].role === 'ORGANIZATION_OWNER') {
-          if (actor.rows[0].role !== 'ORGANIZATION_OWNER') {
+          if (effectiveActorRole !== 'ORGANIZATION_OWNER') {
             await client.query('ROLLBACK');
             return reply.code(403).send({ error: { code: 'OWNER_ROLE_PROTECTED', message: 'Only an organization owner can remove an owner.' } });
           }
@@ -176,7 +194,7 @@ export const organizationTeamRoutes: FastifyPluginAsync = async (app) => {
             return reply.code(409).send({ error: { code: 'LAST_ORGANIZATION_OWNER', message: 'The organization must retain at least one owner.' } });
           }
         }
-        if (target.rows[0].role === 'ORGANIZATION_ADMIN' && actor.rows[0].role !== 'ORGANIZATION_OWNER') {
+        if (target.rows[0].role === 'ORGANIZATION_ADMIN' && effectiveActorRole !== 'ORGANIZATION_OWNER') {
           await client.query('ROLLBACK');
           return reply.code(403).send({ error: { code: 'ADMIN_ROLE_PROTECTED', message: 'Only an organization owner can remove an organization administrator.' } });
         }
