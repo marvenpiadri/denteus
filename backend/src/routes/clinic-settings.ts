@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { FastifyPluginAsync } from 'fastify';
 import { requireClinicAccess } from '../auth/authorization.js';
 import { pool } from '../db/pool.js';
+import { normalizeIanaTimeZone } from '../domain/timezone-policy.js';
 
 interface Params { organizationId:string; clinicId:string; }
 interface ClinicProfileBody { name:string; city:string|null; address:string|null; phone:string|null; email:string|null; timezone:string; }
@@ -44,9 +45,8 @@ export const clinicSettingsRoutes:FastifyPluginAsync=async(app)=>{
       const name=body.name.trim();
       if(!name)return reply.code(400).send({error:{code:'INVALID_CLINIC_NAME',message:'A clinic name is required.'}});
       const clean=(value:string|null)=>value?.trim()||null;
-      const timezone=body.timezone.trim();
-      try { new Intl.DateTimeFormat('en-US',{timeZone:timezone}).format(); }
-      catch { return reply.code(400).send({error:{code:'INVALID_TIMEZONE',message:'Choose a valid IANA time zone, such as Africa/Casablanca.'}}); }
+      const timezone=normalizeIanaTimeZone(body.timezone);
+      if(!timezone)return reply.code(400).send({error:{code:'INVALID_TIMEZONE',message:'Choose a valid IANA time zone, such as Africa/Casablanca.'}});
       const client=await pool.connect();
       try{
         await client.query('BEGIN');
