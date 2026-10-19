@@ -1,4 +1,5 @@
 import { Pool } from 'pg';
+import { safeErrorLogFields } from '../security/safe-error-log.js';
 import { validateDatabaseConfiguration } from './database-config-policy.js';
 
 const connectionString = process.env['DATABASE_URL'];
@@ -18,9 +19,9 @@ export const pool = new Pool({
 });
 
 pool.on('error', (error) => {
-  // Never log connection strings or query parameters; this is a process-level
-  // signal that an idle pooled connection failed unexpectedly.
-  console.error('Unexpected PostgreSQL pool error:', error.message);
+  // Pool errors can carry connection details. Keep diagnostics structured and
+  // omit free-form messages, query details, and stack traces.
+  console.error('Unexpected PostgreSQL pool error:', safeErrorLogFields(error));
 });
 
 export async function checkDatabaseConnection(): Promise<void> {
