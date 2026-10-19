@@ -87,7 +87,11 @@ export class ClinicalShellComponent implements OnInit {
     if (!sidebar) return;
     const focusable = Array.from(sidebar.querySelectorAll<HTMLElement>(
       'a[href], button:not([disabled]), select:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-    )).filter((element) => !element.hasAttribute('inert') && element.getAttribute('aria-hidden') !== 'true');
+    )).filter((element) =>
+      element.getClientRects().length > 0
+      && !element.hasAttribute('inert')
+      && element.getAttribute('aria-hidden') !== 'true',
+    );
     if (!focusable.length) {
       event.preventDefault();
       sidebar.focus();
