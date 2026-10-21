@@ -49,6 +49,15 @@ export interface CreateAppointmentInput {
   operatoryId?: string | null;
 }
 
+export interface UpdateAppointmentInput {
+  patientId: string;
+  startsAt: string;
+  endsAt: string;
+  reason: string | null;
+  providerId: string | null;
+  operatoryId: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AppointmentApiService {
   private readonly http = inject(HttpClient);
@@ -94,19 +103,24 @@ export class AppointmentApiService {
     endsAt: string,
     providerId?: string | null,
     operatoryId?: string | null,
-    patientId?: string,
-    reason?: string | null,
+  ): Promise<void> {
+    await this.update(organizationId, clinicId, appointmentId, {
+      startsAt,
+      endsAt,
+      ...(providerId !== undefined ? { providerId } : {}),
+      ...(operatoryId !== undefined ? { operatoryId } : {}),
+    } as UpdateAppointmentInput);
+  }
+
+  async update(
+    organizationId: string,
+    clinicId: string,
+    appointmentId: string,
+    input: Partial<UpdateAppointmentInput> & Pick<UpdateAppointmentInput, 'startsAt' | 'endsAt'>,
   ): Promise<void> {
     await firstValueFrom(this.http.patch(
       `${this.collectionUrl(organizationId, clinicId)}/${encodeURIComponent(appointmentId)}/reschedule`,
-      {
-        startsAt,
-        endsAt,
-        ...(providerId !== undefined ? { providerId } : {}),
-        ...(operatoryId !== undefined ? { operatoryId } : {}),
-        ...(patientId !== undefined ? { patientId } : {}),
-        ...(reason !== undefined ? { reason } : {}),
-      },
+      input,
       { withCredentials: true },
     ));
   }
