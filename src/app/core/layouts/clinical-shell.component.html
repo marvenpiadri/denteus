@@ -20,7 +20,7 @@
           <strong>Chargement des cliniques…</strong><small>Vérification des accès</small>
         } @else if (tenantContext.clinics().length) {
           <label for="active-clinic">CLINIQUE ACTIVE</label>
-          <select id="active-clinic" [value]="tenantContext.activeClinic()?.id ?? ''" (change)="selectClinic($any($event.target).value)">
+          <select id="active-clinic" [value]="tenantContext.activeClinic().id ?? ''" (change)="selectClinic($any($event.target).value)">
             @for (clinic of tenantContext.clinics(); track clinic.id) {
               <option [value]="clinic.id">{{ clinic.name }} · {{ clinic.organizationName }}</option>
             }
@@ -95,7 +95,7 @@
       </button>
       <div class="topbar-context">
         <span class="topbar-kicker">ESPACE CLINIQUE</span>
-        <span class="topbar-title">{{ tenantContext.activeClinic()?.name || 'Votre cabinet' }}</span>
+        <span class="topbar-title">{{ tenantContext.activeClinic().name || 'Votre cabinet' }}</span>
       </div>
       <div class="topbar-actions">
         <span class="clinic-status"><span class="status-dot" aria-hidden="true"></span>{{ tenantContext.activeClinic() ? 'Contexte clinique actif' : 'Aucune clinique sélectionnée' }}</span>
