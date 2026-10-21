@@ -724,17 +724,14 @@ export class AgendaPageComponent {
       const timezone = clinic.timezone || 'Africa/Casablanca';
       const startsAt = localDateTimeToIso(this.rescheduleStartsAt, timezone);
       const endsAt = localDateTimeToIso(this.rescheduleEndsAt, timezone);
-      await this.appointmentsApi.reschedule(
-        clinic.organizationId,
-        clinic.id,
-        appointment.id,
+      await this.appointmentsApi.update(clinic.organizationId, clinic.id, appointment.id, {
         startsAt,
         endsAt,
-        this.rescheduleProviderId || null,
-        this.rescheduleOperatoryId || null,
-        this.reschedulePatientId,
-        this.rescheduleReason.trim() || null,
-      );
+        providerId: this.rescheduleProviderId || null,
+        operatoryId: this.rescheduleOperatoryId || null,
+        patientId: this.reschedulePatientId,
+        reason: this.rescheduleReason.trim() || null,
+      });
       if (this.tenant.activeClinic()?.id !== clinic.id) return;
       this.reschedulingId.set(null);
       this.success.set('Les modifications du rendez-vous ont été enregistrées.');
