@@ -43,13 +43,19 @@ The API listens on `http://localhost:4100` by default. The PostgreSQL integratio
 
 ## Neon PostgreSQL setup
 
-The backend obtains its database connection exclusively from the server-side `DATABASE_URL` environment variable. Never put a live connection string in source code, frontend configuration, or a committed `.env` file.
+The backend reads its connection string only from the server-side `DATABASE_URL` environment variable. Never put a live connection string in source code, frontend configuration, or a committed `.env` file.
 
-For deployment, set `DATABASE_URL` in the backend host's secret/environment settings to the Neon PostgreSQL connection string. Keep the full URL private. Neon URLs should use TLS (for example, `sslmode=require`).
+Denteus now uses one canonical initial schema at `src/db/migrations/001_initial_schema.sql`. It is intended for a **new, empty PostgreSQL database**, not for upgrading a database created with the previous incremental schema. The migration runner refuses to apply the baseline if it detects an earlier Denteus schema or migration history.
 
-To apply pending migrations from GitHub Actions, add a repository Actions secret named `DATABASE_URL` under **Settings → Secrets and variables → Actions**, then run **Actions → Neon database migrations → Run workflow**. The workflow uses the existing migration runner and records applied migrations in `schema_migrations`; it does not drop the database. This GitHub secret is for the migration workflow and does not automatically configure the deployed API runtime, which must receive its own `DATABASE_URL` secret.
+For a clean setup:
+1. Create a fresh Neon database for Denteus. Do not drop or overwrite an existing database unless you have independently confirmed it contains no data you need.
+2. Set `DATABASE_URL` in the backend runtime's secret/environment settings to that database's TLS-enabled Neon connection string.
+3. Add a GitHub Actions secret named `DATABASE_URL` under **Settings → Secrets and variables → Actions** for the migration workflow.
+4. Run **Actions → Neon database migrations → Run workflow**.
+5. Configure the deployed API runtime with its own `DATABASE_URL`; the GitHub Actions secret does not automatically configure the runtime.
+6. Verify `GET /health/ready` returns `200` with `{"status":"ok","database":"connected"}`.
 
-After configuring the runtime secret and deploying, verify `GET /health/ready` returns `200` with `{"status":"ok","database":"connected"}`. A successful workflow run verifies that the migration command completed; it does not by itself verify the deployed API runtime.
+The migration workflow applies the schema to the database configured in its GitHub secret. A successful workflow run does not by itself verify the deployed API runtime.
 
 ## Security boundary
 
