@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { TenantContextService } from '../../core/tenant/tenant-context.service';
 import { PatientApiService } from '../patients/patient-api.service';
-import type { PatientRecord } from '../patients/patient-api.service';
+import type { PatientListRecord } from '../patients/patient-api.service';
 import { RecallApiService } from './recall-api.service';
 import type { PatientRecall, RecallStatus } from './recall-api.service';
 import { formatClinicDate, formatClinicTime, todayInTimeZone } from '../agenda/clinic-date-time';
@@ -25,7 +25,7 @@ export class RecallsPageComponent {
   private readonly patientsApi = inject(PatientApiService);
   private readonly platformId = inject(PLATFORM_ID);
   readonly recalls = signal<PatientRecall[]>([]);
-  readonly patients = signal<PatientRecord[]>([]);
+  readonly patients = signal<PatientListRecord[]>([]);
   readonly loading = signal(false);
   readonly loadingPatients = signal(false);
   readonly saving = signal(false);
