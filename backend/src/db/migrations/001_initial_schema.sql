@@ -1,7 +1,6 @@
 -- Denteus initial PostgreSQL schema.
 -- This is the canonical schema for a new, empty database; no legacy upgrade path.
 
--- Source: 001_initial_tenant_foundation.sql
 CREATE TABLE app_users (
   id text PRIMARY KEY,
   name text NOT NULL,
@@ -197,7 +196,6 @@ CREATE TABLE audit_events (
 CREATE INDEX audit_events_org_created_idx ON audit_events(organization_id, created_at DESC);
 CREATE INDEX audit_events_user_created_idx ON audit_events(user_id, created_at DESC);
 
--- Source: 002_appointments.sql
 CREATE TABLE appointments (
   id text PRIMARY KEY,
   organization_id text NOT NULL,
@@ -227,7 +225,6 @@ CREATE INDEX appointments_patient_schedule_idx
 CREATE INDEX appointments_clinic_status_idx
   ON appointments(organization_id, clinic_id, status, starts_at);
 
--- Source: 003_patient_recalls.sql
 CREATE TABLE patient_recalls (
   id text PRIMARY KEY,
   organization_id text NOT NULL,
@@ -277,7 +274,6 @@ CREATE TABLE patient_recall_events (
 CREATE INDEX patient_recall_events_history_idx
   ON patient_recall_events(organization_id, clinic_id, recall_id, created_at DESC);
 
--- Source: 004_scheduling_resources.sql
 CREATE TABLE clinic_providers (
   id text PRIMARY KEY,
   organization_id text NOT NULL,
@@ -347,7 +343,6 @@ CREATE INDEX appointments_operatory_schedule_idx
   ON appointments(organization_id, clinic_id, operatory_id, starts_at, ends_at)
   WHERE operatory_id IS NOT NULL AND status NOT IN ('CANCELLED', 'NO_SHOW');
 
--- Source: 005_patient_treatment_history.sql
 ALTER TABLE appointments
   ADD CONSTRAINT appointments_org_clinic_id_unique UNIQUE (organization_id, clinic_id, id);
 
@@ -425,7 +420,6 @@ CREATE TABLE patient_treatment_events (
 CREATE INDEX patient_treatment_events_history_idx
   ON patient_treatment_events(organization_id, clinic_id, treatment_id, created_at DESC);
 
--- Source: 006_odontogram_revisions.sql
 CREATE TABLE odontogram_revisions (
   id text PRIMARY KEY,
   organization_id text NOT NULL,
@@ -444,7 +438,6 @@ CREATE TABLE odontogram_revisions (
 CREATE INDEX odontogram_revisions_patient_history_idx
   ON odontogram_revisions(organization_id, clinic_id, patient_id, created_at DESC);
 
--- Source: 007_clinical_encounters.sql
 -- Encounter-centered clinical history. Odontograms remain the current-state view.
 ALTER TABLE appointments ADD CONSTRAINT appointments_org_clinic_patient_id_unique UNIQUE (organization_id, clinic_id, patient_id, id);
 
@@ -663,7 +656,6 @@ CREATE TABLE clinical_follow_ups (
 );
 CREATE INDEX clinical_follow_ups_due_idx ON clinical_follow_ups(organization_id, clinic_id, status, due_at);
 
--- Source: 009_clinical_record_immutability.sql
 -- Clinical records are corrected by append-only amendments, never silent overwrites.
 CREATE OR REPLACE FUNCTION protect_signed_clinical_note()
 RETURNS trigger LANGUAGE plpgsql AS $$
@@ -780,7 +772,6 @@ CREATE TRIGGER clinical_procedures_completed_immutable
   BEFORE UPDATE OR DELETE ON clinical_procedures
   FOR EACH ROW EXECUTE FUNCTION protect_completed_clinical_procedure();
 
--- Source: 010_patient_clinical_history.sql
 CREATE TABLE patient_clinical_history_entries (
   id text PRIMARY KEY,
   organization_id text NOT NULL,
@@ -796,7 +787,6 @@ CREATE TABLE patient_clinical_history_entries (
 CREATE INDEX patient_clinical_history_patient_idx
   ON patient_clinical_history_entries(organization_id, clinic_id, patient_id, created_at DESC);
 
--- Source: 011_patient_clinical_history_amendments.sql
 ALTER TABLE patient_clinical_history_entries
   ADD CONSTRAINT patient_clinical_history_scope_id_unique
   UNIQUE (organization_id, clinic_id, patient_id, id);
@@ -839,7 +829,6 @@ CREATE TRIGGER patient_clinical_history_entries_immutable
   BEFORE UPDATE OR DELETE ON patient_clinical_history_entries
   FOR EACH ROW EXECUTE FUNCTION prevent_patient_clinical_history_mutation();
 
--- Source: 012_organization_invitations.sql
 CREATE TABLE organization_invitations (
   id text PRIMARY KEY,
   organization_id text NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
