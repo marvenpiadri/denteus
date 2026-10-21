@@ -109,7 +109,7 @@ export class AppointmentApiService {
       endsAt,
       ...(providerId !== undefined ? { providerId } : {}),
       ...(operatoryId !== undefined ? { operatoryId } : {}),
-    } as UpdateAppointmentInput);
+    });
   }
 
   async update(
