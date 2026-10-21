@@ -1,0 +1,14 @@
+/* Shared event colour tokens for timed blocks and compact chips. */
+:host {
+  --ev-bg: color-mix(in srgb, var(--c, #64748b) 13%, #ffffff);
+  --ev-bg-strong: color-mix(in srgb, var(--c, #64748b) 22%, #ffffff);
+  --ev-fg: #24343c;
+  --ev-bar: var(--c, #64748b);
+}
+
+:host-context([data-theme='dark']) {
+  --ev-bg: color-mix(in srgb, var(--c, #64748b) 25%, #17252d);
+  --ev-bg-strong: color-mix(in srgb, var(--c, #64748b) 34%, #17252d);
+  --ev-fg: #e4edf0;
+  --ev-bar: var(--c, #8da2aa);
+}
