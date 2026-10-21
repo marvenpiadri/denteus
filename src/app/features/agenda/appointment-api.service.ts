@@ -86,10 +86,27 @@ export class AppointmentApiService {
     ));
   }
 
-  async reschedule(organizationId: string, clinicId: string, appointmentId: string, startsAt: string, endsAt: string, providerId?: string | null, operatoryId?: string | null): Promise<void> {
+  async reschedule(
+    organizationId: string,
+    clinicId: string,
+    appointmentId: string,
+    startsAt: string,
+    endsAt: string,
+    providerId?: string | null,
+    operatoryId?: string | null,
+    patientId?: string,
+    reason?: string | null,
+  ): Promise<void> {
     await firstValueFrom(this.http.patch(
       `${this.collectionUrl(organizationId, clinicId)}/${encodeURIComponent(appointmentId)}/reschedule`,
-      { startsAt, endsAt, ...(providerId !== undefined ? { providerId } : {}), ...(operatoryId !== undefined ? { operatoryId } : {}) },
+      {
+        startsAt,
+        endsAt,
+        ...(providerId !== undefined ? { providerId } : {}),
+        ...(operatoryId !== undefined ? { operatoryId } : {}),
+        ...(patientId !== undefined ? { patientId } : {}),
+        ...(reason !== undefined ? { reason } : {}),
+      },
       { withCredentials: true },
     ));
   }
