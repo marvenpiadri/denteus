@@ -17,7 +17,7 @@
       <button type="button" [class.active]="calendarResourceView() === 'operatory'" (click)="setCalendarResourceView('operatory')">Par fauteuil</button>
     </div>
     <div class="calendar-date-control"><label for="agenda-date">Aller à la date</label><input id="agenda-date" type="date" [ngModel]="selectedDate()" (ngModelChange)="selectedDate.set($event)" [disabled]="saving() || changingStatusId() !== null"></div>
-    <span class="timezone-label">{{ tenant.activeClinic()?.timezone || 'Africa/Casablanca' }}</span>
+    <span class="timezone-label">{{ tenant.activeClinic().timezone || 'Africa/Casablanca' }}</span>
   </section>
 
   @if (showResourceSetup()) {
