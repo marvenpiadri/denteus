@@ -582,6 +582,11 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
         }
 
         const patientId = request.body.patientId ?? currentAppointment.patientId;
+        if (patientId !== currentAppointment.patientId && ['ARRIVED', 'IN_PROGRESS'].includes(status)) {
+          await client.query('ROLLBACK');
+          transactionOpen = false;
+          return reply.code(409).send({ error: { code: 'PATIENT_CHANGE_NOT_ALLOWED', message: 'Le patient ne peut plus être changé après son arrivée ou le début du soin.' } });
+        }
         if (patientId !== currentAppointment.patientId) {
           const patient = await client.query(
             `SELECT 1 FROM patient_clinics WHERE organization_id = $1 AND clinic_id = $2 AND patient_id = $3 LIMIT 1`,
@@ -684,7 +689,7 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
             access.userId,
             request.body.patientId !== undefined || request.body.reason !== undefined ? 'APPOINTMENT_UPDATED' : 'APPOINTMENT_RESCHEDULED',
             request.params.appointmentId,
-            JSON.stringify({ clinicId: request.params.clinicId, startsAt: request.body.startsAt, endsAt: request.body.endsAt, providerId, operatoryId, patientId, ...(request.body.reason !== undefined ? { reason: request.body.reason?.trim() || null } : {}) }),
+            JSON.stringify({ clinicId: request.params.clinicId, startsAt: request.body.startsAt, endsAt: request.body.endsAt, providerId, operatoryId, patientId, reasonChanged: request.body.reason !== undefined }),
           ],
         );
         await client.query('COMMIT');
