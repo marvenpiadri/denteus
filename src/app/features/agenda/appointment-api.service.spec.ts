@@ -63,4 +63,31 @@ describe('AppointmentApiService', () => {
     rescheduleRequest.flush({ data: { id: 'appointment-1' } });
     await expect(reschedule).resolves.toBeUndefined();
   });
+  it('saves appointment edits through the clinic-scoped scheduling endpoint', async () => {
+    const result = service.reschedule(
+      'org-1',
+      'clinic-1',
+      'appointment-1',
+      '2026-10-18T09:00:00.000Z',
+      '2026-10-18T09:45:00.000Z',
+      'provider-1',
+      'operatory-1',
+      'patient-2',
+      'Contrôle annuel',
+    );
+    const request = http.expectOne('/api/v1/organizations/org-1/clinics/clinic-1/appointments/appointment-1/reschedule');
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({
+      startsAt: '2026-10-18T09:00:00.000Z',
+      endsAt: '2026-10-18T09:45:00.000Z',
+      providerId: 'provider-1',
+      operatoryId: 'operatory-1',
+      patientId: 'patient-2',
+      reason: 'Contrôle annuel',
+    });
+    expect(request.request.withCredentials).toBe(true);
+    request.flush({ data: { id: 'appointment-1' } });
+    await expect(result).resolves.toBeUndefined();
+  });
+
 });
