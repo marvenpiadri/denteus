@@ -193,10 +193,11 @@
                 <h3>Modifier le rendez-vous</h3>
                 @if (patientsError()) { <p class="inline-error" role="alert">{{ patientsError() }} <button type="button" (click)="retryPatientOptions()">Réessayer</button></p> }
                 <label [for]="'reschedule-patient-' + appointment.id">Patient *</label>
-                <select [id]="'reschedule-patient-' + appointment.id" name="reschedulePatient" [(ngModel)]="reschedulePatientId" required [disabled]="loadingPatients() || !!patientsError()">
+                <select [id]="'reschedule-patient-' + appointment.id" name="reschedulePatient" [(ngModel)]="reschedulePatientId" required [disabled]="loadingPatients() || !!patientsError() || appointment.status === 'ARRIVED' || appointment.status === 'IN_PROGRESS'">
                   <option value="" disabled>{{ loadingPatients() ? 'Chargement des patients…' : 'Sélectionner un patient' }}</option>
                   @for (patient of patients(); track patient.id) { <option [value]="patient.id">{{ patient.lastName }} {{ patient.firstName }} · {{ patient.patientNumber }}</option> }
                 </select>
+                @if (appointment.status === 'ARRIVED' || appointment.status === 'IN_PROGRESS') { <small>Le patient ne peut plus être changé après son arrivée ou le début du soin.</small> }
                 <label [for]="'reschedule-reason-' + appointment.id">Motif</label><input [id]="'reschedule-reason-' + appointment.id" name="rescheduleReason" [(ngModel)]="rescheduleReason" maxlength="300" placeholder="Contrôle, consultation, suivi…">
                 <label [for]="'reschedule-start-' + appointment.id">Début *</label><input [id]="'reschedule-start-' + appointment.id" name="rescheduleStart" type="datetime-local" [(ngModel)]="rescheduleStartsAt" required>
                 <label [for]="'reschedule-end-' + appointment.id">Fin *</label><input [id]="'reschedule-end-' + appointment.id" name="rescheduleEnd" type="datetime-local" [(ngModel)]="rescheduleEndsAt" required>
