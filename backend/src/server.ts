@@ -109,7 +109,8 @@ app.get('/health/ready', async (_request, reply) => {
 
 app.route({
   method: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  url: '/api/auth/*',
+  // Match auth endpoints without a named-wildcard parser pattern.
+  url: /^\/api\/auth\/.*$/,
   async handler(request, reply) {
     try {
       const url = new URL(request.url, authBaseUrl);
