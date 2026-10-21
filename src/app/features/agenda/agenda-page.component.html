@@ -189,13 +189,21 @@
               </div>
             }
             @if (reschedulingId() === appointment.id) {
-              <form class="reschedule-form" (ngSubmit)="saveReschedule(appointment)">
-                <label [for]="'reschedule-start-' + appointment.id">Nouveau début</label><input [id]="'reschedule-start-' + appointment.id" name="rescheduleStart" type="datetime-local" [(ngModel)]="rescheduleStartsAt" required>
-                <label [for]="'reschedule-end-' + appointment.id">Nouvelle fin</label><input [id]="'reschedule-end-' + appointment.id" name="rescheduleEnd" type="datetime-local" [(ngModel)]="rescheduleEndsAt" required>
+              <form class="reschedule-form" (ngSubmit)="saveReschedule(appointment)" #rescheduleForm="ngForm">
+                <h3>Modifier le rendez-vous</h3>
+                @if (patientsError()) { <p class="inline-error" role="alert">{{ patientsError() }} <button type="button" (click)="retryPatientOptions()">Réessayer</button></p> }
+                <label [for]="'reschedule-patient-' + appointment.id">Patient *</label>
+                <select [id]="'reschedule-patient-' + appointment.id" name="reschedulePatient" [(ngModel)]="reschedulePatientId" required [disabled]="loadingPatients() || !!patientsError()">
+                  <option value="" disabled>{{ loadingPatients() ? 'Chargement des patients…' : 'Sélectionner un patient' }}</option>
+                  @for (patient of patients(); track patient.id) { <option [value]="patient.id">{{ patient.lastName }} {{ patient.firstName }} · {{ patient.patientNumber }}</option> }
+                </select>
+                <label [for]="'reschedule-reason-' + appointment.id">Motif</label><input [id]="'reschedule-reason-' + appointment.id" name="rescheduleReason" [(ngModel)]="rescheduleReason" maxlength="300" placeholder="Contrôle, consultation, suivi…">
+                <label [for]="'reschedule-start-' + appointment.id">Début *</label><input [id]="'reschedule-start-' + appointment.id" name="rescheduleStart" type="datetime-local" [(ngModel)]="rescheduleStartsAt" required>
+                <label [for]="'reschedule-end-' + appointment.id">Fin *</label><input [id]="'reschedule-end-' + appointment.id" name="rescheduleEnd" type="datetime-local" [(ngModel)]="rescheduleEndsAt" required>
                 <label [for]="'reschedule-provider-' + appointment.id">Praticien</label><select [id]="'reschedule-provider-' + appointment.id" name="rescheduleProvider" [(ngModel)]="rescheduleProviderId" [required]="providers().length > 0 || operatories().length > 0"><option value="">Non affecté</option>@for (provider of providers(); track provider.id) { <option [value]="provider.id">{{ provider.displayName }}</option> }</select>
                 <label [for]="'reschedule-operatory-' + appointment.id">Fauteuil</label><select [id]="'reschedule-operatory-' + appointment.id" name="rescheduleOperatory" [(ngModel)]="rescheduleOperatoryId" [required]="providers().length > 0 || operatories().length > 0"><option value="">Non affecté</option>@for (operatory of operatories(); track operatory.id) { <option [value]="operatory.id">{{ operatory.name }}</option> }</select>
                 @if (rescheduleError()) { <p class="inline-error" role="alert">{{ rescheduleError() }}</p> }
-                <div class="reschedule-actions"><button type="button" class="secondary-button" (click)="reschedulingId.set(null)" [disabled]="saving()">Annuler</button><button type="submit" class="primary-button" [disabled]="saving() || loadingResources() || !!resourceError()">{{ saving() ? 'Déplacement…' : 'Confirmer le déplacement' }}</button></div>
+                <div class="reschedule-actions"><button type="button" class="secondary-button" (click)="reschedulingId.set(null)" [disabled]="saving()">Annuler</button><button type="submit" class="primary-button" [disabled]="rescheduleForm.invalid || saving() || loadingPatients() || !!patientsError() || !patients().length || loadingResources() || !!resourceError()">{{ saving() ? 'Enregistrement…' : 'Enregistrer les modifications' }}</button></div>
               </form>
             }
           </article>
