@@ -1,0 +1,36 @@
+name: Neon database migrations
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    name: Apply pending PostgreSQL migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      NODE_ENV: production
+    steps:
+      - name: Check required secret
+        shell: bash
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::Add DATABASE_URL in GitHub repository Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm install
+      - name: Apply database migrations
+        working-directory: backend
+        run: npm run db:migrate
