@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { TenantContextService } from '../../core/tenant/tenant-context.service';
 import { PatientApiService } from '../patients/patient-api.service';
-import type { PatientRecord } from '../patients/patient-api.service';
+import type { PatientListRecord } from '../patients/patient-api.service';
 import { AppointmentApiService } from './appointment-api.service';
 import { SchedulerCalendarComponent } from './calendar-engine/scheduler-calendar.component';
 import type { CalendarCategory, CalendarEvent, CalendarGateway, CalendarViewType, EventDraft, LaneConfig } from './calendar-engine/models/calendar.models';
@@ -96,7 +96,7 @@ export class AgendaPageComponent {
   readonly calendarGateway: CalendarGateway = {
     update: async (event, previous) => this.persistCalendarMove(event, previous),
   };
-  readonly patients = signal<PatientRecord[]>([]);
+  readonly patients = signal<PatientListRecord[]>([]);
   readonly waitingRoomAppointments = computed(() => this.dayAppointments().filter((appointment) => appointment.status === 'ARRIVED'));
   readonly inTreatmentAppointments = computed(() => this.dayAppointments().filter((appointment) => appointment.status === 'IN_PROGRESS'));
   readonly providers = signal<ClinicProvider[]>([]);
@@ -645,7 +645,7 @@ export class AgendaPageComponent {
   }
 
   availableTransitions(status: AppointmentStatus, startsAt?: string, endsAt?: string): AppointmentStatus[] {
-    const transitions: Record<AppointmentStatus, Exclude<AppointmentStatus, 'SCHEDULED'>[]> = {
+    const transitions: Record<AppointmentStatus, AppointmentStatus[]> = {
       SCHEDULED: ['CONFIRMED', 'ARRIVED', 'CANCELLED', 'NO_SHOW'],
       CONFIRMED: ['ARRIVED', 'CANCELLED', 'NO_SHOW'],
       ARRIVED: ['IN_PROGRESS', 'CANCELLED'],
