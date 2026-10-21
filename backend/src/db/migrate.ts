@@ -20,6 +20,28 @@ async function migrate(): Promise<void> {
       )
     `);
 
+    const baseline = await client.query(
+      "SELECT 1 FROM schema_migrations WHERE name = '001_initial_schema.sql'",
+    );
+
+    if (!baseline.rowCount) {
+      const previousMigrations = await client.query(
+        'SELECT count(*)::integer AS count FROM schema_migrations',
+      );
+      const existingSchema = await client.query(
+        "SELECT to_regclass('public.app_users') AS app_users, to_regclass('public.organizations') AS organizations",
+      );
+      if (
+        previousMigrations.rows[0]?.count > 0 ||
+        existingSchema.rows[0]?.app_users !== null ||
+        existingSchema.rows[0]?.organizations !== null
+      ) {
+        throw new Error(
+          'This database already contains a previous Denteus schema. The clean baseline only runs on an empty database; create a fresh Neon database before applying it.',
+        );
+      }
+    }
+
     const files = (await readdir(migrationsDirectory))
       .filter((name) => /^\d+_[a-z0-9_-]+\.sql$/.test(name))
       .sort();
