@@ -30,6 +30,8 @@ interface RescheduleBody {
   endsAt: string;
   providerId?: string | null;
   operatoryId?: string | null;
+  patientId?: string;
+  reason?: string | null;
 }
 interface StatusBody {
   status: 'SCHEDULED' | 'CONFIRMED' | 'ARRIVED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
@@ -68,6 +70,8 @@ const rescheduleSchema = {
     endsAt: { type: 'string', format: 'date-time' },
     providerId: { anyOf: [{ type: 'string', minLength: 1, maxLength: 100 }, { type: 'null' }] },
     operatoryId: { anyOf: [{ type: 'string', minLength: 1, maxLength: 100 }, { type: 'null' }] },
+    patientId: { type: 'string', minLength: 1, maxLength: 100 },
+    reason: { anyOf: [{ type: 'string', maxLength: 300 }, { type: 'null' }] },
   },
 } as const;
 
@@ -577,6 +581,19 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
           });
         }
 
+        const patientId = request.body.patientId ?? currentAppointment.patientId;
+        if (patientId !== currentAppointment.patientId) {
+          const patient = await client.query(
+            `SELECT 1 FROM patient_clinics WHERE organization_id = $1 AND clinic_id = $2 AND patient_id = $3 LIMIT 1`,
+            [request.params.organizationId, request.params.clinicId, patientId],
+          );
+          if (!patient.rowCount) {
+            await client.query('ROLLBACK');
+            transactionOpen = false;
+            return reply.code(404).send({ error: { code: 'PATIENT_NOT_FOUND', message: 'Patient not found in this clinic.' } });
+          }
+        }
+
         const overlap = await client.query(
           `
             SELECT 1 FROM appointments
@@ -589,7 +606,7 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
               AND ends_at > $3::timestamptz
             LIMIT 1
           `,
-          [request.params.organizationId, request.params.clinicId, request.body.startsAt, request.body.endsAt, currentAppointment.patientId, request.params.appointmentId],
+          [request.params.organizationId, request.params.clinicId, request.body.startsAt, request.body.endsAt, patientId, request.params.appointmentId],
         );
         if (overlap.rowCount) {
           await client.query('ROLLBACK');
@@ -648,22 +665,26 @@ export const appointmentRoutes: FastifyPluginAsync = async (app) => {
         await client.query(
           `
             UPDATE appointments
-            SET starts_at = $4::timestamptz, ends_at = $5::timestamptz, provider_id = $6, operatory_id = $7, updated_at = clock_timestamp()
+            SET patient_id = $8, starts_at = $4::timestamptz, ends_at = $5::timestamptz,
+                provider_id = $6, operatory_id = $7,
+                reason = CASE WHEN $9::boolean THEN $10::text ELSE reason END,
+                updated_at = clock_timestamp()
             WHERE organization_id = $1 AND clinic_id = $2 AND id = $3
           `,
-          [request.params.organizationId, request.params.clinicId, request.params.appointmentId, request.body.startsAt, request.body.endsAt, providerId, operatoryId],
+          [request.params.organizationId, request.params.clinicId, request.params.appointmentId, request.body.startsAt, request.body.endsAt, providerId, operatoryId, patientId, request.body.reason !== undefined, request.body.reason?.trim() || null],
         );
         await client.query(
           `
             INSERT INTO audit_events (id, organization_id, user_id, action, resource_type, resource_id, metadata)
-            VALUES ($1, $2, $3, 'APPOINTMENT_RESCHEDULED', 'APPOINTMENT', $4, $5::jsonb)
+            VALUES ($1, $2, $3, $4, 'APPOINTMENT', $5, $6::jsonb)
           `,
           [
             randomUUID(),
             request.params.organizationId,
             access.userId,
+            request.body.patientId !== undefined || request.body.reason !== undefined ? 'APPOINTMENT_UPDATED' : 'APPOINTMENT_RESCHEDULED',
             request.params.appointmentId,
-            JSON.stringify({ clinicId: request.params.clinicId, startsAt: request.body.startsAt, endsAt: request.body.endsAt, providerId, operatoryId }),
+            JSON.stringify({ clinicId: request.params.clinicId, startsAt: request.body.startsAt, endsAt: request.body.endsAt, providerId, operatoryId, patientId, ...(request.body.reason !== undefined ? { reason: request.body.reason?.trim() || null } : {}) }),
           ],
         );
         await client.query('COMMIT');
