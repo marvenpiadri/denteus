@@ -41,6 +41,16 @@ The API listens on `http://localhost:4100` by default. The PostgreSQL integratio
 - Patient list/detail/create routes are nested under an authorized organization and clinic path. Clinical odontogram reads/writes are restricted to explicitly allowed clinical roles.
 - Odontogram read/write routes are nested under an authorized organization, clinic and patient path; writes require an allowed clinical role and are audited transactionally.
 
+## Neon PostgreSQL setup
+
+The backend obtains its database connection exclusively from the server-side `DATABASE_URL` environment variable. Never put a live connection string in source code, frontend configuration, or a committed `.env` file.
+
+For deployment, set `DATABASE_URL` in the backend host's secret/environment settings to the Neon PostgreSQL connection string. Keep the full URL private. Neon URLs should use TLS (for example, `sslmode=require`).
+
+To apply pending migrations from GitHub Actions, add a repository Actions secret named `DATABASE_URL` under **Settings → Secrets and variables → Actions**, then run **Actions → Neon database migrations → Run workflow**. The workflow uses the existing migration runner and records applied migrations in `schema_migrations`; it does not drop the database. This GitHub secret is for the migration workflow and does not automatically configure the deployed API runtime, which must receive its own `DATABASE_URL` secret.
+
+After configuring the runtime secret and deploying, verify `GET /health/ready` returns `200` with `{"status":"ok","database":"connected"}`. A successful workflow run verifies that the migration command completed; it does not by itself verify the deployed API runtime.
+
 ## Security boundary
 
 The backend now has authenticated organization and clinic-scoped routes for patients, appointments, recalls, scheduling resources, odontograms, clinical encounters, private clinical media, patient clinical history, clinic settings, reports, team management, and organization invitations. Sensitive clinical routes use explicit role policies; clinical writes and invitation changes use transactional persistence and audit events where implemented. These source-level controls do not replace executed negative authorization and integration tests.
