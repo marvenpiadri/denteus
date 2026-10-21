@@ -746,8 +746,10 @@ export class AgendaPageComponent {
       this.rescheduleError.set(error instanceof Error && !(error instanceof HttpErrorResponse)
         ? error.message
         : error instanceof HttpErrorResponse && error.status === 409
-          ? 'Le créneau n’est plus disponible ou le rendez-vous ne peut plus être déplacé.'
-          : 'Le déplacement n’a pas été enregistré. Vérifiez les horaires puis réessayez.');
+          ? error.error?.error?.message || 'Le créneau n’est plus disponible ou le rendez-vous ne peut plus être modifié.'
+          : error instanceof HttpErrorResponse && error.status === 404
+            ? 'Le patient sélectionné n’est pas accessible dans la clinique active. Rechargez la liste.'
+            : 'Les modifications n’ont pas été enregistrées. Vérifiez les horaires puis réessayez.');
     } finally {
       if (mutationSequence === this.appointmentMutationSequence) this.saving.set(false);
     }
