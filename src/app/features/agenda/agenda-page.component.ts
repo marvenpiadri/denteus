@@ -714,6 +714,10 @@ export class AgendaPageComponent {
     const clinic = this.tenant.activeClinic();
     if (!clinic || this.saving()) return;
     this.rescheduleError.set('');
+    if (!this.reschedulePatientId) {
+      this.rescheduleError.set('Sélectionnez un patient pour ce rendez-vous.');
+      return;
+    }
     if (Boolean(this.rescheduleProviderId) !== Boolean(this.rescheduleOperatoryId)) {
       this.rescheduleError.set('Affectez à la fois un praticien et un fauteuil, ou laissez les deux champs vides.');
       return;
@@ -746,7 +750,9 @@ export class AgendaPageComponent {
           ? error.error?.error?.message || 'Le créneau n’est plus disponible ou le rendez-vous ne peut plus être modifié.'
           : error instanceof HttpErrorResponse && error.status === 404
             ? 'Le patient sélectionné n’est pas accessible dans la clinique active. Rechargez la liste.'
-            : 'Les modifications n’ont pas été enregistrées. Vérifiez les horaires puis réessayez.');
+            : error instanceof HttpErrorResponse && error.status === 400
+              ? error.error?.error?.message || 'Vérifiez les horaires et les ressources sélectionnées.'
+              : 'Les modifications n’ont pas été enregistrées. Vérifiez les horaires puis réessayez.');
     } finally {
       if (mutationSequence === this.appointmentMutationSequence) this.saving.set(false);
     }
